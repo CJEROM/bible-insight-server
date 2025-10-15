@@ -18,8 +18,16 @@ def set_database():
     cur = conn.cursor()
 
     # cur.execute("SELECT version();")
-    cur.execute("SELECT * FROM Languages;")
-    if cur.fetchall() != None:
+    cur.execute("""
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+            AND table_name = %s
+        );
+    """, ("Languages",))
+    
+    if cur.fetchone()[0] == True:
         return "Database Already Initialised!"
 
     # Load and execute SQL file
