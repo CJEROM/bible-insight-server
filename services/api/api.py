@@ -25,7 +25,7 @@ def set_database():
             WHERE table_schema = 'public'
             AND table_name = %s
         );
-    """, ("Languages",))
+    """, ("languages",))
     
     if cur.fetchone()[0] == True:
         return "Database Already Initialised!"
