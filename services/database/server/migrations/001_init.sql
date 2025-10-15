@@ -494,22 +494,22 @@ INSERT INTO BookGroups (testament, level) VALUES
     (FALSE, 2), -- ID = 12, General Epistles
     (FALSE, 2); -- ID = 13, Prophecy
 
-INSERT INTO BookGroupNames (book_group_id, name) VALUES 
-    (1, 'Old Testament'),
-    (2, 'New Testament'),
-    (3, 'Pentateuch'),
-    (3, 'Books of Moses'),
-    (3, 'Books of the Law'),
-    (4, 'Historical'),
-    (5, 'Wisdom'),
-    (6, 'Poetry'),
-    (7, 'Major Prophets'),
-    (8, 'Minor Prophets'),
-    (9, 'Gospels'),
-    (10, 'Church History'),
-    (11, 'Pauline Epistles'),
-    (12, 'General Epistles'),
-    (13, 'Prophecy');
+INSERT INTO BookGroupNames (book_group_id, language_id, name) VALUES 
+    (1, 1, 'Old Testament'),
+    (2, 1, 'New Testament'),
+    (3, 1, 'Pentateuch'),
+    (3, 1, 'Books of Moses'),
+    (3, 1, 'Books of the Law'),
+    (4, 1, 'Historical'),
+    (5, 1, 'Wisdom'),
+    (6, 1, 'Poetry'),
+    (7, 1, 'Major Prophets'),
+    (8, 1, 'Minor Prophets'),
+    (9, 1, 'Gospels'),
+    (10, 1, 'Church History'),
+    (11, 1, 'Pauline Epistles'),
+    (12, 1, 'General Epistles'),
+    (13, 1, 'Prophecy');
 
 INSERT INTO BookToGroup (book_id, book_group_id) VALUES 
 -- Old Testament
