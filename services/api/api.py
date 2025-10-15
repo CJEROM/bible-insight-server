@@ -1,59 +1,42 @@
 from flask import Flask, jsonify
 import sqlite3
 import json
+import psycopg2
 
 app = Flask(__name__)
 
-@app.route("/geojson_all") 
-def get_all_geojson(): 
-    conn = sqlite3.connect("bibleData.db") 
-    cursor = conn.cursor() 
-    cursor.execute("SELECT file_content FROM Files WHERE type LIKE 'application/json'") # adjust table/column name 
-    rows = cursor.fetchall() 
-
-    features = [] 
-    for row in rows: 
-        geometry = json.loads(row[0]) 
-        features.append({ 
-            "type": "Feature", 
-            "geometry": geometry, 
-            "properties": {} 
-        }) 
-    
-    feature_collection = {"type": "FeatureCollection", "features": features} 
-    return jsonify(feature_collection)
-
-@app.route("/geojson/<file_name>")
-def get_geojson(file_name):
-    conn = sqlite3.connect("bibleData.db")
-    cursor = conn.cursor()
-
-    # Use parameter substitution to avoid SQL injection
-    cursor.execute(
-        "SELECT file_content FROM Files WHERE type LIKE 'application/json' AND file_name = ?",
-        (file_name,)
+@app.route("/init_database") 
+def set_database():
+    conn = psycopg2.connect(
+        host="REDACTED_IP",
+        port=5444,
+        dbname="postgres",
+        user="postgres",
+        password="REDACTED_PASSWORD"
     )
-    rows = cursor.fetchall()
+
+    cur = conn.cursor()
+
+    # cur.execute("SELECT version();")
+    cur.execute("SELECT * FROM Languages;")
+    if cur.fetchall() != None:
+        return "Database Already Initialised!"
+
+    # Load and execute SQL file
+    with open("../database/server/schemas/v1_schema.sql", "r") as file:
+        sql_script = file.read()
+        cur.execute(sql_script)
+
+    # Load and execute SQL file
+    with open("../database/server/migrations/001_init.sql", "r") as file:
+        sql_script = file.read()
+        cur.execute(sql_script)
+
+    conn.commit()
+    cur.close()
     conn.close()
 
-    if not rows:
-        return jsonify({"error": f"No GeoJSON found for '{file_name}'"}), 404
-
-    features = []
-    for row in rows:
-        try:
-            geometry = json.loads(row[0])
-            features.append({
-                "type": "Feature",
-                "geometry": geometry,
-                "properties": {}
-            })
-        except Exception as e:
-            print(f"Skipping bad row: {e}")
-
-    feature_collection = {"type": "FeatureCollection", "features": features}
-    return jsonify(feature_collection)
-
+    return "Database Init Success"
 
 if __name__ == "__main__":
     print("✅ Starting Flask server on http://localhost:5000 ...")
