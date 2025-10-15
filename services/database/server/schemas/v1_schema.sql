@@ -9,17 +9,6 @@ CREATE TABLE IF NOT EXISTS Languages (
 
 -- ================================================== Translation ==================================================
 
--- DROP TABLE IF EXISTS Translations;
-CREATE TABLE IF NOT EXISTS Translations (
-    id                  SERIAL PRIMARY KEY,
-    dbl_id              TEXT,
-    agreement_id        TEXT,
-	revision            INT,
-	revision_note		TEXT, -- For storing what has changed in the revision
-	UNIQUE(dbl_id, agreement_id, revision),
-	FOREIGN KEY (dbl_id) REFERENCES TranslationInfo (dbl_id)
-);
-
 -- DROP TABLE IF EXISTS TranslationInfo;
 CREATE TABLE IF NOT EXISTS TranslationInfo (
     dbl_id              TEXT PRIMARY KEY,
@@ -32,7 +21,18 @@ CREATE TABLE IF NOT EXISTS TranslationInfo (
     FOREIGN KEY (language_id) REFERENCES Languages (id)
 );
 
--- DROP TABLE IF EXISTS TranslationRelationships
+-- DROP TABLE IF EXISTS Translations;
+CREATE TABLE IF NOT EXISTS Translations (
+    id                  SERIAL PRIMARY KEY,
+    dbl_id              TEXT,
+    agreement_id        TEXT,
+	revision            INT,
+	revision_note		TEXT, -- For storing what has changed in the revision
+	UNIQUE(dbl_id, agreement_id, revision),
+	FOREIGN KEY (dbl_id) REFERENCES TranslationInfo (dbl_id)
+);
+
+-- DROP TABLE IF EXISTS TranslationRelationships;
 CREATE TABLE IF NOT EXISTS TranslationRelationships (
     id                  SERIAL PRIMARY KEY,
     from_translation    TEXT,
@@ -46,7 +46,13 @@ CREATE TABLE IF NOT EXISTS TranslationRelationships (
 
 -- ================================================== Reference Data ==================================================
 
--- DROP TABLE IF EXISTS Sources
+-- DROP TABLE IF EXISTS Users;
+CREATE TABLE IF NOT EXISTS Users (
+    id                  SERIAL PRIMARY KEY,
+    sud                 TEXT UNIQUE
+);
+
+-- DROP TABLE IF EXISTS Sources;
 CREATE TABLE IF NOT EXISTS Sources (
     id                  SERIAL PRIMARY KEY,
     url                 TEXT,
@@ -68,7 +74,7 @@ CREATE TABLE IF NOT EXISTS Files (
 );
 
 -- Consider turning into unique instance for controlling styles across all translations instead, like default settings
--- DROP TABLE IF EXISTS Styles
+-- DROP TABLE IF EXISTS Styles;
 CREATE TABLE IF NOT EXISTS Styles (
     id                  SERIAL PRIMARY KEY,
     style               TEXT,
@@ -80,7 +86,7 @@ CREATE TABLE IF NOT EXISTS Styles (
     FOREIGN KEY (source_file_id) REFERENCES Files(id) ON DELETE CASCADE
 );
 
--- DROP TABLE IF EXISTS Properties
+-- DROP TABLE IF EXISTS Properties;
 CREATE TABLE IF NOT EXISTS Properties (
     id                  SERIAL PRIMARY KEY,
     name                TEXT,
@@ -95,7 +101,8 @@ CREATE TABLE IF NOT EXISTS Properties (
 -- DROP TABLE IF EXISTS Books;
 CREATE TABLE IF NOT EXISTS Books (
     id              SERIAL PRIMARY KEY,
-    code            TEXT UNIQUE
+    code            TEXT UNIQUE,
+	total_chapters	INT
 );
 
 -- DROP TABLE IF EXISTS BookToFile;
@@ -139,7 +146,7 @@ CREATE TABLE IF NOT EXISTS BookGroupNames (
 
 -- ================================================== Chapters ==================================================
 
--- DROP TABLE IF EXISTS Chapters
+-- DROP TABLE IF EXISTS Chapters;
 CREATE TABLE IF NOT EXISTS Chapters (
     id                      SERIAL PRIMARY KEY,
     book_code               TEXT,
@@ -148,20 +155,20 @@ CREATE TABLE IF NOT EXISTS Chapters (
     FOREIGN KEY (book_code) REFERENCES Books(code)
 );
 
--- DROP TABLE IF EXISTS ChapterOccurences
+-- DROP TABLE IF EXISTS ChapterOccurences;
 CREATE TABLE IF NOT EXISTS ChapterOccurences (
-    id                      SERIAL PRIMARY KEY,
     chapter_ref             TEXT,
     file_id            		INT,
+	PRIMARY KEY (chapter_ref, file_id),
     FOREIGN KEY (chapter_ref) REFERENCES Chapters (chapter_ref),
-    FOREIGN KEY (file_id) REFERENCES Files (id) ON DELETE CASCADE,
+    FOREIGN KEY (file_id) REFERENCES Files (id) ON DELETE CASCADE
 );
 
 -- ================================================== Paragraphs & Verses ==================================================
 
 -- Consider Relative link into Chapter Occurences, for easier reference
 
--- DROP TABLE IF EXISTS Paragraphs
+-- DROP TABLE IF EXISTS Paragraphs;
 CREATE TABLE IF NOT EXISTS Paragraphs (
     id              SERIAL PRIMARY KEY,
     book_file_id    INTEGER,
@@ -176,7 +183,7 @@ CREATE TABLE IF NOT EXISTS Paragraphs (
     FOREIGN KEY (style_id) REFERENCES Styles(id)
 );
 
--- DROP TABLE IF EXISTS Verses
+-- DROP TABLE IF EXISTS Verses;
 CREATE TABLE IF NOT EXISTS Verses (
     id              SERIAL PRIMARY KEY,
     chapter_ref     TEXT,
@@ -184,17 +191,17 @@ CREATE TABLE IF NOT EXISTS Verses (
     FOREIGN KEY (chapter_ref) REFERENCES Chapters (chapter_ref)
 );
 
--- DROP TABLE IF EXISTS VerseOccurences
+-- DROP TABLE IF EXISTS VerseOccurences;
 CREATE TABLE IF NOT EXISTS VerseOccurences (
-    id              SERIAL PRIMARY KEY,
     verse_ref       TEXT,
     book_file_id    INTEGER,
     text	       	TEXT,
+	PRIMARY KEY (verse_ref, book_file_id),
     FOREIGN KEY (verse_ref) REFERENCES Verses (verse_ref),
     FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE
 );
 
--- DROP TABLE IF EXISTS VersesToParagraphs
+-- DROP TABLE IF EXISTS VersesToParagraphs;
 CREATE TABLE IF NOT EXISTS VersesToParagraphs (
     verse_ref       INTEGER,
     paragraph_id    INTEGER,
@@ -203,7 +210,7 @@ CREATE TABLE IF NOT EXISTS VersesToParagraphs (
     FOREIGN KEY (paragraph_id) REFERENCES Paragraphs (id)
 );
 
--- DROP TABLE IF EXISTS ExcludedVerses
+-- DROP TABLE IF EXISTS ExcludedVerses;
 CREATE TABLE IF NOT EXISTS ExcludedVerses (
     id              SERIAL PRIMARY KEY,
     verse_ref       TEXT,
@@ -214,30 +221,34 @@ CREATE TABLE IF NOT EXISTS ExcludedVerses (
 
 -- ================================================== Cross References & Footnotes ==================================================
 
--- DROP TABLE IF EXISTS TranslationFootNotes
+-- DROP TABLE IF EXISTS TranslationFootNotes;
 CREATE TABLE IF NOT EXISTS TranslationFootNotes (
     id              SERIAL PRIMARY KEY,
+	file_id			INT,
     verse_ref       TEXT,
     xml             XML,
 	text			TEXT,
+	FOREIGN KEY (file_id) REFERENCES Files (id),
     FOREIGN KEY (verse_ref) REFERENCES Verses (verse_ref)
 );
 
--- DROP TABLE IF EXISTS TranslationRefNotes
+-- DROP TABLE IF EXISTS TranslationRefNotes;
 CREATE TABLE IF NOT EXISTS TranslationRefNotes (
     id              SERIAL PRIMARY KEY,
+	file_id			INT,
     from_verse_ref  TEXT,
     to_verse_start  TEXT,
     to_verse_end    TEXT,
     xml             XML,
+	FOREIGN KEY (file_id) REFERENCES Files (id),
     FOREIGN KEY (from_verse_ref) REFERENCES Verses (verse_ref),
     FOREIGN KEY (to_verse_start) REFERENCES Verses (verse_ref),
     FOREIGN KEY (to_verse_end) REFERENCES Verses (verse_ref)
 );
 
--- ================================================== Strongs ==================================================
+-- ================================================== Linked Components ==================================================
 
--- DROP TABLE IF EXISTS Strongs
+-- DROP TABLE IF EXISTS Strongs;
 CREATE TABLE IF NOT EXISTS Strongs (
     id              SERIAL PRIMARY KEY,
     code            TEXT UNIQUE,
@@ -246,35 +257,29 @@ CREATE TABLE IF NOT EXISTS Strongs (
     FOREIGN KEY (language_id) REFERENCES Languages (id)
 );
 
--- DROP TABLE IF EXISTS StrongsOccurence
-CREATE TABLE IF NOT EXISTS StrongsOccurence (
-    id              SERIAL PRIMARY KEY,
-    xml		        XML,
-    book_file_id    INT,
-    paragraph_id    INT,
-    verse_ref       TEXT,
-	start_char		INT, -- Relative to Verse (for search)
-	end_char		INT, -- Relative to Verse (for search)
-    strong_code     TEXT,
-    FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE,
-    FOREIGN KEY (paragraph_id) REFERENCES Paragraphs (id),
-    FOREIGN KEY (verse_ref) REFERENCES Verses (verse_ref),
-    FOREIGN KEY (strong_code) REFERENCES Strongs (code)
+-- DROP TABLE IF EXISTS Entities;
+CREATE TABLE IF NOT EXISTS Entities (
+    id              SERIAL PRIMARY KEY
 );
 
 -- ================================================== Text Based Information ==================================================
 
+-- DROP TABLE IF EXISTS Occurences;
 CREATE TABLE IF NOT EXISTS Occurences (
 	id                  SERIAL PRIMARY KEY,
 	text				TEXT,
 	type				TEXT, -- [quote, enitity, location]
+	book_file_id		INT,
 	verse_ref			TEXT,
-	start_char		INT, -- Relative to Verse (for search)
-	end_char		INT, -- Relative to Verse (for search)
-	FOREIGN KEY (verse_ref) REFERENCES Verses (verse_ref)
+	start_char			INT, -- Relative to Verse (for search)
+	end_char			INT, -- Relative to Verse (for search)
+	paragraph_id		INT,
+	FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE,
+	FOREIGN KEY (verse_ref, book_file_id) REFERENCES VerseOccurences (verse_ref, book_file_id),
+	FOREIGN KEY (paragraph_id) REFERENCES Paragraphs (id)
 );
 
--- DROP TABLE IF EXISTS Quotes
+-- DROP TABLE IF EXISTS Quotes;
 CREATE TABLE IF NOT EXISTS Quotes (
     id              SERIAL PRIMARY KEY,
     text            TEXT,
@@ -288,21 +293,29 @@ CREATE TABLE IF NOT EXISTS Quotes (
     FOREIGN KEY (parent_quote) REFERENCES Quotes (id)
 );
 
--- DROP TABLE IF EXISTS Entities
-CREATE TABLE IF NOT EXISTS Entities (
-    id              SERIAL PRIMARY KEY
+-- This will also count as Entity Names to some degree since we are counting each occurence and mentions of them, but this could have start and end
+-- DROP TABLE IF EXISTS EntityOccurence;
+CREATE TABLE IF NOT EXISTS EntityOccurence (
+    id              SERIAL PRIMARY KEY,
+	entity_id		INT,
+	occurence_id	INT,
+	FOREIGN KEY (entity_id) REFERENCES Entities (id),
+	FOREIGN KEY (occurence_id) REFERENCES Occurences (id)
 );
 
--- This will also count as Entity Names to some degree since we are counting each occurence and mentions of them, but this could have start and end
--- DROP TABLE IF EXISTS EntityOccurence 
-CREATE TABLE IF NOT EXISTS EntityOccurence (
-    id              SERIAL PRIMARY KEY
+-- DROP TABLE IF EXISTS StrongsOccurence;
+CREATE TABLE IF NOT EXISTS StrongsOccurence (
+    id              SERIAL PRIMARY KEY,
+	occurence_id	INT,
+    strong_code     TEXT,
+    FOREIGN KEY (occurence_id) REFERENCES Occurences (id) ON DELETE CASCADE,
+    FOREIGN KEY (strong_code) REFERENCES Strongs (code)
 );
 
 -- ================================================== [] ==================================================
 
 -- Only storing important tokens
--- DROP TABLE IF EXISTS Tokens
+-- DROP TABLE IF EXISTS Tokens;
 CREATE TABLE IF NOT EXISTS Tokens (
     id                  SERIAL PRIMARY KEY,
     text                TEXT,
@@ -317,7 +330,6 @@ CREATE TABLE IF NOT EXISTS Tokens (
     is_alpha            BOOLEAN,
     is_punct            BOOLEAN,
     like_num            BOOLEAN,
-    FOREIGN KEY (llema_id) REFERENCES Llemas (id),
     FOREIGN KEY (paragraph_id) REFERENCES Paragraphs (id),
     FOREIGN KEY (verse_ref) REFERENCES Verses (verse_ref),
     FOREIGN KEY (head_token_id) REFERENCES Tokens (id)
@@ -326,7 +338,7 @@ CREATE TABLE IF NOT EXISTS Tokens (
 
 -- ================================================== User Based Data ==================================================
 
--- DROP TABLE IF EXISTS UserNotes
+-- DROP TABLE IF EXISTS UserNotes;
 CREATE TABLE IF NOT EXISTS UserNotes (
     id              SERIAL PRIMARY KEY,
     created_at      TIMESTAMP,
@@ -334,24 +346,50 @@ CREATE TABLE IF NOT EXISTS UserNotes (
     complete_at     TIMESTAMP,
     title           TEXT,
     content         TEXT,
-    tags            TEXT
+    tags            TEXT,
+	user_id			INT,
+	FOREIGN KEY (user_id) REFERENCES Users (id)
 );
 
--- DROP TABLE IF EXISTS UserHighlights
-CREATE TABLE IF NOT EXISTS UserHighlights (
+-- DROP TABLE IF EXISTS NoteRelationships;
+CREATE TABLE IF NOT EXISTS NoteRelationships (
+    id              SERIAL PRIMARY KEY,
+    note_from    	INT,
+    note_to         INT, 
+	type			TEXT,
+    FOREIGN KEY (note_from) REFERENCES UserNotes (id),
+	FOREIGN KEY (note_to) REFERENCES UserNotes (id)
+);
+
+-- DROP TABLE IF EXISTS UserHighlightsAnchors;
+CREATE TABLE IF NOT EXISTS UserHighlightsAnchors (
     id              SERIAL PRIMARY KEY,
     book_file_id    INT,
-    xml             XML, -- Copy of inserted highlight for reference purposes.
-    FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE
+    verse_ref       TEXT, 
+	start_char		INT,
+	end_char		INT,
+	FOREIGN KEY (verse_ref, book_file_id) REFERENCES VerseOccurences (verse_ref, book_file_id)
 );
 
--- DROP TABLE IF EXISTS ReadHistory
+-- DROP TABLE IF EXISTS UserHighlights;
+CREATE TABLE IF NOT EXISTS UserHighlights (
+    id              SERIAL PRIMARY KEY,
+    start_anchor	INT,
+    end_anchor      INT,
+	color			TEXT,
+    FOREIGN KEY (start_anchor) REFERENCES UserHighlightsAnchors (id) ON DELETE CASCADE,
+	FOREIGN KEY (end_anchor) REFERENCES UserHighlightsAnchors (id) ON DELETE CASCADE
+);
+
+-- DROP TABLE IF EXISTS ReadHistory;
 CREATE TABLE IF NOT EXISTS ReadHistory (
     history_id              SERIAL PRIMARY KEY,
     date_time               TEXT DEFAULT CURRENT_TIMESTAMP,
     book_file_id            INTEGER,
     scripture_reference     TEXT,
-    FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE
+	user_id					INT,
+    FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE,
+	FOREIGN KEY (user_id) REFERENCES Users (id)
 );
 
 -- ================================================== Imported Location Data (OpenBible.info) ==================================================
@@ -359,7 +397,7 @@ CREATE TABLE IF NOT EXISTS ReadHistory (
 -- Location data can be more complicate than this, as can treat these as location reference points (waypoints / landmarks)
 --		 so will require rendering in context and showing waypoints relative to area being referred to e.g. for territory 
 
--- DROP TABLE IF EXISTS Locations
+-- DROP TABLE IF EXISTS Locations;
 CREATE TABLE IF NOT EXISTS Locations (
     id                  SERIAL PRIMARY KEY,
     location_id         TEXT UNIQUE,
@@ -370,7 +408,7 @@ CREATE TABLE IF NOT EXISTS Locations (
 );
 
 -- Refers to linking a location to a particular verse, and creating all the entries for this.
--- DROP TABLE IF EXISTS LocationOccurence
+-- DROP TABLE IF EXISTS LocationOccurence;
 CREATE TABLE IF NOT EXISTS LocationOccurence (
     id                  SERIAL PRIMARY KEY,
     location_id         TEXT,
@@ -379,7 +417,7 @@ CREATE TABLE IF NOT EXISTS LocationOccurence (
     FOREIGN KEY (verse_ref) REFERENCES Verses (verse_ref)
 );
 
--- DROP TABLE IF EXISTS AncientToModernLocations
+-- DROP TABLE IF EXISTS LocationRelationships;
 CREATE TABLE IF NOT EXISTS LocationRelationships (
     id                  SERIAL PRIMARY KEY,
     from_location       TEXT,
@@ -391,14 +429,14 @@ CREATE TABLE IF NOT EXISTS LocationRelationships (
     FOREIGN KEY (to_location) REFERENCES Locations (location_id)
 );
 
--- DROP TABLE IF EXISTS GeoSources
+-- DROP TABLE IF EXISTS GeoSources;
 CREATE TABLE IF NOT EXISTS GeoSources (
     id                  SERIAL PRIMARY KEY,
     source_id           TEXT UNIQUE,
     info                JSON
 );
 
--- DROP TABLE IF EXISTS GeoSourceForLocation
+-- DROP TABLE IF EXISTS LocationDataSources;
 CREATE TABLE IF NOT EXISTS LocationDataSources (
     id                  SERIAL PRIMARY KEY,
     source_id           TEXT,
@@ -409,7 +447,7 @@ CREATE TABLE IF NOT EXISTS LocationDataSources (
     FOREIGN KEY (location_id) REFERENCES Locations (location_id)
 );
 
--- DROP TABLE IF EXISTS Images
+-- DROP TABLE IF EXISTS Images;
 CREATE TABLE IF NOT EXISTS Images (
     id                  SERIAL PRIMARY KEY,
     image_id            TEXT UNIQUE,
@@ -420,7 +458,7 @@ CREATE TABLE IF NOT EXISTS Images (
     FOREIGN KEY (file_id) REFERENCES Files (id)
 );
 
--- DROP TABLE IF EXISTS GeoSourceForLocation
+-- DROP TABLE IF EXISTS LocationImages;
 CREATE TABLE IF NOT EXISTS LocationImages (
     id                  SERIAL PRIMARY KEY,
     image_id            TEXT,
@@ -432,7 +470,7 @@ CREATE TABLE IF NOT EXISTS LocationImages (
 );
 
 -- Not storing it as a file, instead just as entries, due to 
--- DROP TABLE IF EXISTS Geometry
+-- DROP TABLE IF EXISTS Geometries;
 CREATE TABLE IF NOT EXISTS Geometries (
     id                  SERIAL PRIMARY KEY,
     geo_id              TEXT UNIQUE,
@@ -445,7 +483,7 @@ CREATE TABLE IF NOT EXISTS Geometries (
     FOREIGN KEY (file_id) REFERENCES Files (id)
 );
 
--- DROP TABLE IF EXISTS LocationGeometry
+-- DROP TABLE IF EXISTS LocationGeometry;
 CREATE TABLE IF NOT EXISTS LocationGeometry (
     id                  SERIAL PRIMARY KEY,
     geo_id              TEXT,
@@ -457,14 +495,14 @@ CREATE TABLE IF NOT EXISTS LocationGeometry (
 -- ================================================== Other Derived Data ==================================================
 
 -- For parts of scripture talking about same period, and how it aligns e.g. Gospels
--- DROP TABLE IF EXISTS Harmonies
+-- DROP TABLE IF EXISTS Harmonies;
 CREATE TABLE IF NOT EXISTS Harmonies (
     id                  SERIAL PRIMARY KEY,
 	description			TEXT,
-	order				INT
+	order_num			INT
 );
 
--- DROP TABLE IF EXISTS HarmonyMapping
+-- DROP TABLE IF EXISTS HarmonyMapping;
 CREATE TABLE IF NOT EXISTS HarmonyMapping (
     harmony_id          INT,
 	verse_ref			TEXT,
@@ -473,14 +511,14 @@ CREATE TABLE IF NOT EXISTS HarmonyMapping (
 );
 
 -- Order of all verses in the bible, can also skip if concurrent sections are read as normal
--- DROP TABLE IF EXISTS ChronologyOccurence
+-- DROP TABLE IF EXISTS ChronologyOccurence;
 CREATE TABLE IF NOT EXISTS ChronologyOccurence (
     id                  SERIAL PRIMARY KEY,
 	chapter_ref			TEXT,
 	verse_ref			TEXT
 );
 
--- DROP TABLE IF EXISTS Chronology
+-- DROP TABLE IF EXISTS Chronology;
 CREATE TABLE IF NOT EXISTS Chronology (
     id                  SERIAL PRIMARY KEY,
 	prev_occurence		INT,
