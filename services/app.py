@@ -30,7 +30,8 @@ def start_api_server():
 if __name__ == "__main__":
     try:
         restart_docker_postgres()
-        start_api_server()
+        start_api_server() 
+        print("FINISHED Script")
     except:
         pass
     
