@@ -11,6 +11,16 @@ CREATE TABLE IF NOT EXISTS Languages (
     scriptDirection     TEXT
 );
 
+-- DROP TABLE IF EXISTS DBLAgreements;
+CREATE TABLE IF NOT EXISTS DBLAgreements (
+    id                  INT PRIMARY KEY,
+	copyright           TEXT,
+    promotion           TEXT,
+    active              TIMESTAMP,
+    expiry              TIMESTAMP,
+    enabled             BOOLEAN
+);
+
 -- DROP TABLE IF EXISTS TranslationInfo;
 CREATE TABLE IF NOT EXISTS TranslationInfo (
     dbl_id              TEXT PRIMARY KEY,
@@ -21,6 +31,16 @@ CREATE TABLE IF NOT EXISTS TranslationInfo (
     abbreviationLocal   TEXT,
     language_id         INT,
     FOREIGN KEY (language_id) REFERENCES Languages (id)
+);
+
+-- DROP TABLE IF EXISTS DBLInfo;
+CREATE TABLE IF NOT EXISTS DBLInfo (
+    dbl_id              TEXT,
+    agreement_id         INT,
+	revisions            INT,
+	PRIMARY KEY(dbl_id, agreement_id),
+    FOREIGN KEY (agreement_id) REFERENCES DBLAgreements (id)
+    -- FOREIGN KEY (dbl_id) REFERENCES TranslationInfo (dbl_id)
 );
 
 -- DROP TABLE IF EXISTS Translations;
