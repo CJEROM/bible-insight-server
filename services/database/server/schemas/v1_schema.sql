@@ -101,8 +101,16 @@ CREATE TABLE IF NOT EXISTS Translations (
     agreement_id        TEXT,
 	revision            INT,
 	revision_note		TEXT, -- For storing what has changed in the revision
+    license_file        INT,
+    metadata_file       INT,
+    ldml_file           INT,
+    versification_file  INT,
 	UNIQUE(dbl_id, agreement_id, revision),
-	FOREIGN KEY (dbl_id) REFERENCES TranslationInfo (dbl_id)
+	FOREIGN KEY (dbl_id) REFERENCES TranslationInfo (dbl_id),
+    FOREIGN KEY (license_file) REFERENCES Files (id),
+    FOREIGN KEY (metadata_file) REFERENCES Files (id),
+    FOREIGN KEY (ldml_file) REFERENCES Files (id),
+    FOREIGN KEY (versification_file) REFERENCES Files (id)
 );
 
 -- DROP TABLE IF EXISTS TranslationRelationships;
