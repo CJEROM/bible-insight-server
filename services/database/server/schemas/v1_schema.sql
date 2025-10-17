@@ -1,3 +1,7 @@
+CREATE EXTENSION pgcrypto;
+
+-- ================================================== Translation ==================================================
+
 -- DROP TABLE IF EXISTS Languages;
 CREATE TABLE IF NOT EXISTS Languages (
     id                  SERIAL PRIMARY KEY,
@@ -6,8 +10,6 @@ CREATE TABLE IF NOT EXISTS Languages (
     nameLocal           TEXT,
     scriptDirection     TEXT
 );
-
--- ================================================== Translation ==================================================
 
 -- DROP TABLE IF EXISTS TranslationInfo;
 CREATE TABLE IF NOT EXISTS TranslationInfo (
