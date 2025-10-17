@@ -1,5 +1,56 @@
 CREATE EXTENSION pgcrypto;
 
+-- ================================================== Reference Data ==================================================
+
+-- DROP TABLE IF EXISTS Users;
+CREATE TABLE IF NOT EXISTS Users (
+    id                  SERIAL PRIMARY KEY,
+    sud                 TEXT UNIQUE
+);
+
+-- DROP TABLE IF EXISTS Sources;
+CREATE TABLE IF NOT EXISTS Sources (
+    id                  SERIAL PRIMARY KEY,
+    url                 TEXT,
+	note				TEXT,
+	metadata			JSONB
+);
+
+-- DROP TABLE IF EXISTS Files;
+CREATE TABLE IF NOT EXISTS Files (
+    id              SERIAL PRIMARY KEY,
+    type            TEXT,
+	-- Update to include bucket id for this file
+    file_name       TEXT, -- where this would be the file path inside said bucket
+    file_content    TEXT, -- this would be ignored
+    translation_id  INT,
+    source_id       INT,
+    FOREIGN KEY (source_id) REFERENCES Sources (id)  
+);
+
+-- Consider turning into unique instance for controlling styles across all translations instead, like default settings
+-- DROP TABLE IF EXISTS Styles;
+CREATE TABLE IF NOT EXISTS Styles (
+    id                  SERIAL PRIMARY KEY,
+    style               TEXT,
+    name                TEXT,
+    description         TEXT,
+    versetext           BOOLEAN,
+    publishable         BOOLEAN,
+    source_file_id      INTEGER,
+    FOREIGN KEY (source_file_id) REFERENCES Files(id) ON DELETE CASCADE
+);
+
+-- DROP TABLE IF EXISTS Properties;
+CREATE TABLE IF NOT EXISTS Properties (
+    id                  SERIAL PRIMARY KEY,
+    name                TEXT,
+    value               TEXT,
+    unit                TEXT,
+    style_id            INT,
+    FOREIGN KEY (style_id) REFERENCES Styles(id)
+);
+
 -- ================================================== Translation ==================================================
 
 -- DROP TABLE IF EXISTS Languages;
@@ -64,58 +115,6 @@ CREATE TABLE IF NOT EXISTS TranslationRelationships (
     type                TEXT,
     FOREIGN KEY (from_translation) REFERENCES TranslationInfo (dbl_id) ON DELETE CASCADE
     -- FOREIGN KEY (to_translation) REFERENCES Translations (dbl_id)
-);
-
--- ================================================== Reference Data ==================================================
-
--- DROP TABLE IF EXISTS Users;
-CREATE TABLE IF NOT EXISTS Users (
-    id                  SERIAL PRIMARY KEY,
-    sud                 TEXT UNIQUE
-);
-
--- DROP TABLE IF EXISTS Sources;
-CREATE TABLE IF NOT EXISTS Sources (
-    id                  SERIAL PRIMARY KEY,
-    url                 TEXT,
-	note				TEXT,
-	metadata			JSONB
-);
-
--- DROP TABLE IF EXISTS Files;
-CREATE TABLE IF NOT EXISTS Files (
-    id              SERIAL PRIMARY KEY,
-    type            TEXT,
-	-- Update to include bucket id for this file
-    file_name       TEXT, -- where this would be the file path inside said bucket
-    file_content    TEXT, -- this would be ignored
-    translation_id  INT,
-    source_id       INT,
-    FOREIGN KEY (translation_id) REFERENCES Translations (id) ON DELETE CASCADE,  
-    FOREIGN KEY (source_id) REFERENCES Sources (id)  
-);
-
--- Consider turning into unique instance for controlling styles across all translations instead, like default settings
--- DROP TABLE IF EXISTS Styles;
-CREATE TABLE IF NOT EXISTS Styles (
-    id                  SERIAL PRIMARY KEY,
-    style               TEXT,
-    name                TEXT,
-    description         TEXT,
-    versetext           BOOLEAN,
-    publishable         BOOLEAN,
-    source_file_id      INTEGER,
-    FOREIGN KEY (source_file_id) REFERENCES Files(id) ON DELETE CASCADE
-);
-
--- DROP TABLE IF EXISTS Properties;
-CREATE TABLE IF NOT EXISTS Properties (
-    id                  SERIAL PRIMARY KEY,
-    name                TEXT,
-    value               TEXT,
-    unit                TEXT,
-    style_id            INT,
-    FOREIGN KEY (style_id) REFERENCES Styles(id)
 );
 
 -- ================================================== Books ==================================================
