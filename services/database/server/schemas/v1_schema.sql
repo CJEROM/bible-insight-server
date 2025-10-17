@@ -1,4 +1,6 @@
 CREATE EXTENSION pgcrypto;
+CREATE SCHEMA bible;
+SET search_path TO bible;
 
 -- ================================================== Reference Data ==================================================
 
