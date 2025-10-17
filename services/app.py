@@ -34,7 +34,7 @@ def start_api_server():
         cwd=scripts_dir
     )
 
-    time.sleep(5)
+    time.sleep(1)
 
     base_url = "http://REDACTED_IP:5000/"
     response = requests.get(base_url+"init_database")
