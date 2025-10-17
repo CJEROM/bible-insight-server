@@ -35,10 +35,17 @@ def set_database():
         sql_script = file.read()
         cur.execute(sql_script)
 
-    # Load and execute SQL file
-    with open("../database/server/migrations/001_init.sql", "r") as file:
-        sql_script = file.read()
-        cur.execute(sql_script)
+    migrations = [
+        "001_init_translations.sql",
+        "002_init_bible.sql"
+    ]
+
+    for init_script in migrations:
+        script_path = "../database/server/migrations/" + init_script
+        # Load and execute SQL file
+        with open(script_path, "r") as file:
+            sql_script = file.read()
+            cur.execute(sql_script)
 
     conn.commit()
     cur.close()
