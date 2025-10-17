@@ -4,6 +4,7 @@ import psycopg2
 
 from playwright.sync_api import sync_playwright
 import os
+import time
 
 USERNAME = "REDACTED_USERNAME"
 PASSWORD = "REDACTED_PASSWORD"
@@ -33,21 +34,29 @@ def get_downloads():
         context = browser.new_context(accept_downloads=True)  # Important to handle downloads
 
         page = context.new_page()
+    
+        # Go to the normal page
+        page.goto("https://app.library.bible/")
 
-        # Go to the login page
-        page.goto("https://app.library.bible/login")  # adjust to actual login URL
+        page.wait_for_load_state("networkidle") # Wait until no network requests for ~500ms (are we being redirected to login?)
 
-        # Fill in the username/email and password
-        page.fill("input[name='email']", USERNAME)
-        page.fill("input[name='password']", PASSWORD)
+        # Do we need to login?
+        if page.query_selector("input[name='email']"):
+            print("Need to log in")
+            # Fill in the username/email and password
+            page.fill("input[name='email']", USERNAME)
+            page.fill("input[name='password']", PASSWORD)
+            page.click("button#rememberMe") # Try Remember me for 30 days, to prevent excessive logging and checking
 
-        # Click the login button
-        page.click("button:has-text('Sign in')")
+            # Click the login button
+            page.click("button:has-text('Sign in')")
 
-        # Wait for navigation after login
-        page.wait_for_url("https://app.library.bible/")  # adjust if needed
-
-        hi = True
+            # Wait for navigation after login
+            page.wait_for_url("https://app.library.bible/")
+        else:
+            print("Already logged in")
+      
+        hi = True # Placeholder, to limit to 1 download
 
         for dbl_id, agreement_id in cur.fetchall():
             if hi:
