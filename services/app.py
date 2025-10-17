@@ -12,6 +12,19 @@ def restart_docker_postgres():
     # Restart Docker instance
     subprocess.run(["docker", "compose", "up", "-d"], cwd=scripts_dir)
 
+def initialise_database():
+    base = Path(__file__).parent
+    scripts_dir = base / "scripts"
+
+    print("Waiting for containers ...")
+    time.sleep(5)
+
+    subprocess.run(
+        ["python3", "init_database.py"], 
+        cwd=scripts_dir
+    )
+
+
 def start_api_server():
     base = Path(__file__).parent
     scripts_dir = base / "api"
@@ -30,7 +43,8 @@ def start_api_server():
 if __name__ == "__main__":
     try:
         restart_docker_postgres()
-        start_api_server() 
+        initialise_database()
+        # start_api_server() 
         print("FINISHED Script")
     except:
         pass
