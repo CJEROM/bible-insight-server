@@ -9,3 +9,5 @@ devops/docker/*/*
 
 # Also, don't ignore subfolders needed for those files (if any)
 !devops/docker/
+
+downloads
