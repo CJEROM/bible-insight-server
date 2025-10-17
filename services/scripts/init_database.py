@@ -37,7 +37,7 @@ def init_database():
     for init_script in migrations:
         script_path = "../database/server/migrations/" + init_script
         # Load and execute SQL file
-        with open(script_path, "r") as file:
+        with open(script_path, "r", encoding="utf-8") as file:
             sql_script = file.read()
             cur.execute(sql_script)
 
