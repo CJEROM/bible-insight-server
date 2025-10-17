@@ -1,0 +1,11 @@
+# Ignore everything in the folder
+devops/docker/**
+!devops/docker/**/
+
+# But not these specific files
+!devops/docker/**/docker-compose.yml
+!devops/docker/**/README.md
+!devops/docker/**/.env
+
+# Also, don't ignore subfolders needed for those files (if any)
+!devops/docker/
