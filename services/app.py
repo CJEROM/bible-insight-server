@@ -16,9 +16,6 @@ def initialise_database():
     base = Path(__file__).parent
     scripts_dir = base / "scripts"
 
-    print("Waiting for containers ...")
-    time.sleep(5)
-
     subprocess.run(
         ["python3", "init_database.py"], 
         cwd=scripts_dir
@@ -33,6 +30,8 @@ def start_api_server():
         ["python3", "api.py"], 
         cwd=scripts_dir
     )
+
+    time.sleep(1)
 
     base_url = "http://REDACTED_IP:5000/"
     response = requests.get(base_url+"init_database")
