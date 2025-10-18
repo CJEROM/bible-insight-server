@@ -16,3 +16,6 @@ Could even see if possible to save screenshots and then send them to location fo
 
 And even further have AI further analyse the image and any differences, or whats probably easier, 
 is for playwright to do all the the site checks while you are there.
+
+Can also replicate this behaviour for audio translations, to grab the audio files that aren't as 
+convenient to download in bulk with a zip like I can with text based translations
