@@ -10,20 +10,11 @@ client = Minio(
     secure=False
 )
 
-# Makes buckets (not if they already exist) for each type of category of files I want to store
-for bucket in ["bible-dbl-raw", "open-bible-location-data", "bible-nlp"]:
-    if not client.bucket_exists(bucket):
-        client.make_bucket(bucket)
-
-# List buckets
-print(client.list_buckets())
-
 # Download a file
 response = client.get_object("test", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
 print(response)
 
 # Upload a file
-
 download_path = "C:/Users/CephJ/Documents/git/bible-insight-server/downloads"
 zip_path = Path("downloads/en_kjv.zip")
 extract_path = Path("tmp/en_kjv")
