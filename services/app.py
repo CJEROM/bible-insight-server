@@ -12,15 +12,14 @@ def restart_docker(container):
     # Restart Docker instance
     subprocess.run(["docker", "compose", "up", "-d"], cwd=scripts_dir)
 
-def initialise_database():
+def initialise_script(file_name):
     base = Path(__file__).parent
     scripts_dir = base / "scripts"
 
     subprocess.run(
-        ["python3", "init_database.py"], 
+        ["python3", file_name], 
         cwd=scripts_dir
     )
-
 
 def start_api_server():
     base = Path(__file__).parent
@@ -44,7 +43,8 @@ if __name__ == "__main__":
         # restart_docker("authentik")
         # restart_docker("memgraph")
         # restart_docker("label-studio")
-        initialise_database()
+        initialise_script("init_database.py")
+        initialise_script("init_minio.py")
         # start_api_server() 
         print("FINISHED Script")
     except:
