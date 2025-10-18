@@ -3,9 +3,9 @@ import subprocess
 import requests
 import time
 
-def restart_docker_postgres():
+def restart_docker(container):
     base = Path(__file__).parent.parent
-    scripts_dir = base / "devops/docker/postgres"
+    scripts_dir = base / "devops/docker" / container
 
     # Destroy existing instance + connected volumes
     subprocess.run(["docker", "compose", "down", "-v"], cwd=scripts_dir)
@@ -34,15 +34,17 @@ def start_api_server():
         cwd=scripts_dir
     )
 
-    time.sleep(1)
-
     base_url = "http://REDACTED_IP:5000/"
     response = requests.get(base_url+"init_database")
     print(response.status_code, response.text)
 
 if __name__ == "__main__":
     try:
-        restart_docker_postgres()
+        restart_docker("postgres")
+        restart_docker("minio")
+        # restart_docker("authentik")
+        # restart_docker("memgraph")
+        # restart_docker("label-studio")
         initialise_database()
         # start_api_server() 
         print("FINISHED Script")
