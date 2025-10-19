@@ -12,11 +12,18 @@ client = Minio(
 )
 
 class MinioUSXUpload:
-    def __init__(self, minio_client: Minio):
+    def __init__(self, minio_client: Minio, medium):
         self.client = minio_client
+        self.medium = medium # Audio | Video | Text (USX)
 
-        self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
+        # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
 
+    def validate_upload(self):
+        # This is to check whether this translation is already in database, in which case don't upload
+        #   Perhaps move this earlier in the process, or actually a secondary check is good.
+        pass
+
+    # Make use and amend below function, to feed in files for processing (e.g. Book Classes)
     def stream_file(self, bucket, file_path):
         # Download a file
         response = self.client.get_object(bucket, file_path)
