@@ -17,6 +17,13 @@ class MinioUSXUpload:
         self.medium = medium # Audio | Video | Text (USX)
 
         # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
+        match medium:
+            case "text": # USX Files e.g. for deeper analysis
+                pass
+            case "video": # Videos e.g. for the deaf (sign language)
+                pass
+            case "audio": # Audio e.g. for the blind or preference
+                pass
 
     def validate_upload(self):
         # This is to check whether this translation is already in database, in which case don't upload
@@ -33,6 +40,8 @@ class MinioUSXUpload:
         return
 
     def upload_zip_folder(self, original_location, minio_location):
+        base = Path(__file__).parent.parent.parent
+        downloads_path = base / "downloads"
 
         # Upload a file
         download_path = "C:/Users/CephJ/Documents/git/bible-insight-server/downloads"
