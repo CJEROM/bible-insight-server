@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS Sources (
 
 -- DROP TABLE IF EXISTS Files;
 CREATE TABLE IF NOT EXISTS Files (
-    etag            TEXT PRIMARY KEY,
+    id              SERIAL PRIMARY KEY,
+    etag            TEXT,
     type            TEXT,
 	-- Update to include bucket id for this file
     file_path       TEXT, -- where this would be the file path inside said bucket
@@ -39,8 +40,8 @@ CREATE TABLE IF NOT EXISTS Styles (
     description         TEXT,
     versetext           BOOLEAN,
     publishable         BOOLEAN,
-    source_file_id      TEXT,
-    FOREIGN KEY (source_file_id) REFERENCES Files (etag) ON DELETE CASCADE
+    source_file_id      INT,
+    FOREIGN KEY (source_file_id) REFERENCES Files (id) ON DELETE CASCADE
 );
 
 -- DROP TABLE IF EXISTS Properties;
@@ -103,16 +104,16 @@ CREATE TABLE IF NOT EXISTS Translations (
     agreement_id        TEXT,
 	revision            INT,
 	revision_note		TEXT, -- For storing what has changed in the revision
-    license_file        TEXT,
-    metadata_file       TEXT,
-    ldml_file           TEXT,
-    versification_file  TEXT,
+    license_file        INT,
+    metadata_file       INT,
+    ldml_file           INT,
+    versification_file  INT,
 	UNIQUE(dbl_id, agreement_id, revision),
 	FOREIGN KEY (dbl_id) REFERENCES TranslationInfo (dbl_id),
-    FOREIGN KEY (license_file) REFERENCES Files (etag),
-    FOREIGN KEY (metadata_file) REFERENCES Files (etag),
-    FOREIGN KEY (ldml_file) REFERENCES Files (etag),
-    FOREIGN KEY (versification_file) REFERENCES Files (etag)
+    FOREIGN KEY (license_file) REFERENCES Files (id),
+    FOREIGN KEY (metadata_file) REFERENCES Files (id),
+    FOREIGN KEY (ldml_file) REFERENCES Files (id),
+    FOREIGN KEY (versification_file) REFERENCES Files (id)
 );
 
 -- DROP TABLE IF EXISTS TranslationRelationships;
@@ -141,12 +142,12 @@ CREATE TABLE IF NOT EXISTS BookToFile (
     id              SERIAL PRIMARY KEY,
     book_code       TEXT,
     translation_id  INT,
-    file_id         TEXT,
+    file_id         INT,
     short           TEXT, -- Short Name for the book
     long            TEXT, -- Long Name for the book
     FOREIGN KEY (book_code) REFERENCES Books (code),
     FOREIGN KEY (translation_id) REFERENCES Translations (id) ON DELETE CASCADE,
-    FOREIGN KEY (file_id) REFERENCES Files (etag) ON DELETE CASCADE
+    FOREIGN KEY (file_id) REFERENCES Files (id) ON DELETE CASCADE
 );
 
 -- DROP TABLE IF EXISTS BookGroups;
@@ -189,10 +190,10 @@ CREATE TABLE IF NOT EXISTS Chapters (
 -- DROP TABLE IF EXISTS ChapterOccurences;
 CREATE TABLE IF NOT EXISTS ChapterOccurences (
     chapter_ref             TEXT,
-    file_id            		TEXT,
+    file_id            		INT,
 	PRIMARY KEY (chapter_ref, file_id),
     FOREIGN KEY (chapter_ref) REFERENCES Chapters (chapter_ref),
-    FOREIGN KEY (file_id) REFERENCES Files (etag) ON DELETE CASCADE
+    FOREIGN KEY (file_id) REFERENCES Files (id) ON DELETE CASCADE
 );
 
 -- ================================================== Paragraphs & Verses ==================================================
@@ -202,14 +203,14 @@ CREATE TABLE IF NOT EXISTS ChapterOccurences (
 -- DROP TABLE IF EXISTS Paragraphs;
 CREATE TABLE IF NOT EXISTS Paragraphs (
     id              SERIAL PRIMARY KEY,
-    book_file_id    TEXT,
+    book_file_id    INT,
     chapter_id      INTEGER,
     style_id        INTEGER,
     parent_para     INTEGER,
     xml             XML,
     versetext       TEXT,
     FOREIGN KEY (parent_para) REFERENCES Paragraphs (id),
-    FOREIGN KEY (book_file_id) REFERENCES Files (etag) ON DELETE CASCADE,
+    FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE,
     FOREIGN KEY (chapter_id) REFERENCES Chapters (id),
     FOREIGN KEY (style_id) REFERENCES Styles(id)
 );
@@ -225,11 +226,11 @@ CREATE TABLE IF NOT EXISTS Verses (
 -- DROP TABLE IF EXISTS VerseOccurences;
 CREATE TABLE IF NOT EXISTS VerseOccurences (
     verse_ref       TEXT,
-    book_file_id    TEXT,
+    book_file_id    INT,
     text	       	TEXT,
 	PRIMARY KEY (verse_ref, book_file_id),
     FOREIGN KEY (verse_ref) REFERENCES Verses (verse_ref),
-    FOREIGN KEY (book_file_id) REFERENCES Files (etag) ON DELETE CASCADE
+    FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE
 );
 
 -- DROP TABLE IF EXISTS VersesToParagraphs;
@@ -255,23 +256,23 @@ CREATE TABLE IF NOT EXISTS ExcludedVerses (
 -- DROP TABLE IF EXISTS TranslationFootNotes;
 CREATE TABLE IF NOT EXISTS TranslationFootNotes (
     id              SERIAL PRIMARY KEY,
-	file_id			TEXT,
+	file_id			INT,
     verse_ref       TEXT,
     xml             XML,
 	text			TEXT,
-	FOREIGN KEY (file_id) REFERENCES Files (etag),
+	FOREIGN KEY (file_id) REFERENCES Files (id),
     FOREIGN KEY (verse_ref) REFERENCES Verses (verse_ref)
 );
 
 -- DROP TABLE IF EXISTS TranslationRefNotes;
 CREATE TABLE IF NOT EXISTS TranslationRefNotes (
     id              SERIAL PRIMARY KEY,
-	file_id			TEXT,
+	file_id			INT,
     from_verse_ref  TEXT,
     to_verse_start  TEXT,
     to_verse_end    TEXT,
     xml             XML,
-	FOREIGN KEY (file_id) REFERENCES Files (etag),
+	FOREIGN KEY (file_id) REFERENCES Files (id),
     FOREIGN KEY (from_verse_ref) REFERENCES Verses (verse_ref),
     FOREIGN KEY (to_verse_start) REFERENCES Verses (verse_ref),
     FOREIGN KEY (to_verse_end) REFERENCES Verses (verse_ref)
@@ -300,12 +301,12 @@ CREATE TABLE IF NOT EXISTS Occurences (
 	id                  SERIAL PRIMARY KEY,
 	text				TEXT,
 	type				TEXT, -- [quote, enitity, location]
-	book_file_id		TEXT,
+	book_file_id		INT,
 	verse_ref			TEXT,
 	start_char			INT, -- Relative to Verse (for search)
 	end_char			INT, -- Relative to Verse (for search)
 	paragraph_id		INT,
-	FOREIGN KEY (book_file_id) REFERENCES Files (etag) ON DELETE CASCADE,
+	FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE,
 	FOREIGN KEY (verse_ref, book_file_id) REFERENCES VerseOccurences (verse_ref, book_file_id),
 	FOREIGN KEY (paragraph_id) REFERENCES Paragraphs (id)
 );
@@ -416,10 +417,10 @@ CREATE TABLE IF NOT EXISTS UserHighlights (
 CREATE TABLE IF NOT EXISTS ReadHistory (
     history_id              SERIAL PRIMARY KEY,
     date_time               TEXT DEFAULT CURRENT_TIMESTAMP,
-    book_file_id            TEXT,
+    book_file_id            INT,
     scripture_reference     TEXT,
 	user_id					INT,
-    FOREIGN KEY (book_file_id) REFERENCES Files (etag) ON DELETE CASCADE,
+    FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE,
 	FOREIGN KEY (user_id) REFERENCES Users (id)
 );
 
@@ -483,10 +484,10 @@ CREATE TABLE IF NOT EXISTS Images (
     id                  SERIAL PRIMARY KEY,
     image_id            TEXT UNIQUE,
     location_id         TEXT,
-    file_id             TEXT,
+    file_id             INT,
     info                JSON,
     FOREIGN KEY (location_id) REFERENCES Locations (location_id),
-    FOREIGN KEY (file_id) REFERENCES Files (etag)
+    FOREIGN KEY (file_id) REFERENCES Files (id)
 );
 
 -- DROP TABLE IF EXISTS LocationImages;
@@ -505,13 +506,13 @@ CREATE TABLE IF NOT EXISTS LocationImages (
 CREATE TABLE IF NOT EXISTS Geometries (
     id                  SERIAL PRIMARY KEY,
     geo_id              TEXT UNIQUE,
-    file_id             TEXT,
+    file_id             INT,
     geometries          TEXT,
     source              TEXT,
     surface             TEXT,
     info                JSON,
     FOREIGN KEY (geo_id) REFERENCES Locations (location_id),
-    FOREIGN KEY (file_id) REFERENCES Files (etag)
+    FOREIGN KEY (file_id) REFERENCES Files (id)
 );
 
 -- DROP TABLE IF EXISTS LocationGeometry;
