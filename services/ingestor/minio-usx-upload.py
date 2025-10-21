@@ -12,9 +12,10 @@ client = Minio(
 )
 
 class MinioUSXUpload:
-    def __init__(self, minio_client: Minio, medium):
+    def __init__(self, minio_client: Minio, medium, process_location):
         self.client = minio_client
         self.medium = medium # Audio | Video | Text (USX)
+        self.process_location = process_location
 
         # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
         match medium:
