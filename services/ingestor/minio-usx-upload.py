@@ -64,8 +64,25 @@ class MinioUSXUpload:
         # After unzipping delete the old zip file
         # Path(zip_path).unlink(missing_ok=True)
 
+    def validate_upload(self, folder):
+        # This is to check whether this translation is already in database, in which case don't upload
+        #   Perhaps move this earlier in the process, or actually a secondary check is good.
+        medium, dbl, agreement = folder.split("-")
+
+        # Query database to see whether this dbl_id and agreement exist in the database with corresponding data or not (Through Translations table)
+        self.cur.execute("""
+            SELECT id FROM bible.Translations WHERE dbl_id = %s AND agreement_id = %s;
+        """, (dbl, agreement))
+        
+        # If this translation not been loaded in database
+        if self.cur.fetchone() == None:
+            return False # Not Valid => Therefore create new
+        
+        return True # Valid => Therefore skip to next upload file
+
     def upload_files(self, file_location):
         top_folder = str(file_location).split("\\")[-1]
+
         # Validate bible upload (is already)
         valid = self.validate_upload(top_folder)
         if valid == True:
@@ -87,8 +104,18 @@ class MinioUSXUpload:
         object_name = f"{top_folder}/{revision}/{file}"
         object_name = f"{top_folder}/{revision}/USX/file.xml"
         self.client.fput_object("bible-dbl-raw", object_name, str(metadata_file_path))
+        
 
-        # Get data of an object of version-ID.
+        
+        
+
+        # Selectively upload the files I want in the format I want (from metadata)
+
+        # Update database entries with files or rely on books class to do so.
+
+    # Make use and amend below function, to feed in files for processing (e.g. Book Classes)
+    def stream_file(self, bucket, object_name):
+        # Get file
         response = None 
         try:
             response = self.client.get_object(
@@ -100,53 +127,6 @@ class MinioUSXUpload:
             if response:
                 response.close()
                 response.release_conn()
-        
-
-        # Selectively upload the files I want in the format I want (from metadata)
-
-        # Update database entries with files or rely on books class to do so.
-
-    def validate_upload(self, folder):
-        # This is to check whether this translation is already in database, in which case don't upload
-        #   Perhaps move this earlier in the process, or actually a secondary check is good.
-        medium, dbl, agreement = folder.split("-")
-
-        # Query database to see whether this dbl_id and agreement exist in the database with corresponding data or not (Through Translations table)
-        self.cur.execute("""
-            SELECT id FROM bible.Translations WHERE dbl_id = %s AND agreement_id = %s;
-        """, (dbl, agreement))
-        
-        # If this translation not been loaded in database
-        if self.cur.fetchone() == None:
-            return False # Not Valid => Therefore create new
-        
-        return True # Valid => Therefore skip to next upload file
-
-    # Make use and amend below function, to feed in files for processing (e.g. Book Classes)
-    def stream_file(self, bucket, file_path):
-        # Download a file
-        response = self.client.get_object(bucket, file_path)
-        print(response)
-
-    def upload_zip_folder(self, original_location, minio_location):
-        base = Path(__file__).parent.parent.parent
-        downloads_path = base / "downloads"
-
-        # Upload a file
-        download_path = "C:/Users/CephJ/Documents/git/bible-insight-server/downloads"
-        zip_path = Path(original_location)
-        extract_path = Path("tmp/en_kjv")
-        extract_path.mkdir(parents=True, exist_ok=True)
-
-        with ZipFile(zip_path, "r") as zf:
-            zf.extractall(extract_path)
-
-        for file_path in extract_path.rglob("*.usx"):
-            object_name = f"en_kjv/{file_path.name}"
-            self.client.fput_object("bible-raw", object_name, str(file_path))
-
-    def upload_folder(self, original_location, minio_location):
-        return
     
 if __name__ == "__main__":
     MinioUSXUpload(client, "text", r"C:/Users/CephJ/Documents/git/bible-insight-server/downloads/c1c304e5-9e97-49bb-8637-6f5137a69d71.zip", "bible_raw")
