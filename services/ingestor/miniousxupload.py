@@ -327,13 +327,17 @@ class MinioUSXUpload:
                 bucket_name=self.bucket,
                 object_name=object_name,
             )
-            return str(response.data)
+            # Read the data as bytes, then decode as UTF-8
+            data = response.read().decode("utf-8")
+            return data
         finally:
             if response:
                 response.close()
                 response.release_conn()
                
     def createStylesAndProperties(self, styles_string, styles_file_id):
+        style_additions = 0
+        property_additions = 0
         # We only set styles and properties once, since it is duplicated across all translations, just usx formatting.
         self.cur.execute("""SELECT last_value FROM bible.styles_id_seq;""")
         styles = self.cur.fetchone()[0]
@@ -363,7 +367,7 @@ class MinioUSXUpload:
                     """, (property_name, property_value, property_unit))
                 else:
                     self.cur.execute("""
-                        INSERT INTO bible.roperties (name, value) 
+                        INSERT INTO bible.properties (name, value) 
                         VALUES (%s, %s)
                     """, (property_name, property_value))
 
@@ -378,7 +382,7 @@ class MinioUSXUpload:
                 style_publishable = style_parent.get("publishable")
 
                 self.cur.execute("""
-                    INSERT INTO bible.styles (style, name, description, versetext, publishable, style_file_id) 
+                    INSERT INTO bible.styles (style, name, description, versetext, publishable, source_file_id) 
                     VALUES (%s, %s, %s, %s, %s, %s)
                 """, (style, style_name, style_description, style_versetext, style_publishable, styles_file_id))
 
@@ -389,14 +393,21 @@ class MinioUSXUpload:
 
             if property_unit != None:
                 self.cur.execute("""
-                    INSERT INTO Properties (name, value, unit, style_id) 
+                    INSERT INTO bible.properties (name, value, unit, style_id) 
                     VALUES (%s, %s, %s, %s)
                 """, (property_name, property_value, property_unit, style_id))
             else:
                 self.cur.execute("""
-                    INSERT INTO Properties (name, value, style_id) 
+                    INSERT INTO bible.properties (name, value, style_id) 
                     VALUES (%s, %s, %s)
                 """, (property_name, property_value, style_id))
+
+
+        if style_additions > 0:
+            print(f"[{style_additions}] Styles loaded into database")
+
+        if property_additions > 0:
+            print(f"[{property_additions}] Properties loaded into database")
 
     def createVersification(self, file_string):
         # file_xml = BeautifulSoup(file_string, "xml")
@@ -429,6 +440,7 @@ class MinioUSXUpload:
         self.createExcludedVerses(file_sections[2])
     
     def createExcludedVerses(self, section_text):
+        additions = 0
         # Create list of excluded verses
         for line in section_text.splitlines():
             if line.startswith("#! -"):
@@ -447,8 +459,13 @@ class MinioUSXUpload:
                     INSERT INTO bible.excludedverses (verse_ref, translation_id) 
                     VALUES (%s, %s)
                 """, (verse_ref, self.translation_id))
+                additions += 1
+
+        if additions > 0:
+            print(f"[{additions}] Excluded Verses added to database")
     
     def createVerses(self, section_text):
+        additions = 0
         # Create all Verses Tables instances - different from VerseOccurences, just chceck they all exist
         for line in section_text.splitlines():
             sections = line.split(" ")
@@ -478,3 +495,7 @@ class MinioUSXUpload:
                             INSERT INTO bible.verses (chapter_ref, verse_ref) 
                             VALUES (%s, %s)
                         """, (chapter_ref, verse_ref))
+                        additions += 1
+        
+        if additions > 0:
+            print(f"[{additions}] Verses Initialized into database")
