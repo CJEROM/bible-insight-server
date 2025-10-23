@@ -5,20 +5,13 @@ import os
 from bs4 import BeautifulSoup
 import psycopg2
 
-# Passes Minio client connection on to the class
-client = Minio(
-    "localhost:9900",
-    access_key="REDACTED_USERNAME",
-    secret_key="REDACTED_PASSWORD",
-    secure=False
-)
-
 class MinioUSXUpload:
-    def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url):
+    def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id):
         self.client = minio_client
         self.medium = medium # Audio | Video | Text (USX)
         self.process_location = process_location
         self.bucket = bucket # The Minio bucket to create the files in.
+        self.translation_id = translation_id
 
         # Adds a database connection
         conn = psycopg2.connect(
@@ -86,7 +79,7 @@ class MinioUSXUpload:
             self.check_files(new_location)
 
         # After unzipping delete the old zip file
-        # Path(zip_path).unlink(missing_ok=True)
+        Path(zip_path).unlink(missing_ok=True)
 
     def validate_upload(self, folder):
         # This is to check whether this translation is already in database, in which case don't upload
@@ -147,32 +140,36 @@ class MinioUSXUpload:
                 SELECT code FROM bible.books WHERE code = %s;
             """, (book,))
             found_book = self.cur.fetchone()
-            # print(found_book)
-
-
 
             if found_book != None:
                 # If this is text and the book is among ones we are interested in, take the file and upload it to minio
                 object_name = f"{top_folder}/{revision}/{file_name}"
                 content_type = metadata_xml.find("resource", uri=content.get("src")).get("mimeType")
-                print(self.upload_file(object_name, file_path, content_type).etag)
+                file_id = self.upload_file(object_name, file_path, content_type)
+
+                book_info = metadata_xml.find("name", id=content.get("name"))
+                short_name = book_info.find("short").text
+                long_name = book_info.find("long").text
                 
                 # Then update the database linking to them
-                # if self.medium == "text":
+                if self.medium == "text":
+                    self.cur.execute("""
+                        INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s);
+                    """, (book, self.translation_id, file_id, short_name, long_name))
+                if self.medium == "audio":
+                    self.cur.execute("""
+                        INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s);
+                    """, (book, self.translation_id, None, short_name, long_name))
 
-                #     self.cur.execute("""
-                #         INSERT INTO BookToFile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s);
-                #     """, (book,))
-                # elif self.medium == "audio":
-                #     self.cur.execute("""
-                #         INSERT INTO ChapterOccurences (chapter_ref, file__id) VALUES (%s, %s);
-                #     """, (chapter_ref,))
+                    self.cur.execute("""
+                        INSERT INTO bible.chapteroccurences (chapter_ref, file_id) VALUES (%s, %s);
+                    """, (chapter_ref, file_id))
 
-        # Update database entries with files or rely on books class to do so.
+        Path(file_location).unlink(missing_ok=True)
 
     def upload_file(self, object_name, file_path, content_type):
         self.client.fput_object(self.bucket, object_name, str(file_path), content_type=content_type)
-        info = client.stat_object(self.bucket, object_name)
+        info = self.client.stat_object(self.bucket, object_name)
         # Example
             # Object(
             #     bucket_name='bible-dbl-raw', 
@@ -208,21 +205,21 @@ class MinioUSXUpload:
             # )
         
         self.cur.execute("""
-            INSERT INTO Files (etag, type, file_path, bucket, source_id) 
+            INSERT INTO bible.files (etag, type, file_path, bucket, source_id) 
             VALUES (%s, %s, %s, %s, %s)
             ON CONFLICT (etag) DO NOTHING;
         """, (info.etag, info.content_type, info.object_name, info.bucket_name, self.source_id))
-        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("Files",))
+        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.files",))
 
         return self.cur.fetchone() # Return file_id to link to
 
     # Make use and amend below function, to feed in files for processing (e.g. Book Classes)
-    def stream_file(self, bucket, object_name):
+    def stream_file(self, object_name):
         # Get file
         response = None 
         try:
             response = self.client.get_object(
-                bucket_name="bible-dbl-raw",
+                bucket_name=self.bucket,
                 object_name=object_name,
             )
             print(str(response.data))
@@ -230,6 +227,4 @@ class MinioUSXUpload:
             if response:
                 response.close()
                 response.release_conn()
-
-
-                
+               
