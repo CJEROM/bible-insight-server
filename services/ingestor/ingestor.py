@@ -58,7 +58,6 @@ def expand_all_folders(page):
         for btn in expand_buttons:
             try:
                 label = btn.get_attribute("aria-label")
-                print(f"Expanding {label}")
                 btn.scroll_into_view_if_needed()
                 btn.click()
                 time.sleep(0.3)  # small delay for DOM update
@@ -144,18 +143,8 @@ def get_downloads():
                     for btn in file_buttons:
                         filename = btn.get_attribute("aria-label").replace("Download ", "").strip()
 
-                        # Walk up the DOM to gather folder labels
-                        folder_names = []
-                        parent = btn
-                        while True:
-                            parent = parent.query_selector("xpath=ancestor::div/button[contains(@aria-label, 'Collapse')]")
-                            if not parent:
-                                break
-                            folder_names.append(parent.get_attribute("aria-label").replace("Collapse ", "").strip())
-
-                        print(folder_names)
-                        
-                        folder_names.reverse()
+                        book = filename.split(".")[0].split("_")[0]
+                        folder_names = ["release", "audio", book]
                         folder_path = os.path.join(Path(download_path) / download_folder_name, *folder_names)
                         os.makedirs(folder_path, exist_ok=True)
 
