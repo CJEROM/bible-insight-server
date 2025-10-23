@@ -14,11 +14,12 @@ client = Minio(
 )
 
 class MinioUSXUpload:
-    def __init__(self, minio_client: Minio, medium, process_location, bucket):
+    def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url):
         self.client = minio_client
         self.medium = medium # Audio | Video | Text (USX)
         self.process_location = process_location
         self.bucket = bucket # The Minio bucket to create the files in.
+        self.source_id = self.get_source(source_url)
 
         # Adds a database connection
         conn = psycopg2.connect(
@@ -50,6 +51,21 @@ class MinioUSXUpload:
                 pass
             case "audio": # Audio e.g. for the blind or preference
                 self.check_files(self.process_location)
+
+    def get_source(self, source_url):
+        # Find if url is already stored source in database
+        self.cur.execute("""SELECT id FROM bible.sources WHERE url = %s;""", (source_url,))
+        source_id = self.cur.fetchone()
+        if source_id != None:
+            return source_id[0]
+        
+        # If not create new and return it
+        self.cur.execute("""
+            INSERT INTO Sources (url) 
+            VALUES (%s);
+        """, (source_url,))
+        self.cur.execute("""SELECT currval(pg_get_serial_sequence('%s', 'id'));""", ("bible.sources",))
+        return self.cur.fetchone()[0]
 
     def unzip_folder(self, zip_path):
         # This will unzip the zip folder, and then delete the original and replace process location with new path name
@@ -192,7 +208,15 @@ class MinioUSXUpload:
             #     tags=None, 
             #     is_dir=False
             # )
-        return info
+        
+        self.cur.execute("""
+            INSERT INTO Files (etag, type, file_path, bucket, source_id) 
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (etag) DO NOTHING;
+        """, (info.etag, info.content_type, info.object_name, info.bucket_name, self.source_id))
+        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("Files",))
+
+        return self.cur.fetchone() # Return file_id to link to
 
     # Make use and amend below function, to feed in files for processing (e.g. Book Classes)
     def stream_file(self, bucket, object_name):
