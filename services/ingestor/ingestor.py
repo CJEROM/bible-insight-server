@@ -95,6 +95,7 @@ def get_downloads():
 
             # Wait for navigation after login
             page.wait_for_url("https://app.library.bible/")
+            print("✅ Succesful Log In")
         else:
             print("Already logged in")
       
@@ -103,8 +104,8 @@ def get_downloads():
         for dbl_id, agreement_id in cur.fetchall():
             if hi:
                 print(dbl_id, agreement_id)
-                dbl_id = "52a82b80a85343c5"
-                agreement_id = 279707
+                # dbl_id = "52a82b80a85343c5"
+                # agreement_id = 279707
 
                 # Go to the DBL translation page
                 url = "https://app.library.bible/content/" + dbl_id + "/download?agreementId=" + str(agreement_id)
@@ -125,10 +126,11 @@ def get_downloads():
                     # Check if there was no download ZIP, so download would equal 0? 
 
                     # Save to your folder
+                    new_path = Path(download_path) / download.suggested_filename
                     download.save_as(os.path.join(download_path, download.suggested_filename))
-                    print(f"✅ Downloaded ZIP: {download_path / download.suggested_filename}")
+                    print(f"✅ Downloaded ZIP: {new_path}")
 
-                    MinioUSXUpload(client, "text", download_path / download.suggested_filename, "bible-dbl-raw", url)
+                    MinioUSXUpload(client, "text", new_path, "bible-dbl-raw", url)
                 else:
                     print("⚠️ No ZIP button found, assuming audio download instead")
                     # Expand all folders
@@ -145,6 +147,9 @@ def get_downloads():
 
                         book = filename.split(".")[0].split("_")[0]
                         folder_names = ["release", "audio", book]
+                        if filename == "metadata.xml":
+                            folder_names = []
+
                         folder_path = os.path.join(Path(download_path) / download_folder_name, *folder_names)
                         os.makedirs(folder_path, exist_ok=True)
 
@@ -154,11 +159,11 @@ def get_downloads():
                         download = download_info.value
                         download.save_as(os.path.join(folder_path, filename))
 
-                        print(f"✅ Downloaded {filename} → {folder_path}")
+                        # print(f"✅ Downloaded {filename} → {folder_path}")
 
                     new_path = Path(download_path) / download_folder_name
                     
-                    print(f"✅ Downloaded Audio Files: {new_path}")
+                    print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
 
                     MinioUSXUpload(client, "audio", new_path, "bible-dbl-raw", url)
 
