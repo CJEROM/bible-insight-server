@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS Files (
 	-- Update to include bucket id for this file
     file_path       TEXT, -- where this would be the file path inside said bucket
     bucket          TEXT, -- this would be ignored
-    translation_id  INT,
+    -- translation_id  INT,
     source_id       INT,
     FOREIGN KEY (source_id) REFERENCES Sources (id)  
 );
