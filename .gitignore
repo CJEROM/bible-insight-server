@@ -11,3 +11,6 @@ devops/docker/*/*
 !devops/docker/
 
 downloads
+
+**/__pycache__/
+*.py[cod]
