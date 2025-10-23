@@ -41,8 +41,6 @@ class Ingestor:
 
         self.get_downloads()
 
-
-
     def expand_all_folders(self, page):
         """
         Expands all collapsible folders on the DBL download page
@@ -96,7 +94,7 @@ class Ingestor:
         self.conn.commit()
 
         self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
-        return self.cur.fetchone() # Return file_id to link to
+        return self.cur.fetchone()[0] # Return file_id to link to
 
     def get_downloads(self):
         with sync_playwright() as p:
@@ -138,7 +136,10 @@ class Ingestor:
 
                 translation_id = self.get_translation(dbl_id, agreement_id)
                 if translation_id == -1:
+                    print(f"❌ Translation {dbl_id}-{agreement_id} already exists! Skipping ...")
                     continue # Skip because its already in our system
+
+                print(f"✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
 
                 new_path = None
 
