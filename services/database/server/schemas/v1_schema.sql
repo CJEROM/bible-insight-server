@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS Users (
 -- DROP TABLE IF EXISTS Sources;
 CREATE TABLE IF NOT EXISTS Sources (
     id                  SERIAL PRIMARY KEY,
-    url                 TEXT,
+    url                 TEXT UNIQUE,
 	note				TEXT,
 	metadata			JSONB
 );
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS TranslationInfo (
 CREATE TABLE IF NOT EXISTS DBLInfo (
     dbl_id              TEXT,
     agreement_id         INT,
-	revisions            INT,
+	-- revisions            INT, -- Currently duplicated since its seems dbl_id and agreement_id make unique instance (revision) of a bible translation
 	PRIMARY KEY(dbl_id, agreement_id),
     FOREIGN KEY (agreement_id) REFERENCES DBLAgreements (id)
     -- FOREIGN KEY (dbl_id) REFERENCES TranslationInfo (dbl_id)
