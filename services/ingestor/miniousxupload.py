@@ -189,6 +189,9 @@ class MinioUSXUpload:
             self.translation_id
         ))
 
+        # Extra file to upload but not link - Consider excluding when creating standard style for all bible translation reading
+        self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml"),
+
         publication = metadata_xml.find("publication", default="true") # Get default files for publication
         contents = publication.find_all("content")
 
@@ -234,11 +237,15 @@ class MinioUSXUpload:
                     """, (chapter_ref, file_id))
         
         self.conn.commit()
+
+        print("Cleaning Up Artifacts...")
         
         if file_location.is_dir():
             shutil.rmtree(file_location, ignore_errors=True)  # delete folder + contents
         elif file_location.is_file():
             Path(file_location).unlink(missing_ok=True)
+
+        print("✅ Completed Upload!\n")
 
     def upload_file(self, object_name, file_path, content_type):
         self.client.fput_object(self.bucket, object_name, str(file_path), content_type=content_type)
