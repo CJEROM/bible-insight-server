@@ -27,6 +27,8 @@ class MinioUSXUpload:
 
         self.source_id = self.get_source(source_url)
 
+        print("✅ Starting Upload ...")
+
         # Fetch and print result
         # version = self.cur.fetchone()
         # print("Connected successfully! PostgreSQL version:", version)
@@ -90,30 +92,8 @@ class MinioUSXUpload:
         elif zip_path.is_file():
             Path(zip_path).unlink(missing_ok=True)
 
-    def validate_upload(self, folder):
-        # This is to check whether this translation is already in database, in which case don't upload
-        #   Perhaps move this earlier in the process, or actually a secondary check is good.
-        medium, dbl, agreement = folder.split("-")
-
-        # Query database to see whether this dbl_id and agreement exist in the database with corresponding data or not (Through Translations table)
-        self.cur.execute("""
-            SELECT id FROM bible.Translations WHERE dbl_id = %s AND agreement_id = %s;
-        """, (dbl, agreement))
-        
-        # If this translation not been loaded in database
-        if self.cur.fetchone() == None:
-            return False # Not Valid => Therefore create new
-        
-        return True # Valid => Therefore skip to next upload file
-
     def check_files(self, file_location):
         top_folder = str(file_location).split("\\")[-1]
-
-        # Validate bible upload (is already)
-        valid = self.validate_upload(top_folder)
-        if valid == True:
-            # Don't continue if already in database
-            return 
         
         # Get License file
         license_file_path = Path(file_location) / "license.xml" # Only if there is an expiration on the license
