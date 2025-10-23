@@ -29,7 +29,7 @@ class Ingestor:
             secure=False
         )
 
-        conn = psycopg2.connect(
+        self.conn = psycopg2.connect(
             host="REDACTED_IP",
             port=5444,
             dbname="postgres",
@@ -37,7 +37,7 @@ class Ingestor:
             password="REDACTED_PASSWORD"
         )
 
-        self.cur = conn.cursor()
+        self.cur = self.conn.cursor()
 
         self.get_downloads()
 
@@ -74,6 +74,7 @@ class Ingestor:
         print("✅ All folders expanded.")
 
     def get_translation(self, dbl_id, agreement_id):
+        agreement_id = str(agreement_id)
         self.cur.execute("""
             SELECT id FROM bible.translations WHERE dbl_id = %s AND agreement_id = %s;
         """, (dbl_id, agreement_id))
@@ -85,10 +86,16 @@ class Ingestor:
         
         # If not create a new entry and pass along the new id        
         self.cur.execute("""
+            INSERT INTO bible.translationinfo (dbl_id) VALUES(%s)
+            ON CONFLICT (dbl_id) DO NOTHING;
+        """, (dbl_id,))
+
+        self.cur.execute("""
             INSERT INTO bible.translations (dbl_id, agreement_id) VALUES(%s, %s);
         """, (dbl_id, agreement_id))
-        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
+        self.conn.commit()
 
+        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
         return self.cur.fetchone() # Return file_id to link to
 
     def get_downloads(self):
@@ -133,8 +140,9 @@ class Ingestor:
                 if translation_id == -1:
                     continue # Skip because its already in our system
 
+                new_path = None
+
                 if hi:
-                    print(dbl_id, agreement_id)
                     # dbl_id = "52a82b80a85343c5"
                     # agreement_id = 279707
 
