@@ -98,7 +98,7 @@ class MinioUSXUpload:
         file_name = file_path.split("/")[-1]
         object_name = object_start + f"{file_name}"
 
-        new_file_path = Path(file_location) / file_name
+        new_file_path = Path(file_location) / file_path
         if new_file_path.exists():
             return self.upload_file(object_name, new_file_path, content_type)
         
@@ -167,7 +167,6 @@ class MinioUSXUpload:
         ldml_file = metadata_xml.select_one('resource[uri$=".ldml"]').get("uri")
         ldml_file_id = None
         if ldml_file is not None:
-            print(ldml_file)
             ldml_file_id = self.get_support_files(file_location, object_start, ldml_file, "application/xml")
 
         # Update this information for translation in database
