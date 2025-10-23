@@ -19,7 +19,6 @@ class MinioUSXUpload:
         self.medium = medium # Audio | Video | Text (USX)
         self.process_location = process_location
         self.bucket = bucket # The Minio bucket to create the files in.
-        self.source_id = self.get_source(source_url)
 
         # Adds a database connection
         conn = psycopg2.connect(
@@ -32,12 +31,11 @@ class MinioUSXUpload:
 
         self.cur = conn.cursor()
 
-        # Test query
-        self.cur.execute("SELECT code FROM bible.books;")
+        self.source_id = self.get_source(source_url)
 
         # Fetch and print result
-        version = self.cur.fetchone()
-        print("Connected successfully! PostgreSQL version:", version)
+        # version = self.cur.fetchone()
+        # print("Connected successfully! PostgreSQL version:", version)
 
         self.metadata_content = ""
 
@@ -61,10 +59,10 @@ class MinioUSXUpload:
         
         # If not create new and return it
         self.cur.execute("""
-            INSERT INTO Sources (url) 
+            INSERT INTO bible.sources (url) 
             VALUES (%s);
         """, (source_url,))
-        self.cur.execute("""SELECT currval(pg_get_serial_sequence('%s', 'id'));""", ("bible.sources",))
+        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.sources",))
         return self.cur.fetchone()[0]
 
     def unzip_folder(self, zip_path):
@@ -232,6 +230,6 @@ class MinioUSXUpload:
             if response:
                 response.close()
                 response.release_conn()
-    
-if __name__ == "__main__":
-    MinioUSXUpload(client, "text", r"C:/Users/CephJ/Documents/git/bible-insight-server/downloads/c1c304e5-9e97-49bb-8637-6f5137a69d71.zip", "bible-dbl-raw")
+
+
+                
