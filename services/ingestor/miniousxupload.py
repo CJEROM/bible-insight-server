@@ -5,6 +5,7 @@ import os
 from bs4 import BeautifulSoup
 import psycopg2
 import shutil
+import re
 
 class MinioUSXUpload:
     def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id, dbl_id, agreement_id):
@@ -24,6 +25,8 @@ class MinioUSXUpload:
             user="postgres",
             password="REDACTED_PASSWORD"
         )
+
+        self.revision = None
 
         self.cur = self.conn.cursor()
 
@@ -84,7 +87,6 @@ class MinioUSXUpload:
 
             # Saves the new location for the usx files to be ran in next part of pipeline
             new_location = downloads_location / top_folder
-            print(new_location)
             self.check_files(new_location)
 
         # After unzipping delete the old zip file
@@ -144,6 +146,20 @@ class MinioUSXUpload:
             self.dbl_id
         ))
 
+        self.create_translation_relationships(metadata_xml)
+
+    def create_translation_relationships(self, metadata_xml):
+        translation_relationships = metadata_xml.find("relationships")
+        for relation in translation_relationships.find_all("relation"):
+            # Example: <relation id="9879dbb7cfe39e4d" revision="4" type="text" relationType="source"/>
+            relation_dbl_id = relation.get("id")
+            relation_revision = relation.get("revision")
+            relation_type = relation.get("relationType")
+            self.cur.execute("""
+                INSERT INTO bible.translationrelationships (from_translation, from_revision, to_translation, to_revision, type) 
+                VALUES (%s, %s, %s, %s, %s)
+            """, (self.translation_id, self.revision, relation_dbl_id, relation_revision, relation_type))
+
     def check_files(self, file_location):
         top_folder = str(file_location).split("\\")[-1]
 
@@ -156,12 +172,12 @@ class MinioUSXUpload:
         metadata_xml = BeautifulSoup(metadata_file_content, "xml")
         self.update_translationinfo_db(metadata_xml)
 
-        revision = metadata_xml.find("DBLMetadata").get("revision")
+        self.revision = metadata_xml.find("DBLMetadata").get("revision")
         revision_note = metadata_xml.find("archiveStatus").find("comments")
         if revision_note != None:
             revision_note = revision_note.text
 
-        object_start = f"{top_folder}/{revision}/"
+        object_start = f"{top_folder}/{self.revision}/"
 
         # Since dependant on language
         ldml_file = metadata_xml.select_one('resource[uri$=".ldml"]').get("uri")
@@ -180,7 +196,7 @@ class MinioUSXUpload:
                 versification_file = %s
             WHERE id = %s;        
         """, (
-            revision, 
+            self.revision, 
             revision_note, 
             self.get_support_files(file_location, object_start, "metadata.xml", "application/xml"),
             self.get_support_files(file_location, object_start, "license.xml", "application/xml"),
@@ -190,7 +206,9 @@ class MinioUSXUpload:
         ))
 
         # Extra file to upload but not link - Consider excluding when creating standard style for all bible translation reading
-        self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml"),
+        self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml")
+
+        self.conn.commit() # Commit all changes to database
 
         publication = metadata_xml.find("publication", default="true") # Get default files for publication
         contents = publication.find_all("content")
@@ -214,7 +232,7 @@ class MinioUSXUpload:
 
             if found_book != None:
                 # If this is text and the book is among ones we are interested in, take the file and upload it to minio
-                object_name = f"{top_folder}/{revision}/{file_name}"
+                object_name = f"{top_folder}/{self.revision}/{file_name}"
                 content_type = metadata_xml.find("resource", uri=content.get("src")).get("mimeType")
                 file_id = self.upload_file(object_name, file_path, content_type)
 
@@ -290,7 +308,15 @@ class MinioUSXUpload:
         """, (info.etag, info.content_type, info.object_name, info.bucket_name, self.source_id))
         self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.files",))
 
-        return self.cur.fetchone() # Return file_id to link to
+        file_id = self.cur.fetchone()[0]
+
+        if "versification" in object_name:
+            self.createVersification(self.stream_file(object_name))
+        elif "styles" in object_name:
+            self.createStylesAndProperties(self.stream_file(object_name), file_id)
+        # elif "ldml" in object_name:
+
+        return file_id # Return file_id to link to
 
     # Make use and amend below function, to feed in files for processing (e.g. Book Classes)
     def stream_file(self, object_name):
@@ -301,9 +327,154 @@ class MinioUSXUpload:
                 bucket_name=self.bucket,
                 object_name=object_name,
             )
-            print(str(response.data))
+            return str(response.data)
         finally:
             if response:
                 response.close()
                 response.release_conn()
                
+    def createStylesAndProperties(self, styles_string, styles_file_id):
+        # We only set styles and properties once, since it is duplicated across all translations, just usx formatting.
+        self.cur.execute("""SELECT last_value FROM bible.styles_id_seq;""")
+        styles = self.cur.fetchone()[0]
+
+        if styles > 1:
+            return
+        
+        styles_xml = BeautifulSoup(styles_string, "xml")
+        properties = styles_xml.find_all("property")
+
+        previous_style_parent = None
+        style_id = None
+
+        for property in properties:
+            style_parent = property.find_parent("style")
+            
+            property_name = property.get("name")
+            property_unit = property.get("unit")
+            property_value = property.text
+
+            if style_parent == None:
+                # General Properties (without a parent style in stylesheet)
+                if property_unit != None:
+                    self.cur.execute("""
+                        INSERT INTO bible.properties (name, value, unit) 
+                        VALUES (%s, %s, %s)
+                    """, (property_name, property_value, property_unit))
+                else:
+                    self.cur.execute("""
+                        INSERT INTO bible.roperties (name, value) 
+                        VALUES (%s, %s)
+                    """, (property_name, property_value))
+
+                continue
+
+            if previous_style_parent != style_parent:
+                # Create new style
+                style = style_parent.get("id")
+                style_name = style_parent.find("name").text
+                style_description = style_parent.find("description").text
+                style_versetext = style_parent.get("versetext")
+                style_publishable = style_parent.get("publishable")
+
+                self.cur.execute("""
+                    INSERT INTO bible.styles (style, name, description, versetext, publishable, style_file_id) 
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (style, style_name, style_description, style_versetext, style_publishable, styles_file_id))
+
+                self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.styles",))
+                style_id = self.cur.fetchone()[0]
+
+                previous_style_parent = style_parent
+
+            if property_unit != None:
+                self.cur.execute("""
+                    INSERT INTO Properties (name, value, unit, style_id) 
+                    VALUES (%s, %s, %s, %s)
+                """, (property_name, property_value, property_unit, style_id))
+            else:
+                self.cur.execute("""
+                    INSERT INTO Properties (name, value, style_id) 
+                    VALUES (%s, %s, %s)
+                """, (property_name, property_value, style_id))
+
+    def createVersification(self, file_string):
+        # file_xml = BeautifulSoup(file_string, "xml")
+        # We can split file string by "#", remove blank ones, then grapb the relevant section
+        #       by finding next index after sections we want, then read that line by line for each section
+
+        file_sections_headers = [
+            "# Verse number is the maximum verse number for that chapter.",
+            "# Mappings from this versification to standard versification",
+            "# Excluded verses",
+            "# Verse segment information"
+        ]
+        
+        # Build regexes that capture everything between headers (non-greedy, across lines)
+        find_bible_info = re.escape(file_sections_headers[0]) + r"(.*?)" + re.escape(file_sections_headers[1])
+        find_versification_map = re.escape(file_sections_headers[1]) + r"(.*?)" + re.escape(file_sections_headers[2])
+        find_excluded_verses = re.escape(file_sections_headers[2]) + r"(.*?)" + re.escape(file_sections_headers[3])
+
+        # Run searches
+        matches = [
+            re.search(find_bible_info, file_string, re.DOTALL),
+            re.search(find_versification_map, file_string, re.DOTALL),
+            re.search(find_excluded_verses, file_string, re.DOTALL)
+        ]
+
+        # Extract just the captured groups (excluding headers)
+        file_sections = [m.group(1).strip() if m else "" for m in matches]
+
+        self.createVerses(file_sections[0])
+        self.createExcludedVerses(file_sections[2])
+    
+    def createExcludedVerses(self, section_text):
+        # Create list of excluded verses
+        for line in section_text.splitlines():
+            if line.startswith("#! -"):
+                verse_ref = line[4:].strip()
+                book_code = verse_ref[0:3]
+
+                self.cur.execute("""
+                    SELECT id FROM bible.books WHERE code=%s
+                """, (book_code,))
+                valid_book = self.cur.fetchone()
+
+                if valid_book == None:
+                    continue
+
+                self.cur.execute("""
+                    INSERT INTO bible.excludedverses (verse_ref, translation_id) 
+                    VALUES (%s, %s)
+                """, (verse_ref, self.translation_id))
+    
+    def createVerses(self, section_text):
+        # Create all Verses Tables instances - different from VerseOccurences, just chceck they all exist
+        for line in section_text.splitlines():
+            sections = line.split(" ")
+            book_code = sections[0]
+
+            self.cur.execute("""
+                SELECT id FROM bible.books WHERE code=%s
+            """, (book_code,))
+            book_id = self.cur.fetchone()
+
+            if book_id == None:
+                continue
+
+            for chapter in range(1,len(sections)):
+                chapter_num, verse_count = sections[chapter].split(":")
+                for verse in range(1, (int(verse_count)+1)):
+                    chapter_ref = book_code + " " + chapter_num
+                    verse_ref = chapter_ref + ":" + str(verse)
+
+                    self.cur.execute("""
+                        SELECT id FROM bible.verses WHERE verse_ref=%s
+                    """, (verse_ref,))
+                    verse_id = self.cur.fetchone()
+
+                    if verse_id == None:
+                        self.cur.execute("""
+                            INSERT INTO bible.verses (chapter_ref, verse_ref) 
+                            VALUES (%s, %s)
+                        """, (chapter_ref, verse_ref))
