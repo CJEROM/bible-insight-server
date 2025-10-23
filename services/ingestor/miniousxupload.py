@@ -7,12 +7,14 @@ import psycopg2
 import shutil
 
 class MinioUSXUpload:
-    def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id):
+    def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id, dbl_id, agreement_id):
         self.client = minio_client
         self.medium = medium # Audio | Video | Text (USX)
         self.process_location = process_location
         self.bucket = bucket # The Minio bucket to create the files in.
         self.translation_id = translation_id
+        self.dbl_id = dbl_id
+        self.agreement_id = agreement_id
 
         # Adds a database connection
         self.conn = psycopg2.connect(
@@ -101,6 +103,46 @@ class MinioUSXUpload:
             return self.upload_file(object_name, new_file_path, content_type)
         
         return None
+    
+    def check_language(self, language_xml):
+        # Check if language already added to database, if not create it and return language_id
+        self.cur.execute("""SELECT id FROM bible.languages WHERE iso = %s;""", (language_xml.find("iso").text,))
+        language_id = self.cur.fetchone()
+
+        if language_id != None:
+            return language_id[0]
+        
+        self.cur.execute("""
+            INSERT INTO bible.languages (iso, name, namelocal, scriptdirection) 
+            VALUES (%s, %s, %s, %s);
+        """, (
+            language_xml.find("iso").text,
+            language_xml.find("name").text,
+            language_xml.find("nameLocal").text,
+            language_xml.find("scriptDirection").text
+        ))
+        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.languages",))
+        return self.cur.fetchone()[0]
+    
+    def update_translationinfo_db(self, metadata_xml):
+        self.cur.execute("""
+            UPDATE bible.translationinfo
+            SET medium = %s,
+                name = %s,
+                namelocal = %s,
+                description = %s,
+                abbreviationlocal = %s,
+                language_id = %s
+            WHERE dbl_id = %s;        
+        """, (
+            self.medium, 
+            metadata_xml.find("identification").find("name").text, 
+            metadata_xml.find("identification").find("nameLocal").text,
+            metadata_xml.find("identification").find("description").text,
+            metadata_xml.find("identification").find("abbreviationLocal").text,
+            self.check_language(metadata_xml.find("language")),
+            self.dbl_id
+        ))
 
     def check_files(self, file_location):
         top_folder = str(file_location).split("\\")[-1]
@@ -112,6 +154,8 @@ class MinioUSXUpload:
             metadata_file_content = file.read()
 
         metadata_xml = BeautifulSoup(metadata_file_content, "xml")
+        self.update_translationinfo_db(metadata_xml)
+
         revision = metadata_xml.find("DBLMetadata").get("revision")
         revision_note = metadata_xml.find("archiveStatus").find("comments")
         if revision_note != None:
