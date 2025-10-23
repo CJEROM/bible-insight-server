@@ -206,6 +206,8 @@ class Ingestor:
                         MinioUSXUpload(self.client, "audio", new_path, "bible-dbl-raw", url, translation_id)
 
                     hi = False
+                
+                print(f"❌ Skipping ...")
 
             browser.close()
 
