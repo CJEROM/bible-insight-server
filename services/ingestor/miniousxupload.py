@@ -4,6 +4,7 @@ from pathlib import Path
 import os
 from bs4 import BeautifulSoup
 import psycopg2
+import shutil
 
 class MinioUSXUpload:
     def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id):
@@ -14,7 +15,7 @@ class MinioUSXUpload:
         self.translation_id = translation_id
 
         # Adds a database connection
-        conn = psycopg2.connect(
+        self.conn = psycopg2.connect(
             host="REDACTED_IP",
             port=5444,
             dbname="postgres",
@@ -22,7 +23,7 @@ class MinioUSXUpload:
             password="REDACTED_PASSWORD"
         )
 
-        self.cur = conn.cursor()
+        self.cur = self.conn.cursor()
 
         self.source_id = self.get_source(source_url)
 
@@ -42,6 +43,10 @@ class MinioUSXUpload:
                 pass
             case "audio": # Audio e.g. for the blind or preference
                 self.check_files(self.process_location)
+
+        self.conn.commit()
+        self.cur.close()
+        self.conn.close()
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
@@ -79,7 +84,11 @@ class MinioUSXUpload:
             self.check_files(new_location)
 
         # After unzipping delete the old zip file
-        Path(zip_path).unlink(missing_ok=True)
+        shutil.rmtree(zip_path, ignore_errors=True)
+        if zip_path.is_dir():
+            shutil.rmtree(zip_path, ignore_errors=True)  # delete folder + contents
+        elif zip_path.is_file():
+            Path(zip_path).unlink(missing_ok=True)
 
     def validate_upload(self, folder):
         # This is to check whether this translation is already in database, in which case don't upload
@@ -104,7 +113,6 @@ class MinioUSXUpload:
         valid = self.validate_upload(top_folder)
         if valid == True:
             # Don't continue if already in database
-            Path(file_location).unlink(missing_ok=True) # Delete extracted folder
             return 
         
         # Get License file
@@ -164,8 +172,13 @@ class MinioUSXUpload:
                     self.cur.execute("""
                         INSERT INTO bible.chapteroccurences (chapter_ref, file_id) VALUES (%s, %s);
                     """, (chapter_ref, file_id))
-
-        Path(file_location).unlink(missing_ok=True)
+        
+        self.conn.commit()
+        
+        if file_location.is_dir():
+            shutil.rmtree(file_location, ignore_errors=True)  # delete folder + contents
+        elif file_location.is_file():
+            Path(file_location).unlink(missing_ok=True)
 
     def upload_file(self, object_name, file_path, content_type):
         self.client.fput_object(self.bucket, object_name, str(file_path), content_type=content_type)
@@ -207,7 +220,6 @@ class MinioUSXUpload:
         self.cur.execute("""
             INSERT INTO bible.files (etag, type, file_path, bucket, source_id) 
             VALUES (%s, %s, %s, %s, %s)
-            ON CONFLICT (etag) DO NOTHING;
         """, (info.etag, info.content_type, info.object_name, info.bucket_name, self.source_id))
         self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.files",))
 
