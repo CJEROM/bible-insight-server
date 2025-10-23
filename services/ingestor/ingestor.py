@@ -15,7 +15,8 @@ PASSWORD = "REDACTED_PASSWORD"
 
 class Ingestor:
     def __init__(self):
-        pass
+        # Worth adding option, that if dbl_id and agreement_id have been passed in, run just the class for that translation
+        #       This would be useful when enforcing foreign key constraints with translation relationships
 
         # Folder where you want downloads to go
         self.download_path = "C:/Users/CephJ/Documents/git/bible-insight-server/downloads"
@@ -207,7 +208,8 @@ class Ingestor:
 
                     hi = False
                 
-                print(f"❌ Skipping ...")
+                else:
+                    print(f"❌ Skipping ...")
 
             browser.close()
 
