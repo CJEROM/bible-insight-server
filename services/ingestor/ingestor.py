@@ -73,6 +73,24 @@ class Ingestor:
 
         print("✅ All folders expanded.")
 
+    def get_translation(self, dbl_id, agreement_id):
+        self.cur.execute("""
+            SELECT id FROM bible.translations WHERE dbl_id = %s AND agreement_id = %s;
+        """, (dbl_id, agreement_id))
+
+        # If the translation already exists, then quit processing this translation
+        translation_id = self.cur.fetchone()
+        if translation_id != None:
+            return -1
+        
+        # If not create a new entry and pass along the new id        
+        self.cur.execute("""
+            INSERT INTO bible.translations (dbl_id, agreement_id) VALUES(%s, %s);
+        """, (dbl_id, agreement_id))
+        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
+
+        return self.cur.fetchone() # Return file_id to link to
+
     def get_downloads(self):
         with sync_playwright() as p:
             # Launch browser
@@ -110,6 +128,11 @@ class Ingestor:
             """)
 
             for dbl_id, agreement_id in self.cur.fetchall():
+
+                translation_id = self.get_translation(dbl_id, agreement_id)
+                if translation_id == -1:
+                    continue # Skip because its already in our system
+
                 if hi:
                     print(dbl_id, agreement_id)
                     # dbl_id = "52a82b80a85343c5"
@@ -136,7 +159,7 @@ class Ingestor:
                         download.save_as(os.path.join(self.download_path, download.suggested_filename))
                         print(f"✅ Downloaded ZIP: {new_path}")
 
-                        MinioUSXUpload(self.client, "text", new_path, "bible-dbl-raw", url)
+                        MinioUSXUpload(self.client, "text", new_path, "bible-dbl-raw", url, translation_id)
                     else:
                         print("⚠️ No ZIP button found, assuming audio download instead")
                         # Expand all folders
@@ -171,7 +194,7 @@ class Ingestor:
                         
                         print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
 
-                        MinioUSXUpload(self.client, "audio", new_path, "bible-dbl-raw", url)
+                        MinioUSXUpload(self.client, "audio", new_path, "bible-dbl-raw", url, translation_id)
 
                     hi = False
 
