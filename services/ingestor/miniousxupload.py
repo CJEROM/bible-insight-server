@@ -92,13 +92,18 @@ class MinioUSXUpload:
         elif zip_path.is_file():
             Path(zip_path).unlink(missing_ok=True)
 
+    def get_support_files(self, file_location, object_start, file_path, content_type):
+        file_name = file_path.split("/")[-1]
+        object_name = object_start + f"{file_name}"
+
+        new_file_path = Path(file_location) / file_name
+        if new_file_path.exists():
+            return self.upload_file(object_name, new_file_path, content_type)
+        
+        return None
+
     def check_files(self, file_location):
         top_folder = str(file_location).split("\\")[-1]
-        
-        # Get License file
-        license_file_path = Path(file_location) / "license.xml" # Only if there is an expiration on the license
-        if license_file_path.exists():
-            pass
 
         # Find metadata file
         metadata_file_path = Path(file_location) / "metadata.xml"
@@ -108,6 +113,38 @@ class MinioUSXUpload:
 
         metadata_xml = BeautifulSoup(metadata_file_content, "xml")
         revision = metadata_xml.find("DBLMetadata").get("revision")
+        revision_note = metadata_xml.find("archiveStatus").find("comments")
+        if revision_note != None:
+            revision_note = revision_note.text
+
+        object_start = f"{top_folder}/{revision}/"
+
+        # Since dependant on language
+        ldml_file = metadata_xml.select_one('resource[uri$=".ldml"]').get("uri")
+        ldml_file_id = None
+        if ldml_file is not None:
+            print(ldml_file)
+            ldml_file_id = self.get_support_files(file_location, object_start, ldml_file, "application/xml")
+
+        # Update this information for translation in database
+        self.cur.execute("""
+            UPDATE bible.translations
+            SET revision = %s,
+                revision_note = %s,
+                metadata_file = %s,
+                license_file = %s,
+                ldml_file = %s,
+                versification_file = %s
+            WHERE id = %s;        
+        """, (
+            revision, 
+            revision_note, 
+            self.get_support_files(file_location, object_start, "metadata.xml", "application/xml"),
+            self.get_support_files(file_location, object_start, "license.xml", "application/xml"),
+            ldml_file_id,
+            self.get_support_files(file_location, object_start, "release/versification.vrs", "application/xml"),
+            self.translation_id
+        ))
 
         publication = metadata_xml.find("publication", default="true") # Get default files for publication
         contents = publication.find_all("content")
