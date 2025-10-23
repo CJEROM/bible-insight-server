@@ -31,15 +31,25 @@ class MinioUSXUpload:
 
         self.cur = conn.cursor()
 
+        # Test query
+        self.cur.execute("SELECT code FROM bible.books;")
+
+        # Fetch and print result
+        version = self.cur.fetchone()
+        print("Connected successfully! PostgreSQL version:", version)
+
+        self.metadata_content = ""
+
         # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
         match medium:
             case "text": # USX Files e.g. for deeper analysis
                 # unzip first
                 self.unzip_folder(self.process_location)
             case "video": # Videos e.g. for the deaf (sign language)
-                self.upload_files(self.process_location)
+                # self.check_files(self.process_location)
+                pass
             case "audio": # Audio e.g. for the blind or preference
-                self.upload_files(self.process_location)
+                self.check_files(self.process_location)
 
     def unzip_folder(self, zip_path):
         # This will unzip the zip folder, and then delete the original and replace process location with new path name
@@ -59,7 +69,7 @@ class MinioUSXUpload:
             # Saves the new location for the usx files to be ran in next part of pipeline
             new_location = downloads_location / top_folder
             print(new_location)
-            self.upload_files(new_location)
+            self.check_files(new_location)
 
         # After unzipping delete the old zip file
         # Path(zip_path).unlink(missing_ok=True)
@@ -80,7 +90,7 @@ class MinioUSXUpload:
         
         return True # Valid => Therefore skip to next upload file
 
-    def upload_files(self, file_location):
+    def check_files(self, file_location):
         top_folder = str(file_location).split("\\")[-1]
 
         # Validate bible upload (is already)
@@ -89,29 +99,100 @@ class MinioUSXUpload:
             # Don't continue if already in database
             Path(file_location).unlink(missing_ok=True) # Delete extracted folder
             return 
+        
+        # Get License file
+        license_file_path = Path(file_location) / "license.xml" # Only if there is an expiration on the license
+        if license_file_path.exists():
+            pass
 
         # Find metadata file
         metadata_file_path = Path(file_location) / "metadata.xml"
         metadata_file_content = ""
-        with open(metadata_file_path, 'r') as file:
+        with open(metadata_file_path, encoding="utf-8") as file:
             metadata_file_content = file.read()
 
-        revision = 0
+        metadata_xml = BeautifulSoup(metadata_file_content, "xml")
+        revision = metadata_xml.find("DBLMetadata").get("revision")
 
-        license_file_path = Path(file_location) / "license.xml"
-
-
-        object_name = f"{top_folder}/{revision}/{file}"
-        object_name = f"{top_folder}/{revision}/USX/file.xml"
-        self.client.fput_object("bible-dbl-raw", object_name, str(metadata_file_path))
-        
-
-        
-        
+        publication = metadata_xml.find("publication", default="true") # Get default files for publication
+        contents = publication.find_all("content")
 
         # Selectively upload the files I want in the format I want (from metadata)
+        for content in contents:
+            # Get the file path for current file
+            parts = content.get("src").split("/")
+            file_name = parts[-1] # Get filename
+            file_path = file_location
+            for part in parts:
+                file_path = file_path / part
+
+            chapter_ref = content.get("role")
+            book = chapter_ref.split(" ")[0]
+
+            self.cur.execute("""
+                SELECT code FROM bible.books WHERE code = %s;
+            """, (book,))
+            found_book = self.cur.fetchone()
+            # print(found_book)
+
+
+
+            if found_book != None:
+                # If this is text and the book is among ones we are interested in, take the file and upload it to minio
+                object_name = f"{top_folder}/{revision}/{file_name}"
+                content_type = metadata_xml.find("resource", uri=content.get("src")).get("mimeType")
+                print(self.upload_file(object_name, file_path, content_type).etag)
+                
+                # Then update the database linking to them
+                # if self.medium == "text":
+
+                #     self.cur.execute("""
+                #         INSERT INTO BookToFile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s);
+                #     """, (book,))
+                # elif self.medium == "audio":
+                #     self.cur.execute("""
+                #         INSERT INTO ChapterOccurences (chapter_ref, file__id) VALUES (%s, %s);
+                #     """, (chapter_ref,))
 
         # Update database entries with files or rely on books class to do so.
+
+    def upload_file(self, object_name, file_path, content_type):
+        self.client.fput_object(self.bucket, object_name, str(file_path), content_type=content_type)
+        info = client.stat_object(self.bucket, object_name)
+        # Example
+            # Object(
+            #     bucket_name='bible-dbl-raw', 
+            #     object_name='text-65eec8e0b60e656b-246069/10/2JN.usx', 
+            #     last_modified=datetime.datetime(2025, 10, 23, 16, 43, 21, tzinfo=datetime.timezone.utc), 
+            #     etag='9b6bcda7e20ed8ffad0953711880191e', 
+            #     size=3713, 
+            #     metadata=HTTPHeaderDict(
+            #         {'Accept-Ranges': 'bytes', 
+            #          'Content-Length': '3713', 
+            #          'Content-Type': 'application/xml', 
+            #          'ETag': '"9b6bcda7e20ed8ffad0953711880191e"', 
+            #          'Last-Modified': 'Thu, 23 Oct 2025 16:43:21 GMT', 
+            #          'Server': 'MinIO', 
+            #          'Strict-Transport-Security': 'max-age=31536000; includeSubDomains', 
+            #          'Vary': 'Origin, Accept-Encoding', 
+            #          'X-Amz-Id-2': 'dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8', 
+            #          'X-Amz-Request-Id': '18712C730E5C7C9C', 
+            #          'X-Content-Type-Options': 'nosniff', 
+            #          'X-Ratelimit-Limit': '6778', 
+            #          'X-Ratelimit-Remaining': '6778', 
+            #          'X-Xss-Protection': '1; mode=block', 
+            #          'Date': 'Thu, 23 Oct 2025 16:43:21 GMT'}), 
+            #     version_id=None, 
+            #     is_latest=None, 
+            #     storage_class=None, 
+            #     owner_id=None, 
+            #     owner_name=None, 
+            #     content_type='application/xml', 
+            #     is_delete_marker=False, 
+            #     tags=None, 
+            #     is_dir=False
+            # )
+        return info
 
     # Make use and amend below function, to feed in files for processing (e.g. Book Classes)
     def stream_file(self, bucket, object_name):
@@ -129,4 +210,4 @@ class MinioUSXUpload:
                 response.release_conn()
     
 if __name__ == "__main__":
-    MinioUSXUpload(client, "text", r"C:/Users/CephJ/Documents/git/bible-insight-server/downloads/c1c304e5-9e97-49bb-8637-6f5137a69d71.zip", "bible_raw")
+    MinioUSXUpload(client, "text", r"C:/Users/CephJ/Documents/git/bible-insight-server/downloads/c1c304e5-9e97-49bb-8637-6f5137a69d71.zip", "bible-dbl-raw")
