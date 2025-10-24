@@ -1,0 +1,16 @@
+lxml
+requests
+re
+os
+Path
+minio
+psycopg2
+bs4
+pathlib
+zipfile
+playwright
+time
+subprocess
+flask
+json
+sqlite3
