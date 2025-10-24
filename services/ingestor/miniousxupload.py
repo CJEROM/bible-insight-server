@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import psycopg2
 import shutil
 import re
+import time
 
 class MinioUSXUpload:
     def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id, dbl_id, agreement_id):
@@ -29,6 +30,8 @@ class MinioUSXUpload:
         self.revision = None
 
         self.cur = self.conn.cursor()
+
+        self.start_time = time.time()
 
         self.source_id = self.get_source(source_url)
 
@@ -54,6 +57,9 @@ class MinioUSXUpload:
         self.conn.commit()
         self.cur.close()
         self.conn.close()
+
+        duration = round(time.time() - self.start_time, 2)
+        print(f"✅ Completed Translation Import in {duration} seconds!\n")
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
@@ -245,6 +251,7 @@ class MinioUSXUpload:
                     self.cur.execute("""
                         INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s);
                     """, (book, self.translation_id, file_id, short_name, long_name))
+                    
                 if self.medium == "audio":
                     self.cur.execute("""
                         INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s);
@@ -262,8 +269,6 @@ class MinioUSXUpload:
             shutil.rmtree(file_location, ignore_errors=True)  # delete folder + contents
         elif file_location.is_file():
             Path(file_location).unlink(missing_ok=True)
-
-        print("✅ Completed Upload!\n")
 
     def upload_file(self, object_name, file_path, content_type):
         self.client.fput_object(self.bucket, object_name, str(file_path), content_type=content_type)
