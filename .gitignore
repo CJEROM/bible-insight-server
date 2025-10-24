@@ -15,4 +15,5 @@ downloads
 **/__pycache__/
 *.py[cod]
 
-devops\docker\authentik\client_secret_REDACTED_SECRET.json
+.git-replacements.txt
+.env
