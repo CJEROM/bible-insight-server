@@ -8,6 +8,8 @@ import shutil
 import re
 import time
 
+from ingestor.book import Book
+
 from dotenv import load_dotenv
 
 # Automatically find the project root (folder containing .env)
@@ -148,6 +150,7 @@ class MinioUSXUpload:
         return self.cur.fetchone()[0]
     
     def update_translationinfo_db(self, metadata_xml):
+        self.language_id = self.check_language(metadata_xml.find("language"))
         self.cur.execute("""
             UPDATE bible.translationinfo
             SET medium = %s,
@@ -163,7 +166,7 @@ class MinioUSXUpload:
             metadata_xml.find("identification").find("nameLocal").text,
             metadata_xml.find("identification").find("description").text,
             metadata_xml.find("identification").find("abbreviationLocal").text,
-            self.check_language(metadata_xml.find("language")),
+            self.language_id,
             self.dbl_id
         ))
 
@@ -266,15 +269,23 @@ class MinioUSXUpload:
                     self.cur.execute("""
                         INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s);
                     """, (book, self.translation_id, file_id, short_name, long_name))
-                    
+                    self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
+                    book_map_id = self.cur.fetchone()[0]
+
+                    Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn)
                 if self.medium == "audio":
+                    # Audio and eventually video don't have any connection but in serving the files themselves for consumption
+                    #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
+                    #   Since below are all the database references it needs.
                     self.cur.execute("""
                         INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s);
                     """, (book, self.translation_id, None, short_name, long_name))
+                    self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
+                    book_map_id = self.cur.fetchone()[0]
 
                     self.cur.execute("""
-                        INSERT INTO bible.chapteroccurences (chapter_ref, file_id) VALUES (%s, %s);
-                    """, (chapter_ref, file_id))
+                        INSERT INTO bible.chapteroccurences (chapter_ref, file_id, book_to_file_id) VALUES (%s, %s, %s);
+                    """, (chapter_ref, file_id, book_map_id))
         
         self.conn.commit()
 
