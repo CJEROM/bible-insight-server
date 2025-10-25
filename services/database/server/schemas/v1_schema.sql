@@ -338,9 +338,11 @@ CREATE TABLE IF NOT EXISTS bible.entityoccurence (
 -- DROP TABLE IF EXISTS bible.strongsoccurence;
 CREATE TABLE IF NOT EXISTS bible.strongsoccurence (
     id              SERIAL PRIMARY KEY,
-	occurence_id	INT,
+    verse_ref       TEXT,
+    translation_id  TEXT,
     strong_code     TEXT,
-    FOREIGN KEY (occurence_id) REFERENCES bible.occurences (id) ON DELETE CASCADE,
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id),
+    FOREIGN KEY (verse_ref) REFERENCES bible.verses (id),
     FOREIGN KEY (strong_code) REFERENCES bible.strongs (code)
 );
 

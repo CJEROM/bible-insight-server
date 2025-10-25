@@ -137,8 +137,20 @@ class Paragraph:
                     VALUES (%s, %s)
                 """, (strong_code, language_id))
 
-            # Create strongs occurence linked to strongs
             self.cur.execute("""
                 INSERT OR IGNORE INTO bible.strongsoccurence (content, -, paragraph_id, verse_id, strong_code) 
                 VALUES (%s, %s, %s, %s, %s)
             """, (strong_occurence.get_text(), self.book_file_id, self.paragraph_id, self.getVerseForStrongs(strong_occurence), strong_code))
+
+            self.cur.execute("""
+                INSERT OR IGNORE INTO bible.occurences (text, type, verse_occ_id, start_char, end_char, paragraph_id, strong_code) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (occurence_id, strong_code))
+            self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.occurences",))
+            occurence_id = self.cur.fetchone()
+
+            # Create strongs occurence linked to strongs
+            self.cur.execute("""
+                INSERT OR IGNORE INTO bible.strongsoccurence (occurence_id, strong_code) 
+                VALUES (%s, %s, %s, %s, %s)
+            """, (occurence_id, strong_code))
