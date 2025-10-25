@@ -4,11 +4,26 @@ from spacy.tokenizer import Tokenizer
 from spacy.util import compile_infix_regex
 import re
 import json
-import pathlib
-
-from dbmanager import DBManager
+import psycopg2
 
 from ingestor.verse import Verse
+
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Automatically find the project root (folder containing .env)
+current = Path(__file__).resolve()
+for parent in current.parents:
+    if (parent / ".env").exists():
+        load_dotenv(parent / ".env")
+        break
+
+POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
 # Spacy packages need to be installed, so need to account for storage space for these:
 # To Install a package run the following command:
@@ -112,13 +127,24 @@ class Chapter:
         self.chapter_ref = chapter_ref
         self.chapter_xml = BeautifulSoup(chapter_text, "xml")
 
-        self.db = db
+        # Adds a database connection
+        self.conn = psycopg2.connect(
+            host=POSTGRES_HOST,
+            port=POSTGRES_PORT,
+            dbname=POSTGRES_DB,
+            user=POSTGRES_USERNAME,
+            password=POSTGRES_PASSWORD
+        )
+
+        self.cur = self.conn.cursor()
 
         self.chapter_id = self.getChapterID()
 
         self.checkMedium()
 
-        self.db.commit()
+        self.conn.commit()
+        self.cur.close()
+        self.conn.close()
 
     def checkMedium(self):
         if self.medium == "audio":

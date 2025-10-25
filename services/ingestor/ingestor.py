@@ -10,8 +10,27 @@ from pathlib import Path
 
 from miniousxupload import MinioUSXUpload
 
-USERNAME = "REDACTED_USERNAME"
-PASSWORD = "REDACTED_PASSWORD"
+from dotenv import load_dotenv
+
+# Automatically find the project root (folder containing .env)
+current = Path(__file__).resolve()
+for parent in current.parents:
+    if (parent / ".env").exists():
+        load_dotenv(parent / ".env")
+        break
+
+POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+MINIO_USERNAME = os.getenv("MINIO_USERNAME")
+MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
+
+DBL_USERNAME = os.getenv("DBL_USERNAME")
+DBL_PASSWORD = os.getenv("DBL_PASSWORD")
 
 class Ingestor:
     def __init__(self):
@@ -24,23 +43,27 @@ class Ingestor:
 
         # Passes Minio client connection on to the MinioUSXUpload class
         self.client = Minio(
-            "localhost:9900",
-            access_key="REDACTED_USERNAME",
-            secret_key="REDACTED_PASSWORD",
+            MINIO_ENDPOINT,
+            access_key=MINIO_USERNAME,
+            secret_key=MINIO_PASSWORD,
             secure=False
         )
 
         self.conn = psycopg2.connect(
-            host="REDACTED_IP",
-            port=5444,
-            dbname="postgres",
-            user="postgres",
-            password="REDACTED_PASSWORD"
+            host=POSTGRES_HOST,
+            port=POSTGRES_PORT,
+            dbname=POSTGRES_DB,
+            user=POSTGRES_USERNAME,
+            password=POSTGRES_PASSWORD
         )
 
         self.cur = self.conn.cursor()
 
         self.get_downloads()
+
+        self.conn.commit()
+        self.cur.close()
+        self.conn.close()
 
     def expand_all_folders(self, page):
         """
@@ -114,8 +137,8 @@ class Ingestor:
             if page.query_selector("input[name='email']"):
                 print("Need to log in")
                 # Fill in the username/email and password
-                page.fill("input[name='email']", USERNAME)
-                page.fill("input[name='password']", PASSWORD)
+                page.fill("input[name='email']", DBL_USERNAME)
+                page.fill("input[name='password']", DBL_PASSWORD)
                 page.click("button#rememberMe") # Try Remember me for 30 days, to prevent excessive logging and checking
 
                 # Click the login button

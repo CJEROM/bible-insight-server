@@ -1,12 +1,28 @@
 import psycopg2
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Automatically find the project root (folder containing .env)
+current = Path(__file__).resolve()
+for parent in current.parents:
+    if (parent / ".env").exists():
+        load_dotenv(parent / ".env")
+        break
+
+POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
 def init_database():
     conn = psycopg2.connect(
-        host="REDACTED_IP",
-        port=5444,
-        dbname="postgres",
-        user="postgres",
-        password="REDACTED_PASSWORD"
+        host=POSTGRES_HOST,
+        port=POSTGRES_PORT,
+        dbname=POSTGRES_DB,
+        user=POSTGRES_USERNAME,
+        password=POSTGRES_PASSWORD
     )
 
     cur = conn.cursor()

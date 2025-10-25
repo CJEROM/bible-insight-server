@@ -6,6 +6,23 @@ import psycopg2
 from ingestor.paragraph import Paragraph
 from ingestor.chapter import Chapter
 
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Automatically find the project root (folder containing .env)
+current = Path(__file__).resolve()
+for parent in current.parents:
+    if (parent / ".env").exists():
+        load_dotenv(parent / ".env")
+        break
+
+POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+
 class Book:
     def __init__(self, language_id, translation_id, revision, book_id, file_id, book_string, medium, short_name, long_name):
         self.language_id = language_id
@@ -21,11 +38,11 @@ class Book:
 
         # Adds a database connection
         self.conn = psycopg2.connect(
-            host="REDACTED_IP",
-            port=5444,
-            dbname="postgres",
-            user="postgres",
-            password="REDACTED_PASSWORD"
+            host=POSTGRES_HOST,
+            port=POSTGRES_PORT,
+            dbname=POSTGRES_DB,
+            user=POSTGRES_USERNAME,
+            password=POSTGRES_PASSWORD
         )
         self.cur = self.conn.cursor()
 
@@ -34,6 +51,8 @@ class Book:
         self.checkMedium()
 
         self.conn.commit()
+        self.cur.close()
+        self.conn.close()
 
     def checkMedium(self):
         if self.medium == "text":
