@@ -6,24 +6,7 @@ import re
 import json
 import psycopg2
 
-from ingestor.verse import Verse
-
-import os
-from dotenv import load_dotenv
-from pathlib import Path
-
-# Automatically find the project root (folder containing .env)
-current = Path(__file__).resolve()
-for parent in current.parents:
-    if (parent / ".env").exists():
-        load_dotenv(parent / ".env")
-        break
-
-POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+from verse import Verse
 
 # Spacy packages need to be installed, so need to account for storage space for these:
 # To Install a package run the following command:
@@ -117,50 +100,28 @@ language_code_map = {
 }
 
 class Chapter:
-    def __init__(self, language_id, translation_id, revision, book_id, file_id, medium, chapter_ref, db: DBManager, chapter_text):
+    def __init__(self, language_id, translation_id, book_map_id, file_id, chapter_ref, chapter_text, db_conn):
         self.language_id = language_id
         self.translation_id = translation_id
-        self.revision = revision
-        self.book_id = book_id
+        self.book_map_id = book_map_id
         self.file_id = file_id
-        self.medium = medium
         self.chapter_ref = chapter_ref
         self.chapter_xml = BeautifulSoup(chapter_text, "xml")
 
         # Adds a database connection
-        self.conn = psycopg2.connect(
-            host=POSTGRES_HOST,
-            port=POSTGRES_PORT,
-            dbname=POSTGRES_DB,
-            user=POSTGRES_USERNAME,
-            password=POSTGRES_PASSWORD
-        )
-
+        self.conn = db_conn
         self.cur = self.conn.cursor()
+        
+        # Create a Chapter Occurence if chapter id exists
+        self.cur.execute("""
+            INSERT INTO bible.chapteroccurences (chapter_ref, book_to_file_id) 
+            VALUES (%s, %s)
+        """, (self.chapter_ref, self.book_map_id))
 
-        self.chapter_id = self.getChapterID()
-
-        self.checkMedium()
+        self.createVerseOccurences()
+        self.createTokens()
 
         self.conn.commit()
-        self.cur.close()
-        self.conn.close()
-
-    def checkMedium(self):
-        if self.medium == "audio":
-            # Create a Chapter Occurence if chapter id exists
-            self.db.execute("""
-                INSERT INTO ChapterOccurences (chapter_id, chapter_file_id) 
-                VALUES (?, ?)
-            """, (self.chapter_id, self.file_id))
-        else:
-            # Create a Chapter Occurence if chapter id exists
-            self.db.execute("""
-                INSERT INTO ChapterOccurences (chapter_id, book_file_id) 
-                VALUES (?, ?)
-            """, (self.chapter_id, self.file_id))
-            self.createVerseOccurences()
-            self.createTokens()
 
     def createVerseOccurences(self):
         all_verses = self.chapter_xml.find_all("verse")
@@ -172,7 +133,8 @@ class Chapter:
         
     def getChapterID(self):
         # cursor.execute("""SELECT seq FROM sqlite_sequence WHERE name = "Translations" """)
-        chapter_id = self.db.execute("""SELECT id FROM Chapters WHERE chapter_ref=? """, (self.chapter_ref,)).fetchone()
+        self.cur.execute("""SELECT id FROM bible.chapters WHERE chapter_ref=? """, (self.chapter_ref,))
+        chapter_id = self.cur.fetchone()
 
         if chapter_id:
             return chapter_id[0]
@@ -180,15 +142,15 @@ class Chapter:
         return chapter_id
 
     def getParagraphStyle(self, para_style):
-        style_file_id = self.db.execute("""
-            SELECT id FROM Files WHERE translation_id=? AND type=?
+        style_file_id = self.cur.execute("""
+            SELECT id FROM bible.files WHERE translation_id=? AND type=?
         """, (self.translation_id, "styles")).fetchone()
 
         versetext = "false"
 
         if style_file_id != None:
             style = self.db.execute("""
-                SELECT versetext FROM Styles WHERE style_file_id=? AND style=?
+                SELECT versetext FROM Styles WHERE AND style=?
             """, (style_file_id[0], para_style)).fetchone()
             
             if style != None:
