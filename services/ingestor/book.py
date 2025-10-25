@@ -46,7 +46,7 @@ class Book:
         additions = 0
         # Grab all chapter_refs for this particular book
         self.cur.execute("""
-            SELECT chapter_ref FROM Chapters WHERE book_id=?
+            SELECT chapter_ref FROM bible.chapters WHERE book_id=?
         """, (self.book_code,))
         all_chapters = self.cur.fetchall()
 
