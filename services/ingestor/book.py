@@ -6,74 +6,49 @@ import psycopg2
 from ingestor.paragraph import Paragraph
 from ingestor.chapter import Chapter
 
-import os
-from dotenv import load_dotenv
-from pathlib import Path
-
-# Automatically find the project root (folder containing .env)
-current = Path(__file__).resolve()
-for parent in current.parents:
-    if (parent / ".env").exists():
-        load_dotenv(parent / ".env")
-        break
-
-POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
-
+# Changing since will only be relevant for text anyway
 class Book:
-    def __init__(self, language_id, translation_id, revision, book_id, file_id, book_string, medium, short_name, long_name):
+    def __init__(self, language_id, translation_id, book_map_id, file_id, book_string, db_conn):
         self.language_id = language_id
         self.translation_id = translation_id
-        self.revision = revision
-        self.book_id = book_id
+        self.book_map_id = book_map_id
         self.file_id = file_id
         self.book_xml = BeautifulSoup(book_string, "xml")
-        self.medium = medium
-
-        self.short_name = short_name
-        self.long_name = long_name
 
         # Adds a database connection
-        self.conn = psycopg2.connect(
-            host=POSTGRES_HOST,
-            port=POSTGRES_PORT,
-            dbname=POSTGRES_DB,
-            user=POSTGRES_USERNAME,
-            password=POSTGRES_PASSWORD
-        )
+        self.conn = db_conn
         self.cur = self.conn.cursor()
 
-        self.style_file_id = None
+        self.cur.execute("""
+            SELECT book_code FROM bible.booktofile WHERE id = %s;
+        """, (self.book_map_id,))
+        self.book_code = self.cur.fetchone()
 
-        self.checkMedium()
+        self.createParagraphs()
+        self.createTextChapters()
 
         self.conn.commit()
-        self.cur.close()
-        self.conn.close()
-
-    def checkMedium(self):
-        if self.medium == "text":
-            self.createParagraphs()
-            self.createTextChapters()
-        else:
-            return
     
     def createParagraphs(self):
+        additions = 0
         # Have to be created here since not all paragraphs fit inside a chapter
         all_paragraphs = self.book_xml.find_all("para")
 
         for para in all_paragraphs:
-            Paragraph(self.translation_id, self.file_id, para, self.db)
+            Paragraph(self.translation_id, self.file_id, para, self.conn)
+            additions += 1
+        
+        if additions > 0:
+            print(f"[{additions}] Paragraphs added to database")
 
     # Purpose is to split xml up into chapters, for token processing
     def createTextChapters(self):
+        additions = 0
         # Grab all chapter_refs for this particular book
-        all_chapters = self.db.execute("""
+        self.cur.execute("""
             SELECT chapter_ref FROM Chapters WHERE book_id=?
-        """, (self.book_id,)).fetchall()
+        """, (self.book_code,))
+        all_chapters = self.cur.fetchall()
 
         for chapter in all_chapters:
             chapter_ref = chapter[0]
@@ -94,15 +69,10 @@ class Book:
             chapter_text += chapter_found.group(0)
             chapter_text += "\n</usx>"
 
-            # log_path = f"/Users/cepherom/git/bibleSearchTool/logs/{chapter_ref.split(' ')[0]}/"
-            # log_file = f"{log_path}{chapter_ref}.xml"
-            # pathlib.Path(log_path).mkdir(parents=True, exist_ok=True)
-        
-            # # For logging purposes to monitor Chapter contents.
-            # with open(log_file, 'w') as f:
-            #     f.write(chapter_text)
-            #     f.write("\n\n")
-
             # Create Chapter Classes
-            Chapter(self.language_id, self.translation_id, self.revision, self.book_id, self.file_id, self.medium, chapter_ref, self.db, chapter_text)
+            Chapter(self.language_id, self.translation_id, self.book_id, self.file_id, self.medium, chapter_ref, self.db, chapter_text)
+            additions += 1
+        
+        if additions > 0:
+            print(f"[{additions}] Chapters added for {self.book_code}")
    
