@@ -144,7 +144,7 @@ class Chapter:
         for verse in all_verses:
             verse_ref = verse.get("sid")
             if verse_ref:
-                Verse(self.db, self.chapter_xml, verse_ref, self.file_id)
+                Verse(self.chapter_xml, verse_ref, self.chapter_occurence_id, self.conn)
 
     # ================================================================================================================= TOKENIZATION LOGIC =================================================================================================================
 

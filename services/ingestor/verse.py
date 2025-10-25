@@ -2,13 +2,13 @@ from bs4 import BeautifulSoup, Tag, NavigableString
 import re
 
 class Verse:
-    def __init__(self, chapter_xml, verse_ref, book_file_id, db_conn):
+    def __init__(self, chapter_xml, verse_ref, chapter_occurence_id, db_conn):
         # Adds a database connection
         self.conn = db_conn
         self.cur = self.conn.cursor()
 
         self.chapter_xml = chapter_xml
-        self.book_file_id = book_file_id
+        self.chapter_occurence_id = chapter_occurence_id
         self.verse_ref = verse_ref
 
         self.xml = None
@@ -22,10 +22,10 @@ class Verse:
         self.getVerseAndNoteXML()
         self.getVerseText()
 
-        self.db.execute("""
-            INSERT INTO VerseOccurences (verse_ref, book_file_id, xml_snippet, versetext) 
-            VALUES (?, ?, ?, ?)
-        """, (self.verse_ref, self.book_file_id, str(self.xml), self.text))
+        self.cur.execute("""
+            INSERT INTO bible.verseoccurences (chapter_occ_id, verse_ref, text, xml) 
+            VALUES (%s, %s, %s, %s)
+        """, (self.chapter_occurence_id, self.verse_ref, self.text, str(self.xml)))
 
     def getVerseAndNoteXML(self):
         # Regex to get everything between opening and closing paragraph tag
@@ -53,13 +53,14 @@ class Verse:
             para_style = para.get("style")
 
             if para_style != None:
-                result = self.db.execute("""
-                    SELECT versetext FROM Styles WHERE style=?
-                """, (para_style,)).fetchone()
+                self.db.execute("""
+                    SELECT versetext FROM bible.styles WHERE style=%s
+                """, (para_style,))
+                result = self.cur.fetchone()
 
                 is_versetext = result[0] if result else None
 
-                if str(is_versetext) != "true":
+                if str(is_versetext) != True:
                     para.decompose()
 
                 # Remove <note> tags completely
