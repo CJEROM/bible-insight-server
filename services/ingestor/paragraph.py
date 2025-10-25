@@ -89,17 +89,8 @@ class Paragraph:
         
         if verse_tag != None:
             verse_ref = verse_tag.get("eid") if verse_tag.get("eid") else verse_tag.get("sid")
-
-        if verse_tag != None:
-            self.cur.execute("""
-                SELECT id FROM Verses WHERE verse_ref=%s
-            """, (verse_ref,))
-            verse_id = self.cur.fetchone()
-
-        if verse_id != None:
-            return verse_id[0]
         
-        return verse_id
+        return verse_ref
 
     def createStrongs(self):
         # Get all strongs inside this paragraph
@@ -119,18 +110,9 @@ class Paragraph:
                 # check what language the code belongs to 
                 language_id = None
                 if strong_code[0:1] == "G": # Greek
-                    self.cur.execute("""
-                        SELECT id FROM bible.languages WHERE name=%s
-                    """, ("Greek",))
-                    language_id = self.cur.fetchone()
+                    language_id = 4
                 elif strong_code[0:1] == "H": # Hebrew
-                    self.cur.execute("""
-                        SELECT id FROM bible.languages WHERE name=%s
-                    """, ("Hebrew",))
-                    language_id = self.cur.fetchone()
-
-                if language_id != None:
-                    language_id = language_id[0]
+                    language_id = 2
 
                 self.cur.execute("""
                     INSERT OR IGNORE INTO bible.strongs (code, language_id) 
@@ -138,19 +120,6 @@ class Paragraph:
                 """, (strong_code, language_id))
 
             self.cur.execute("""
-                INSERT OR IGNORE INTO bible.strongsoccurence (content, -, paragraph_id, verse_id, strong_code) 
+                INSERT OR IGNORE INTO bible.strongsoccurence (verse_ref, translation_id, text, xml, strong_code) 
                 VALUES (%s, %s, %s, %s, %s)
-            """, (strong_occurence.get_text(), self.book_file_id, self.paragraph_id, self.getVerseForStrongs(strong_occurence), strong_code))
-
-            self.cur.execute("""
-                INSERT OR IGNORE INTO bible.occurences (text, type, verse_occ_id, start_char, end_char, paragraph_id, strong_code) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (occurence_id, strong_code))
-            self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.occurences",))
-            occurence_id = self.cur.fetchone()
-
-            # Create strongs occurence linked to strongs
-            self.cur.execute("""
-                INSERT OR IGNORE INTO bible.strongsoccurence (occurence_id, strong_code) 
-                VALUES (%s, %s, %s, %s, %s)
-            """, (occurence_id, strong_code))
+            """, (self.getVerseForStrongs(strong_occurence), self.translation_id, strong_occurence.get_text(), strong_occurence, strong_code))

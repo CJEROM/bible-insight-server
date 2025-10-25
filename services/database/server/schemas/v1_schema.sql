@@ -291,6 +291,19 @@ CREATE TABLE IF NOT EXISTS bible.strongs (
     FOREIGN KEY (language_id) REFERENCES bible.languages (id)
 );
 
+-- DROP TABLE IF EXISTS bible.strongsoccurence;
+CREATE TABLE IF NOT EXISTS bible.strongsoccurence (
+    id              SERIAL PRIMARY KEY,
+    verse_ref       TEXT,
+    translation_id  INT,
+    text            TEXT,
+    xml             TEXT,
+    strong_code     TEXT,
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id),
+    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref),
+    FOREIGN KEY (strong_code) REFERENCES bible.strongs (code)
+);
+
 -- DROP TABLE IF EXISTS bible.entities;
 CREATE TABLE IF NOT EXISTS bible.entities (
     id              SERIAL PRIMARY KEY
@@ -333,17 +346,6 @@ CREATE TABLE IF NOT EXISTS bible.entityoccurence (
 	occurence_id	INT,
 	FOREIGN KEY (entity_id) REFERENCES bible.entities (id),
 	FOREIGN KEY (occurence_id) REFERENCES bible.occurences (id)
-);
-
--- DROP TABLE IF EXISTS bible.strongsoccurence;
-CREATE TABLE IF NOT EXISTS bible.strongsoccurence (
-    id              SERIAL PRIMARY KEY,
-    verse_ref       TEXT,
-    translation_id  TEXT,
-    strong_code     TEXT,
-    FOREIGN KEY (translation_id) REFERENCES bible.translations (id),
-    FOREIGN KEY (verse_ref) REFERENCES bible.verses (id),
-    FOREIGN KEY (strong_code) REFERENCES bible.strongs (code)
 );
 
 -- ================================================== [] ==================================================
