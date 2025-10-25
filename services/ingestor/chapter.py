@@ -101,11 +101,10 @@ language_code_map = {
 }
 
 class Chapter:
-    def __init__(self, language_id, translation_id, book_map_id, file_id, chapter_ref, chapter_text, db_conn):
+    def __init__(self, language_id, translation_id, book_map_id, chapter_ref, chapter_text, db_conn):
         self.language_id = language_id
         self.translation_id = translation_id
         self.book_map_id = book_map_id
-        self.file_id = file_id
         self.chapter_ref = chapter_ref
         self.chapter_xml = BeautifulSoup(chapter_text, "xml")
 
@@ -123,21 +122,21 @@ class Chapter:
 
         self.createParagraphs()
         self.createVerseOccurences()
-        self.createTokens()
+        # self.createTokens()
 
         self.conn.commit()
 
     def createParagraphs(self):
         additions = 0
         # Have to be created here since not all paragraphs fit inside a chapter
-        all_paragraphs = self.book_xml.find_all("para")
+        all_paragraphs = self.chapter_xml.find_all("para")
 
         for para in all_paragraphs:
             Paragraph(self.translation_id, self.chapter_occurence_id, para, self.conn)
             additions += 1
         
         if additions > 0:
-            print(f"[{additions}] Paragraphs added to database")
+            print(f"    [{additions}] Paragraphs added to database")
 
     def createVerseOccurences(self):
         all_verses = self.chapter_xml.find_all("verse")
@@ -146,16 +145,8 @@ class Chapter:
             verse_ref = verse.get("sid")
             if verse_ref:
                 Verse(self.db, self.chapter_xml, verse_ref, self.file_id)
-        
-    def getChapterID(self):
-        # cursor.execute("""SELECT seq FROM sqlite_sequence WHERE name = "Translations" """)
-        self.cur.execute("""SELECT id FROM bible.chapters WHERE chapter_ref=? """, (self.chapter_ref,))
-        chapter_id = self.cur.fetchone()
 
-        if chapter_id:
-            return chapter_id[0]
-        
-        return chapter_id
+    # ================================================================================================================= TOKENIZATION LOGIC =================================================================================================================
 
     def getParagraphStyle(self, para_style):
         style_file_id = self.cur.execute("""

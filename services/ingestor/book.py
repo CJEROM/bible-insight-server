@@ -58,7 +58,7 @@ class Book:
             chapter_text += "\n</usx>"
 
             # Create Chapter Classes
-            # Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, self.db, chapter_text)
+            Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, chapter_text, self.conn)
             additions += 1
         
         if additions > 0:
