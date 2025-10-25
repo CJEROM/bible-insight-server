@@ -189,12 +189,12 @@ CREATE TABLE IF NOT EXISTS Chapters (
 
 -- DROP TABLE IF EXISTS ChapterOccurences;
 CREATE TABLE IF NOT EXISTS ChapterOccurences (
+    id                      SERIAL PRIMARY KEY,
     chapter_ref             TEXT,
     file_id            		INT,
-    book_to_file_id         INT,
-	PRIMARY KEY (chapter_ref, file_id),
+    book_map_id             INT,
     FOREIGN KEY (chapter_ref) REFERENCES Chapters (chapter_ref),
-    FOREIGN KEY (book_to_file_id) REFERENCES BookToFile (id),
+    FOREIGN KEY (book_map_id) REFERENCES BookToFile (id),
     FOREIGN KEY (file_id) REFERENCES Files (id) ON DELETE CASCADE
 );
 
@@ -205,15 +205,13 @@ CREATE TABLE IF NOT EXISTS ChapterOccurences (
 -- DROP TABLE IF EXISTS Paragraphs;
 CREATE TABLE IF NOT EXISTS Paragraphs (
     id              SERIAL PRIMARY KEY,
-    book_file_id    INT,
-    chapter_id      INTEGER,
+    chapter_occ_id  INTEGER,
     style_id        INTEGER,
     parent_para     INTEGER,
     xml             XML,
-    versetext       TEXT,
+    versetext       BOOLEAN,
     FOREIGN KEY (parent_para) REFERENCES Paragraphs (id),
-    FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE,
-    FOREIGN KEY (chapter_id) REFERENCES Chapters (id),
+    FOREIGN KEY (chapter_occ_id) REFERENCES ChapterOccurences (id),
     FOREIGN KEY (style_id) REFERENCES Styles(id)
 );
 
@@ -227,19 +225,19 @@ CREATE TABLE IF NOT EXISTS Verses (
 
 -- DROP TABLE IF EXISTS VerseOccurences;
 CREATE TABLE IF NOT EXISTS VerseOccurences (
+    id              SERIAL PRIMARY KEY,
+    chapter_occ_id  INT,
     verse_ref       TEXT,
-    book_file_id    INT,
     text	       	TEXT,
-	PRIMARY KEY (verse_ref, book_file_id),
     FOREIGN KEY (verse_ref) REFERENCES Verses (verse_ref),
-    FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE
+    FOREIGN KEY (chapter_occ_id) REFERENCES ChapterOccurences (id)
 );
 
 -- DROP TABLE IF EXISTS VersesToParagraphs;
 CREATE TABLE IF NOT EXISTS VersesToParagraphs (
+    id              SERIAL PRIMARY KEY,
     verse_ref       INTEGER,
     paragraph_id    INTEGER,
-    PRIMARY KEY (verse_ref, paragraph_id),
     FOREIGN KEY (verse_ref) REFERENCES Verses (id),
     FOREIGN KEY (paragraph_id) REFERENCES Paragraphs (id)
 );
@@ -303,13 +301,12 @@ CREATE TABLE IF NOT EXISTS Occurences (
 	id                  SERIAL PRIMARY KEY,
 	text				TEXT,
 	type				TEXT, -- [quote, enitity, location]
-	book_file_id		INT,
-	verse_ref			TEXT,
+	verse_occ_id	    INT,
 	start_char			INT, -- Relative to Verse (for search)
 	end_char			INT, -- Relative to Verse (for search)
 	paragraph_id		INT,
-	FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE,
-	FOREIGN KEY (verse_ref, book_file_id) REFERENCES VerseOccurences (verse_ref, book_file_id),
+	FOREIGN KEY (book_map_id) REFERENCES chapter_occ_id (id) ON DELETE CASCADE,
+	FOREIGN KEY (verse_occ_id) REFERENCES VerseOccurences (id),
 	FOREIGN KEY (paragraph_id) REFERENCES Paragraphs (id)
 );
 
@@ -398,11 +395,11 @@ CREATE TABLE IF NOT EXISTS NoteRelationships (
 -- DROP TABLE IF EXISTS UserHighlightsAnchors;
 CREATE TABLE IF NOT EXISTS UserHighlightsAnchors (
     id              SERIAL PRIMARY KEY,
-    book_file_id    INT,
-    verse_ref       TEXT, 
+    book_map_id     INT,
+    verse_occ_id    TEXT, 
 	start_char		INT,
 	end_char		INT,
-	FOREIGN KEY (verse_ref, book_file_id) REFERENCES VerseOccurences (verse_ref, book_file_id)
+	FOREIGN KEY (verse_occ_id) REFERENCES VerseOccurences (id)
 );
 
 -- DROP TABLE IF EXISTS UserHighlights;
@@ -419,10 +416,10 @@ CREATE TABLE IF NOT EXISTS UserHighlights (
 CREATE TABLE IF NOT EXISTS ReadHistory (
     history_id              SERIAL PRIMARY KEY,
     date_time               TEXT DEFAULT CURRENT_TIMESTAMP,
-    book_file_id            INT,
+    book_map_id            INT,
     scripture_reference     TEXT,
 	user_id					INT,
-    FOREIGN KEY (book_file_id) REFERENCES Files (id) ON DELETE CASCADE,
+    FOREIGN KEY (book_map_id) REFERENCES BookToFile (id) ON DELETE CASCADE,
 	FOREIGN KEY (user_id) REFERENCES Users (id)
 );
 
