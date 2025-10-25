@@ -6,6 +6,7 @@ import re
 import json
 import psycopg2
 
+from paragraph import Paragraph
 from verse import Verse
 
 # Spacy packages need to be installed, so need to account for storage space for these:
@@ -112,16 +113,31 @@ class Chapter:
         self.conn = db_conn
         self.cur = self.conn.cursor()
         
-        # Create a Chapter Occurence if chapter id exists
+        # Create a Chapter Occurence
         self.cur.execute("""
             INSERT INTO bible.chapteroccurences (chapter_ref, book_to_file_id) 
             VALUES (%s, %s)
         """, (self.chapter_ref, self.book_map_id))
+        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))
+        self.chapter_occurence_id = self.cur.fetchone()[0]
 
+        self.createParagraphs()
         self.createVerseOccurences()
         self.createTokens()
 
         self.conn.commit()
+
+    def createParagraphs(self):
+        additions = 0
+        # Have to be created here since not all paragraphs fit inside a chapter
+        all_paragraphs = self.book_xml.find_all("para")
+
+        for para in all_paragraphs:
+            Paragraph(self.translation_id, self.chapter_occurence_id, para, self.conn)
+            additions += 1
+        
+        if additions > 0:
+            print(f"[{additions}] Paragraphs added to database")
 
     def createVerseOccurences(self):
         all_verses = self.chapter_xml.find_all("verse")

@@ -2,9 +2,9 @@ import psycopg2
 from bs4 import BeautifulSoup
 
 class Paragraph:
-    def __init__(self, translation_id, book_map_id, para_xml, db_conn):
+    def __init__(self, translation_id, chapter_occurence_id, para_xml, db_conn):
         self.translation_id = translation_id
-        self.book_map_id = book_map_id
+        self.chapter_occurence_id = chapter_occurence_id
         self.para_xml = para_xml
 
         # Adds a database connection
@@ -24,7 +24,7 @@ class Paragraph:
         para_style = self.para_xml.get("style")
 
         style_id = None
-        versetext = "false"
+        versetext = False
 
         self.cur.execute("""
             SELECT id, versetext FROM bible.styles WHERE style=%s
@@ -63,21 +63,11 @@ class Paragraph:
         return verse_text_content
         
     def createParagraph(self):
-        chapter_ref = self.para_xml.find_next_sibling("chapter").get("eid")
 
         self.cur.execute("""
-            SELECT id FROM bible.chapters WHERE chapter_ref=%s
-        """, (chapter_ref,))
-
-        chapter_id = self.cur.fetchone()
-
-        if chapter_id:
-            chapter_id = chapter_id[0]
-
-        self.cur.execute("""
-            INSERT INTO Paragraphs (book_file_id, chapter_id, style_id, parent_para, xml, versetext) 
+            INSERT INTO Paragraphs (chapter_occ_id, style_id, parent_para, xml, versetext) 
             VALUES (%s, %s, %s, %s, %s, %s)
-        """, (self.book_file_id, chapter_id, self.style_id, None, str(self.para_xml), self.getParaText()))
+        """, (self.chapter_occurence_id, self.style_id, None, str(self.para_xml), self.getParaText()))
         self.cur.execute("""SELECT seq FROM sqlite_sequence WHERE name=? """, ("Paragraphs",))
         self.paragraph_id = self.cur.fetchone()[0]
 

@@ -3,7 +3,7 @@ import pathlib
 import re
 
 import psycopg2
-from paragraph import Paragraph
+
 from chapter import Chapter
 
 # Changing since will only be relevant for text anyway
@@ -28,18 +28,6 @@ class Book:
         self.createTextChapters()
 
         self.conn.commit()
-    
-    def createParagraphs(self):
-        additions = 0
-        # Have to be created here since not all paragraphs fit inside a chapter
-        all_paragraphs = self.book_xml.find_all("para")
-
-        for para in all_paragraphs:
-            Paragraph(self.translation_id, self.book_map_id, para, self.conn)
-            additions += 1
-        
-        if additions > 0:
-            print(f"[{additions}] Paragraphs added to database")
 
     # Purpose is to split xml up into chapters, for token processing
     def createTextChapters(self):
