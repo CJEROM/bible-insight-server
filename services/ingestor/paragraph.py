@@ -1,37 +1,14 @@
 import psycopg2
 from bs4 import BeautifulSoup
-    
-import os
-from dotenv import load_dotenv
-from pathlib import Path
-
-# Automatically find the project root (folder containing .env)
-current = Path(__file__).resolve()
-for parent in current.parents:
-    if (parent / ".env").exists():
-        load_dotenv(parent / ".env")
-        break
-
-POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
 class Paragraph:
-    def __init__(self, translation_id, book_file_id, para_xml):
+    def __init__(self, translation_id, book_map_id, para_xml, db_conn):
         self.translation_id = translation_id
-        self.book_file_id = book_file_id
+        self.book_map_id = book_map_id
         self.para_xml = para_xml
 
         # Adds a database connection
-        self.conn = psycopg2.connect(
-            host=POSTGRES_HOST,
-            port=POSTGRES_PORT,
-            dbname=POSTGRES_DB,
-            user=POSTGRES_USERNAME,
-            password=POSTGRES_PASSWORD
-        )
+        self.conn = db_conn
         self.cur = self.conn.cursor()
 
         self.paragraph_id = None
@@ -42,27 +19,21 @@ class Paragraph:
         self.linkVerses()
 
         self.conn.commit()
-        self.cur.close()
-        self.conn.close()
 
     def getParagraphStyle(self):
         para_style = self.para_xml.get("style")
 
-        style_file_id = self.db.execute("""
-            SELECT id FROM Files WHERE translation_id=? AND type=?
-        """, (self.translation_id, "styles")).fetchone()
-
         style_id = None
         versetext = "false"
 
-        if style_file_id != None:
-            style = self.db.execute("""
-                SELECT id, versetext FROM Styles WHERE style_file_id=? AND style=?
-            """, (style_file_id[0], para_style)).fetchone()
-            
-            if style != None:
-                style_id =  style[0]
-                versetext = style[1]
+        self.cur.execute("""
+            SELECT id, versetext FROM bible.styles WHERE style=%s
+        """, (para_style,))
+        style = self.cur.fetchone()
+        
+        if style != None:
+            style_id = style[0]
+            versetext = style[1]
 
         return style_id, versetext
     
@@ -72,7 +43,7 @@ class Paragraph:
         # Add all verses mappings (due to unique constraint wont add duplicates)
         for verse in all_verses:
             verse_ref = verse.get("sid") if verse.get("sid") != None else verse.get("eid")
-            self.db.execute("""
+            self.cur.execute("""
                 INSERT OR IGNORE INTO VersesToParagraphs (verse_ref, paragraph_id) 
                 VALUES (?, ?)
             """, (verse_ref, self.paragraph_id))
@@ -80,7 +51,7 @@ class Paragraph:
     def getParaText(self):
         verse_text_content = ""
 
-        if self.versetext == "true":
+        if self.versetext:
             # Creates a copy instead of reference, so when we remove note tags, it doesn't remove them from original xml
             temp_para_xml = BeautifulSoup(str(self.para_xml), "xml")
             # Remove <note> tags completely
@@ -94,18 +65,21 @@ class Paragraph:
     def createParagraph(self):
         chapter_ref = self.para_xml.find_next_sibling("chapter").get("eid")
 
-        chapter_id = self.db.execute("""
-            SELECT id FROM Chapters WHERE chapter_ref=?
-        """, (chapter_ref,)).fetchone()
+        self.cur.execute("""
+            SELECT id FROM bible.chapters WHERE chapter_ref=%s
+        """, (chapter_ref,))
+
+        chapter_id = self.cur.fetchone()
 
         if chapter_id:
             chapter_id = chapter_id[0]
 
-        self.db.execute("""
-            INSERT OR IGNORE INTO Paragraphs (book_file_id, chapter_id, style_id, parent_para, xml, versetext) 
-            VALUES (?, ?, ?, ?, ?, ?)
+        self.cur.execute("""
+            INSERT INTO Paragraphs (book_file_id, chapter_id, style_id, parent_para, xml, versetext) 
+            VALUES (%s, %s, %s, %s, %s, %s)
         """, (self.book_file_id, chapter_id, self.style_id, None, str(self.para_xml), self.getParaText()))
-        self.paragraph_id = self.db.execute("""SELECT seq FROM sqlite_sequence WHERE name=? """, ("Paragraphs",)).fetchone()[0]
+        self.cur.execute("""SELECT seq FROM sqlite_sequence WHERE name=? """, ("Paragraphs",))
+        self.paragraph_id = self.cur.fetchone()[0]
 
     def getVerseForStrongs(self, strong_xml):
         verse_ref = None
@@ -117,9 +91,10 @@ class Paragraph:
             verse_ref = verse_tag.get("eid") if verse_tag.get("eid") else verse_tag.get("sid")
 
         if verse_tag != None:
-            verse_id = self.db.execute("""
-                SELECT id FROM Verses WHERE verse_ref=?
-            """, (verse_ref,)).fetchone()
+            self.cur.execute("""
+                SELECT id FROM Verses WHERE verse_ref=%s
+            """, (verse_ref,))
+            verse_id = self.cur.fetchone()
 
         if verse_id != None:
             return verse_id[0]
@@ -135,32 +110,35 @@ class Paragraph:
             strong_code = strong_occurence.get("strong")
 
             # Write any new unique strongs that haven't been added to database yet
-            strong_id = self.db.execute("""
-                SELECT id FROM Strongs WHERE code=?
-            """, (strong_code,)).fetchone()
+            self.cur.execute("""
+                SELECT id FROM bible.strongs WHERE code=%s
+            """, (strong_code,))
+            strong_id = self.cur.fetchone()
 
             if strong_id == None:
                 # check what language the code belongs to 
                 language_id = None
                 if strong_code[0:1] == "G": # Greek
-                    language_id = self.db.execute("""
-                        SELECT id FROM Languages WHERE name=?
-                    """, ("Greek",)).fetchone()
+                    self.cur.execute("""
+                        SELECT id FROM bible.languages WHERE name=%s
+                    """, ("Greek",))
+                    language_id = self.cur.fetchone()
                 elif strong_code[0:1] == "H": # Hebrew
-                    language_id = self.db.execute("""
-                        SELECT id FROM Languages WHERE name=?
-                    """, ("Hebrew",)).fetchone()
+                    self.cur.execute("""
+                        SELECT id FROM bible.languages WHERE name=%s
+                    """, ("Hebrew",))
+                    language_id = self.cur.fetchone()
 
                 if language_id != None:
                     language_id = language_id[0]
 
-                self.db.execute("""
-                    INSERT OR IGNORE INTO Strongs (code, language_id) 
-                    VALUES (?, ?)
+                self.cur.execute("""
+                    INSERT OR IGNORE INTO bible.strongs (code, language_id) 
+                    VALUES (%s, %s)
                 """, (strong_code, language_id))
 
             # Create strongs occurence linked to strongs
-            self.db.execute("""
-                INSERT OR IGNORE INTO StrongsOccurence (content, book_file_id, paragraph_id, verse_id, strong_code) 
-                VALUES (?, ?, ?, ?, ?)
+            self.cur.execute("""
+                INSERT OR IGNORE INTO bible.strongsoccurence (content, -, paragraph_id, verse_id, strong_code) 
+                VALUES (%s, %s, %s, %s, %s)
             """, (strong_occurence.get_text(), self.book_file_id, self.paragraph_id, self.getVerseForStrongs(strong_occurence), strong_code))
