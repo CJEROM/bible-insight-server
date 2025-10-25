@@ -35,7 +35,7 @@ class Book:
         all_paragraphs = self.book_xml.find_all("para")
 
         for para in all_paragraphs:
-            # Paragraph(self.translation_id, self.book_map_id, para, self.conn)
+            Paragraph(self.translation_id, self.book_map_id, para, self.conn)
             additions += 1
         
         if additions > 0:
