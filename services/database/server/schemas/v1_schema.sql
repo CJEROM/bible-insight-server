@@ -191,8 +191,10 @@ CREATE TABLE IF NOT EXISTS Chapters (
 CREATE TABLE IF NOT EXISTS ChapterOccurences (
     chapter_ref             TEXT,
     file_id            		INT,
+    book_to_file_id         INT,
 	PRIMARY KEY (chapter_ref, file_id),
     FOREIGN KEY (chapter_ref) REFERENCES Chapters (chapter_ref),
+    FOREIGN KEY (book_to_file_id) REFERENCES BookToFile (id),
     FOREIGN KEY (file_id) REFERENCES Files (id) ON DELETE CASCADE
 );
 
