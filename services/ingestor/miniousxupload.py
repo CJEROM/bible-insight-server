@@ -217,7 +217,8 @@ class MinioUSXUpload:
                 metadata_file = %s,
                 license_file = %s,
                 ldml_file = %s,
-                versification_file = %s
+                versification_file = %s,
+                style_file = %s
             WHERE id = %s;        
         """, (
             self.revision, 
@@ -226,11 +227,9 @@ class MinioUSXUpload:
             self.get_support_files(file_location, object_start, "license.xml", "application/xml"),
             ldml_file_id,
             self.get_support_files(file_location, object_start, "release/versification.vrs", "application/xml"),
+            self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml"),
             self.translation_id
         ))
-
-        # Extra file to upload but not link - Consider excluding when creating standard style for all bible translation reading
-        self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml")
 
         self.conn.commit() # Commit all changes to database
 

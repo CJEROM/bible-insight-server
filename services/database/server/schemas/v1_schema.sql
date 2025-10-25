@@ -108,12 +108,14 @@ CREATE TABLE IF NOT EXISTS bible.translations (
     metadata_file       INT,
     ldml_file           INT,
     versification_file  INT,
+    style_file          INT,
 	UNIQUE(dbl_id, agreement_id, revision),
 	FOREIGN KEY (dbl_id) REFERENCES bible.translationinfo (dbl_id),
     FOREIGN KEY (license_file) REFERENCES bible.files (id),
     FOREIGN KEY (metadata_file) REFERENCES bible.files (id),
     FOREIGN KEY (ldml_file) REFERENCES bible.files (id),
-    FOREIGN KEY (versification_file) REFERENCES bible.files (id)
+    FOREIGN KEY (versification_file) REFERENCES bible.files (id),
+    FOREIGN KEY (style_file) REFERENCES bible.files (id)
 );
 
 -- DROP TABLE IF EXISTS bible.translationrelationships;
