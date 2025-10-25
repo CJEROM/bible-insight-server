@@ -231,6 +231,7 @@ CREATE TABLE IF NOT EXISTS bible.verseoccurences (
     chapter_occ_id  INT,
     verse_ref       TEXT,
     text	       	TEXT,
+    xml             TEXT,
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref),
     FOREIGN KEY (chapter_occ_id) REFERENCES bible.chapteroccurences (id)
 );
