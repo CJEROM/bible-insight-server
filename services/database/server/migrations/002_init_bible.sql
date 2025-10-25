@@ -1,5 +1,5 @@
 
-INSERT INTO Books (code, total_chapters) VALUES
+INSERT INTO bible.books (code, total_chapters) VALUES
     ('GEN', 50),
     ('EXO', 40),
     ('LEV', 27),
@@ -76,7 +76,7 @@ INSERT INTO Books (code, total_chapters) VALUES
 
     ('REV', 22);
 
-INSERT INTO Chapters (id, book_code, chapter_num, chapter_ref) VALUES
+INSERT INTO bible.chapters (id, book_code, chapter_num, chapter_ref) VALUES
    -- GEN (50 chapters)
    (1, 'GEN', 1, 'GEN 1'), (2, 'GEN', 2, 'GEN 2'), (3, 'GEN', 3, 'GEN 3'), (4, 'GEN', 4, 'GEN 4'), (5, 'GEN', 5, 'GEN 5'),
    (6, 'GEN', 6, 'GEN 6'), (7, 'GEN', 7, 'GEN 7'), (8, 'GEN', 8, 'GEN 8'), (9, 'GEN', 9, 'GEN 9'), (10, 'GEN', 10, 'GEN 10'),
@@ -475,7 +475,7 @@ INSERT INTO Chapters (id, book_code, chapter_num, chapter_ref) VALUES
    (1183, 'REV', 16, 'REV 16'), (1184, 'REV', 17, 'REV 17'), (1185, 'REV', 18, 'REV 18'), (1186, 'REV', 19, 'REV 19'), (1187, 'REV', 20, 'REV 20'),
    (1188, 'REV', 21, 'REV 21'), (1189, 'REV', 22, 'REV 22');
 
-INSERT INTO BookGroups (testament, level) VALUES 
+INSERT INTO bible.bookgroups (testament, level) VALUES 
     (TRUE, 1), -- ID = 1, New Testament
     (TRUE, 1), -- ID = 2, Old Testament
     (FALSE, 2), -- ID = 3, Pentateuch
@@ -490,7 +490,7 @@ INSERT INTO BookGroups (testament, level) VALUES
     (FALSE, 2), -- ID = 12, General Epistles
     (FALSE, 2); -- ID = 13, Prophecy
 
-INSERT INTO BookGroupNames (book_group_id, language_id, name) VALUES 
+INSERT INTO bible.bookgroupnames (book_group_id, language_id, name) VALUES 
     (1, 1, 'Old Testament'),
     (2, 1, 'New Testament'),
     (3, 1, 'Pentateuch'),
@@ -507,7 +507,7 @@ INSERT INTO BookGroupNames (book_group_id, language_id, name) VALUES
     (12, 1, 'General Epistles'),
     (13, 1, 'Prophecy');
 
-INSERT INTO BookToGroup (book_id, book_group_id) VALUES 
+INSERT INTO bible.booktogroup (book_id, book_group_id) VALUES 
 -- Old Testament
     (1, 1),
     (2, 1),

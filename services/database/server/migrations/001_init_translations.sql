@@ -1,9 +1,9 @@
-INSERT INTO ReadHistory (scripture_reference) VALUES 
+INSERT INTO bible.readhistory (scripture_reference) VALUES 
     ('GEN 1:1');
 
-INSERT INTO Languages (iso, name, nameLocal, scriptDirection) VALUES ('eng', 'English', 'English', 'LTR');
+INSERT INTO bible.languages (iso, name, nameLocal, scriptDirection) VALUES ('eng', 'English', 'English', 'LTR');
 
-INSERT INTO DBLAgreements (id, copyright, promotion, active, expiry, enabled) VALUES
+INSERT INTO bible.dblagreements (id, copyright, promotion, active, expiry, enabled) VALUES
     (240017, 'PUBLIC DOMAIN', 'This public domain Bible translation is brought to you courtesy of eBible.org.', '2015-12-15', '9999-12-31', True),
     (240018, 'PUBLIC DOMAIN. "World Messianic Bible" is a trademark.', 'This public domain Bible translation text is brought to you courtesy of eBible.org.', '2015-12-15', '9999-12-31', True),
     (252280, '© 2014 Dr. Paul W. Esposito', 'Translated by Dr. Paul W. Esposito.', '2020-04-05', '9999-12-31', True),
@@ -38,7 +38,7 @@ INSERT INTO DBLAgreements (id, copyright, promotion, active, expiry, enabled) VA
     (250819, 'PUBLIC DOMAIN PUBLIC DOMAIN', 'This Public Domain text is brought to you by eBible.org.', '2020-01-21', '9999-12-31', True),
     (259032, 'Public Domain', 'This Public Domain Bible text is brought to you courtesy of eBible.org.', '2021-05-25', '9999-12-31', True);
 
-INSERT INTO DBLInfo (dbl_id, agreement_id) VALUES
+INSERT INTO bible.dbl_id (dbl_id, agreement_id) VALUES
     ('65eec8e0b60e656b', 246069), -- FBV | text | Free Bible Version
     ('de4e12af7f28f599', 245514), -- KJV | text | King James (Authorised) Version
     ('55212e3cf5d04d49', 253126), -- KJVCPB | text | Cambridge Paragraph Bible of the KJV
