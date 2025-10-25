@@ -8,7 +8,7 @@ import shutil
 import re
 import time
 
-from ingestor.book import Book
+from book import Book
 
 from dotenv import load_dotenv
 
