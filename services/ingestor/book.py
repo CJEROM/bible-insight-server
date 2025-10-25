@@ -3,8 +3,8 @@ import pathlib
 import re
 
 import psycopg2
-from ingestor.paragraph import Paragraph
-from ingestor.chapter import Chapter
+from paragraph import Paragraph
+from chapter import Chapter
 
 # Changing since will only be relevant for text anyway
 class Book:
@@ -35,7 +35,7 @@ class Book:
         all_paragraphs = self.book_xml.find_all("para")
 
         for para in all_paragraphs:
-            Paragraph(self.translation_id, self.file_id, para, self.conn)
+            # Paragraph(self.translation_id, self.book_map_id, para, self.conn)
             additions += 1
         
         if additions > 0:
@@ -46,7 +46,7 @@ class Book:
         additions = 0
         # Grab all chapter_refs for this particular book
         self.cur.execute("""
-            SELECT chapter_ref FROM bible.chapters WHERE book_id=?
+            SELECT chapter_ref FROM bible.chapters WHERE book_id=%s
         """, (self.book_code,))
         all_chapters = self.cur.fetchall()
 
@@ -70,7 +70,7 @@ class Book:
             chapter_text += "\n</usx>"
 
             # Create Chapter Classes
-            Chapter(self.language_id, self.translation_id, self.book_id, self.file_id, self.medium, chapter_ref, self.db, chapter_text)
+            # Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, self.db, chapter_text)
             additions += 1
         
         if additions > 0:
