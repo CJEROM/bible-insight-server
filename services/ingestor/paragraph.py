@@ -82,6 +82,7 @@ class Paragraph:
         return verse_ref
 
     def createStrongs(self):
+        additions = 0
         # Get all strongs inside this paragraph
         all_strongs_occurences = self.para_xml.find_all("char", style="w")
 
@@ -112,3 +113,8 @@ class Paragraph:
                 INSERT INTO bible.strongsoccurence (verse_ref, translation_id, text, xml, strong_code) 
                 VALUES (%s, %s, %s, %s, %s)
             """, (self.getVerseForStrongs(strong_occurence), self.translation_id, strong_occurence.get_text(), strong_occurence, strong_code))
+            additions += 1
+
+        if additions > 0:
+            # print(f"[{additions}] Strongs Occurences added to database")
+            pass

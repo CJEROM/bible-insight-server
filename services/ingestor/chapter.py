@@ -136,7 +136,8 @@ class Chapter:
             additions += 1
         
         if additions > 0:
-            print(f"    [{additions}] Paragraphs added to database")
+            # print(f"    [{additions}] Paragraphs added to database")
+            pass
 
     def createVerseOccurences(self):
         additions = 0
@@ -149,7 +150,8 @@ class Chapter:
                 additions += 1
 
         if additions > 0:
-            print(f"    [{additions}] Verse Occurences added to database")
+            # print(f"    [{additions}] Verse Occurences added to database")
+            pass
 
     # ================================================================================================================= TOKENIZATION LOGIC =================================================================================================================
 
