@@ -35,11 +35,14 @@ services:
       - DJANGO_DB=default
       - POSTGRE_NAME=postgres
       - POSTGRE_USER=postgres
-      - POSTGRE_PASSWORD=
+      - POSTGRE_PASSWORD=password
       - POSTGRE_PORT=5432
       - POSTGRE_HOST=db
       - LABEL_STUDIO_HOST=${LABEL_STUDIO_HOST:-}
       - JSON_LOG=1
+      - LABEL_STUDIO_USERNAME=admin
+      - LABEL_STUDIO_PASSWORD=admin
+      - LABEL_STUDIO_EMAIL=admin@example.com
     #      - LOG_LEVEL=DEBUG
     volumes:
       - ./mydata:/label-studio/data:rw

@@ -42,11 +42,12 @@ if __name__ == "__main__":
     try:
         restart_docker("postgres")
         restart_docker("minio")
+        restart_docker("label-studio")
         # restart_docker("authentik")
         # restart_docker("memgraph")
-        # restart_docker("label-studio")
         initialise_script("init_database.py", 3)
         initialise_script("init_minio.py", 0)
+        initialise_script("init_labelstudio.py", 30) # Label Studio has a long delay before operational
         # start_api_server() 
         print("FINISHED Script")
     except:
