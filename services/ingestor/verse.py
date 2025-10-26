@@ -71,3 +71,16 @@ class Verse:
 
         self.text = temp_verse_xml.get_text().strip()
         # CHANGE LOGIC TO EXTRACT JUST CONTINUOS TEXT, NO LINE BREAKS
+
+    def createQuotesOccurences():
+        # Consider here creating objects for
+        # Quotes
+        # 
+        pass
+
+    def createLabelStudioTask():
+        # After receiving text start feeding into label studio project to create tasks for annotating this verse translation accordingly
+        # Perhaps be selective only for instances where quotes have been found
+        # Or doing a quick nlp if a pronoun or a noun has been found in this verse, then try and highlight for later, 
+        # then using results see if we can make it smarter to recognise these before, perhaps loaded into database 
+        pass
