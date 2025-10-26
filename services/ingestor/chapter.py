@@ -114,7 +114,7 @@ class Chapter:
         
         # Create a Chapter Occurence
         self.cur.execute("""
-            INSERT INTO bible.chapteroccurences (chapter_ref, book_to_file_id) 
+            INSERT INTO bible.chapteroccurences (chapter_ref, book_map_id) 
             VALUES (%s, %s)
         """, (self.chapter_ref, self.book_map_id))
         self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))

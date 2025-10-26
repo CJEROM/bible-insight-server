@@ -44,8 +44,8 @@ class Paragraph:
         for verse in all_verses:
             verse_ref = verse.get("sid") if verse.get("sid") != None else verse.get("eid")
             self.cur.execute("""
-                INSERT OR IGNORE INTO bible.versestoparagraphs (verse_ref, paragraph_id) 
-                VALUES (?, ?)
+                INSERT INTO bible.versestoparagraphs (verse_ref, paragraph_id) 
+                VALUES (%s, %s)
             """, (verse_ref, self.paragraph_id))
 
     def getParaText(self):
@@ -66,14 +66,13 @@ class Paragraph:
 
         self.cur.execute("""
             INSERT INTO bible.paragraphs (chapter_occ_id, style_id, parent_para, xml, versetext) 
-            VALUES (%s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s)
         """, (self.chapter_occurence_id, self.style_id, None, str(self.para_xml), self.getParaText()))
         self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.paragraphs",))
         self.paragraph_id = self.cur.fetchone()[0]
 
     def getVerseForStrongs(self, strong_xml):
         verse_ref = None
-        verse_id = None
 
         verse_tag = strong_xml.find_next("verse")
         
@@ -105,11 +104,11 @@ class Paragraph:
                     language_id = 2
 
                 self.cur.execute("""
-                    INSERT OR IGNORE INTO bible.strongs (code, language_id) 
+                    INSERT INTO bible.strongs (code, language_id) 
                     VALUES (%s, %s)
                 """, (strong_code, language_id))
 
             self.cur.execute("""
-                INSERT OR IGNORE INTO bible.strongsoccurence (verse_ref, translation_id, text, xml, strong_code) 
+                INSERT INTO bible.strongsoccurence (verse_ref, translation_id, text, xml, strong_code) 
                 VALUES (%s, %s, %s, %s, %s)
             """, (self.getVerseForStrongs(strong_occurence), self.translation_id, strong_occurence.get_text(), strong_occurence, strong_code))

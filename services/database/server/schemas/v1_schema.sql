@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS bible.paragraphs (
     style_id        INTEGER,
     parent_para     INTEGER,
     xml             XML,
-    versetext       BOOLEAN,
+    versetext       TEXT,
     FOREIGN KEY (parent_para) REFERENCES bible.paragraphs (id),
     FOREIGN KEY (chapter_occ_id) REFERENCES bible.chapteroccurences (id),
     FOREIGN KEY (style_id) REFERENCES bible.styles (id)
@@ -239,9 +239,9 @@ CREATE TABLE IF NOT EXISTS bible.verseoccurences (
 -- DROP TABLE IF EXISTS bible.versesToParagraphs;
 CREATE TABLE IF NOT EXISTS bible.versesToParagraphs (
     id              SERIAL PRIMARY KEY,
-    verse_ref       INTEGER,
+    verse_ref       TEXT,
     paragraph_id    INTEGER,
-    FOREIGN KEY (verse_ref) REFERENCES bible.verses (id),
+    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref),
     FOREIGN KEY (paragraph_id) REFERENCES bible.paragraphs (id)
 );
 

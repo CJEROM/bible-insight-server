@@ -53,7 +53,7 @@ class Verse:
             para_style = para.get("style")
 
             if para_style != None:
-                self.db.execute("""
+                self.cur.execute("""
                     SELECT versetext FROM bible.styles WHERE style=%s
                 """, (para_style,))
                 result = self.cur.fetchone()
