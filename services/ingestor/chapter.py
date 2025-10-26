@@ -139,12 +139,17 @@ class Chapter:
             print(f"    [{additions}] Paragraphs added to database")
 
     def createVerseOccurences(self):
+        additions = 0
         all_verses = self.chapter_xml.find_all("verse")
 
         for verse in all_verses:
             verse_ref = verse.get("sid")
             if verse_ref:
                 Verse(self.chapter_xml, verse_ref, self.chapter_occurence_id, self.conn)
+                additions += 1
+
+        if additions > 0:
+            print(f"    [{additions}] Verse Occurences added to database")
 
     # ================================================================================================================= TOKENIZATION LOGIC =================================================================================================================
 
