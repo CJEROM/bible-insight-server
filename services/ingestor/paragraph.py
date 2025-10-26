@@ -44,7 +44,7 @@ class Paragraph:
         for verse in all_verses:
             verse_ref = verse.get("sid") if verse.get("sid") != None else verse.get("eid")
             self.cur.execute("""
-                INSERT OR IGNORE INTO VersesToParagraphs (verse_ref, paragraph_id) 
+                INSERT OR IGNORE INTO bible.versestoparagraphs (verse_ref, paragraph_id) 
                 VALUES (?, ?)
             """, (verse_ref, self.paragraph_id))
 
@@ -65,10 +65,10 @@ class Paragraph:
     def createParagraph(self):
 
         self.cur.execute("""
-            INSERT INTO Paragraphs (chapter_occ_id, style_id, parent_para, xml, versetext) 
+            INSERT INTO bible.paragraphs (chapter_occ_id, style_id, parent_para, xml, versetext) 
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (self.chapter_occurence_id, self.style_id, None, str(self.para_xml), self.getParaText()))
-        self.cur.execute("""SELECT seq FROM sqlite_sequence WHERE name=? """, ("Paragraphs",))
+        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.paragraphs",))
         self.paragraph_id = self.cur.fetchone()[0]
 
     def getVerseForStrongs(self, strong_xml):

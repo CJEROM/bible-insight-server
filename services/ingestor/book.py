@@ -23,8 +23,7 @@ class Book:
             SELECT book_code FROM bible.booktofile WHERE id = %s;
         """, (self.book_map_id,))
         self.book_code = self.cur.fetchone()
-
-        self.createParagraphs()
+        
         self.createTextChapters()
 
         self.conn.commit()
