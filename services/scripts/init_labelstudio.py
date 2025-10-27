@@ -24,6 +24,7 @@ LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
 LABEL_STUDIO_USERNAME = os.getenv("LABEL_STUDIO_USERNAME")
 LABEL_STUDIO_PASSWORD = os.getenv("LABEL_STUDIO_PASSWORD")
 LABEL_STUDIO_EMAIL = os.getenv("LABEL_STUDIO_EMAIL")
+LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
 
 CONTAINER_NAME = "label-studio-app-1"  # Adjust if your container name differs
 
@@ -156,8 +157,9 @@ def update_env_file(new_token, env_var):
 
     print(f"✅ {env_var} updated in {ENV_FILE_PATH}")
 
-if __name__ == "__main__":
-    LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
+    return new_token
+
+def generate_token():
     if not LABEL_STUDIO_API_TOKEN:
         LABEL_STUDIO_API_TOKEN = find_api_token()
         if LABEL_STUDIO_API_TOKEN:
@@ -165,13 +167,27 @@ if __name__ == "__main__":
         else:
             print("❌ No token extracted — nothing written.")
     else: 
-        print("Token Already exists!")
+        print("✅ Token Already exists!")
 
-    client = LabelStudio(
-        base_url=LABEL_STUDIO_URL, 
-        api_key=LABEL_STUDIO_API_TOKEN
-    )
-    # A basic request to verify connection is working
-    me = client.users.whoami()
+if __name__ == "__main__":
+    MAX_RETRIES = 3
+    attempt = 0
 
-    client.projects.create()
+    while attempt < MAX_RETRIES:
+        try:
+            client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
+            me = client.users.whoami()
+            client.projects.create()
+            print(f"✅ Connected to [Label Studio] successfully on try {attempt+1}!")
+            break  # success
+        except Exception as e:
+            print(f"⚠️ Attempt {attempt + 1} failed: {e}")
+            attempt += 1
+
+            # Regenerate token only after the first failure
+            LABEL_STUDIO_API_TOKEN = generate_token()
+
+            if attempt == MAX_RETRIES:
+                print("❌ All retries failed. Exiting.")
+                raise
+    
