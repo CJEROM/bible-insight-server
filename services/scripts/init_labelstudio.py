@@ -68,9 +68,32 @@ def create_api_token():
     #     'status': 'ok'
     # }
 
-def create_env_var():
-    with open(ENV_FILE_PATH, 'a') as f:
-        f.write(f"""\nLABEL_STUDIO_TOKEN=\"{create_api_token()}\"""")
+def update_env_file(new_token):
+    """Replace old token line with new one in the .env file."""
+    if not ENV_FILE_PATH:
+        print("❌ .env file not found")
+        return
+
+    lines = []
+    if os.path.exists(ENV_FILE_PATH):
+        with open(ENV_FILE_PATH, "r") as f:
+            for line in f:
+                # Keep everything except old token lines
+                if not line.strip().startswith("LABEL_STUDIO_TOKEN="):
+                    lines.append(line.rstrip("\n"))
+
+    # Add new token line
+    lines.append(f'LABEL_STUDIO_TOKEN="{new_token}"')
+
+    # Write back the cleaned file
+    with open(ENV_FILE_PATH, "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+    print(f"✅ LABEL_STUDIO_TOKEN updated in {ENV_FILE_PATH}")
 
 if __name__ == "__main__":
-    create_env_var()
+    token = create_api_token()
+    if token:
+        update_env_file(token)
+    else:
+        print("❌ No token extracted — nothing written.")
