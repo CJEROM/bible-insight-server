@@ -120,7 +120,7 @@ def refresh_api_token(page):
     else:
         page.click("button:has(span:has-text('Create New Token'))")
 
-    time.sleep(1)
+    time.sleep(1) # prevent reading empty token
     
     API_TOKEN = None
     try:    
