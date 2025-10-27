@@ -26,7 +26,8 @@ POSTGRES_DB = os.getenv("POSTGRES_DB")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
-LABEL_STUDIO_TOKEN = os.getenv("LABEL_STUDIO_TOKEN")
+LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
+LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
 
 class MinioUSXUpload:
     def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id, dbl_id, agreement_id):
@@ -61,7 +62,7 @@ class MinioUSXUpload:
         # version = self.cur.fetchone()
         # print("Connected successfully! PostgreSQL version:", version)
 
-        self.metadata_content = ""
+        self.translation_name = None
 
         # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
         match medium:
@@ -81,11 +82,24 @@ class MinioUSXUpload:
         duration = round(time.time() - self.start_time, 2)
         print(f"✅ Completed Translation Import in {duration} seconds!\n")
 
+        self.translation_title = f"{self.medium}-{self.dbl_id}-{self.agreement_id}"
+
         # Create Label Studio Project for this specific translation of the bible
-        # label_studio_client = LabelStudio(
-        #     api_key=LABEL_STUDIO_TOKEN,
-        # )
-        # label_studio_client.projects.create()
+        label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
+        translation_project = label_studio_client.start_project(
+            title=self.translation_title,
+            description=self.translation_name,
+            label_config="""
+                <View>
+                    <Text name="text" value="$text"/>
+                    <Choices name="category" toName="text">
+                        <Choice value="Noun"/>
+                        <Choice value="Pronoun"/>
+                        <Choice value="Place"/>
+                    </Choices>
+                </View>
+            """
+        )
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
@@ -204,6 +218,8 @@ class MinioUSXUpload:
 
         metadata_xml = BeautifulSoup(metadata_file_content, "xml")
         self.update_translationinfo_db(metadata_xml)
+        self.translation_metadata_xml = metadata_xml
+        self.translation_name = f"{metadata_xml.find("identification").find("abbreviationLocal").text}: {metadata_xml.find("identification").find("name").text}"
 
         self.revision = metadata_xml.find("DBLMetadata").get("revision")
         revision_note = metadata_xml.find("archiveStatus").find("comments")
