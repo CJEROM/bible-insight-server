@@ -102,10 +102,34 @@ def find_api_token():
         page.click("span:has-text('Account & Settings')")
         page.click("span:has-text('Personal Access Token')")
 
-        page.click("span:has-text('Create New Token')")
-        API_TOKEN = page.input_value("input.lsf-input-ls.w-full") # The API Token
+        API_TOKEN = refresh_api_token(page)
+        while API_TOKEN == None:
+            API_TOKEN = refresh_api_token(page)
 
         return API_TOKEN
+    
+def refresh_api_token(page):
+    button = page.locator("button:has(span:has-text('Create New Token'))")
+    if button and button.is_disabled():
+        page.click("span:has-text('Revoke')")
+        revoke_confirm_button = page.locator("button:has(span:has-text('Revoke'))").nth(1)
+        revoke_confirm_button.click()
+        time.sleep(1)
+        page.click("button:has(span:has-text('Create New Token'))")
+        print("Revoked and regenerated API Token")
+    else:
+        page.click("button:has(span:has-text('Create New Token'))")
+    
+    API_TOKEN = None
+    try:    
+        API_TOKEN = page.input_value("input.lsf-input-ls.w-full") # The API Token
+    except Exception as e:
+        pass
+
+    if API_TOKEN == "":
+        API_TOKEN = None
+
+    return API_TOKEN
 
 def update_env_file(new_token, env_var):
     """Replace old token line with new one in the .env file."""
