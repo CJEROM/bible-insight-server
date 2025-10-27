@@ -119,6 +119,8 @@ def refresh_api_token(page):
         print("Revoked and regenerated API Token")
     else:
         page.click("button:has(span:has-text('Create New Token'))")
+
+    time.sleep(1)
     
     API_TOKEN = None
     try:    
