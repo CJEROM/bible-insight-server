@@ -6,11 +6,14 @@ import json
 
 from dotenv import load_dotenv
 
+ENV_FILE_PATH = ""
+
 # Automatically find the project root (folder containing .env)
 current = Path(__file__).resolve()
 for parent in current.parents:
     if (parent / ".env").exists():
         load_dotenv(parent / ".env")
+        ENV_FILE_PATH = parent / ".env"
         break
 
 LABEL_STUDIO_USERNAME = os.getenv("LABEL_STUDIO_USERNAME")
@@ -41,7 +44,7 @@ def create_api_token():
                 print("\nExtracted Token Line:", line)
                 return line
                 break
-            
+
         return None
 
     # => User info:
@@ -60,3 +63,9 @@ def create_api_token():
     #     'status': 'ok'
     # }
 
+def create_env_var():
+    with open(ENV_FILE_PATH, 'a') as f:
+        f.write(f"""\nLABEL_STUDIO_TOKEN=\"{create_api_token()}\"""")
+
+if __name__ == "__main__":
+    create_env_var()
