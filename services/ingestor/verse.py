@@ -82,5 +82,12 @@ class Verse:
         # After receiving text start feeding into label studio project to create tasks for annotating this verse translation accordingly
         # Perhaps be selective only for instances where quotes have been found
         # Or doing a quick nlp if a pronoun or a noun has been found in this verse, then try and highlight for later, 
-        # then using results see if we can make it smarter to recognise these before, perhaps loaded into database 
+        # then using results see if we can make it smarter to recognise these before, perhaps loaded into 
+
+        # This should write the details to a json file inside Minio or stored locally then sent over to minio to store for us
+        # as we go through verses we append the information in there so that we can just import all labelling tasks for this translation
+        # straight into label studio to create, instead of create labelling tasks one by one (which is uneccessary)
+
+        # We can however programatically set up how we want to project and interfaces etc to be created through the api and then call the data import
+        # or automate our very own machine learning backend to highlight specific things for us :)
         pass

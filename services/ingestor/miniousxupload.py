@@ -7,6 +7,7 @@ import psycopg2
 import shutil
 import re
 import time
+from label_studio_sdk import LabelStudio
 
 from book import Book
 
@@ -24,6 +25,8 @@ POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 POSTGRES_DB = os.getenv("POSTGRES_DB")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+
+LABEL_STUDIO_TOKEN = os.getenv("LABEL_STUDIO_TOKEN")
 
 class MinioUSXUpload:
     def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id, dbl_id, agreement_id):
@@ -77,6 +80,12 @@ class MinioUSXUpload:
 
         duration = round(time.time() - self.start_time, 2)
         print(f"✅ Completed Translation Import in {duration} seconds!\n")
+
+        # Create Label Studio Project for this specific translation of the bible
+        # label_studio_client = LabelStudio(
+        #     api_key=LABEL_STUDIO_TOKEN,
+        # )
+        # label_studio_client.projects.create()
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
