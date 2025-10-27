@@ -4,6 +4,9 @@ from pathlib import Path
 import subprocess
 import json
 import ast
+import time
+
+from playwright.sync_api import sync_playwright
 
 from dotenv import load_dotenv
 
@@ -17,13 +20,14 @@ for parent in current.parents:
         ENV_FILE_PATH = parent / ".env"
         break
 
+LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
 LABEL_STUDIO_USERNAME = os.getenv("LABEL_STUDIO_USERNAME")
 LABEL_STUDIO_PASSWORD = os.getenv("LABEL_STUDIO_PASSWORD")
 LABEL_STUDIO_EMAIL = os.getenv("LABEL_STUDIO_EMAIL")
 
 CONTAINER_NAME = "label-studio-app-1"  # Adjust if your container name differs
 
-def create_api_token():
+def create_legacy_token():
     # Get the user info and token
     result = subprocess.run([
         "docker", "exec", CONTAINER_NAME,
@@ -32,6 +36,9 @@ def create_api_token():
     ], capture_output=True, text=True, check=True)
 
     # print("\nRaw output:\n", result.stdout)
+
+    ## LOOKS LIKE WILL HAVE TO IMPLEMENT THIS THROUGH APP WRIGHT AFTER ALL, WITH SLIGHT DELAY UNTIL ITS LOADED, 
+    #           THEN SIGN IN AND CREATE ASSOCIATED ACTIONS UNTIL API KEY AVAILABLE
 
     # Remove the header line if present
     lines = result.stdout.strip().splitlines()
@@ -68,6 +75,38 @@ def create_api_token():
     #     'status': 'ok'
     # }
 
+def find_api_token():
+    # On first time start up / log in for user, can generate a personal API key for them, by browsing the web page
+    with sync_playwright() as p:
+        # Launch browser
+        browser = p.chromium.launch(headless=False)  # headless=False shows the browser
+        context = browser.new_context(accept_downloads=True)  # Important to handle downloads
+
+        page = context.new_page()
+
+        # time.sleep(15)
+    
+        # Go to the normal page
+        page.goto(LABEL_STUDIO_URL)
+
+        # Do we need to login?
+        if page.query_selector("input[name='email']"):
+            # Fill in the username/email and password
+            page.fill("input[name='email']", LABEL_STUDIO_USERNAME)
+            page.fill("input[name='password']", LABEL_STUDIO_PASSWORD)
+
+            # Click the login button
+            page.click("button:has-text('Log in')")
+
+        page.click("span:has-text('CE')")
+        page.click("span:has-text('Account & Settings')")
+        page.click("span:has-text('Personal Access Token')")
+
+        page.click("span:has-text('Create New Token')")
+        API_TOKEN = page.input_value("input.lsf-input-ls.w-full") # The API Token
+
+        return API_TOKEN
+
 def update_env_file(new_token):
     """Replace old token line with new one in the .env file."""
     if not ENV_FILE_PATH:
@@ -92,13 +131,17 @@ def update_env_file(new_token):
     print(f"✅ LABEL_STUDIO_TOKEN updated in {ENV_FILE_PATH}")
 
 if __name__ == "__main__":
-    token = create_api_token()
-    if token:
-        update_env_file(token)
+    API_TOKEN = find_api_token()
+    if API_TOKEN:
+        update_env_file(API_TOKEN)
     else:
         print("❌ No token extracted — nothing written.")
 
-    label_studio_client = LabelStudio(
-        api_key=token,
+    client = LabelStudio(
+        base_url=LABEL_STUDIO_URL, 
+        api_key=API_TOKEN
     )
-    label_studio_client.projects.create()
+    # A basic request to verify connection is working
+    me = client.users.whoami()
+
+    client.projects.create()
