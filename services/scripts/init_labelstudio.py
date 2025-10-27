@@ -177,7 +177,6 @@ if __name__ == "__main__":
         try:
             client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
             me = client.users.whoami()
-            client.projects.create()
             print(f"✅ Connected to [Label Studio] successfully on try {attempt+1}!")
             break  # success
         except Exception as e:
