@@ -157,15 +157,19 @@ def update_env_file(new_token, env_var):
     print(f"✅ {env_var} updated in {ENV_FILE_PATH}")
 
 if __name__ == "__main__":
-    API_TOKEN = find_api_token()
-    if API_TOKEN:
-        update_env_file(API_TOKEN, "LABEL_STUDIO_API_TOKEN")
-    else:
-        print("❌ No token extracted — nothing written.")
+    LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
+    if not LABEL_STUDIO_API_TOKEN:
+        LABEL_STUDIO_API_TOKEN = find_api_token()
+        if LABEL_STUDIO_API_TOKEN:
+            update_env_file(LABEL_STUDIO_API_TOKEN, "LABEL_STUDIO_API_TOKEN")
+        else:
+            print("❌ No token extracted — nothing written.")
+    else: 
+        print("Token Already exists!")
 
     client = LabelStudio(
         base_url=LABEL_STUDIO_URL, 
-        api_key=API_TOKEN
+        api_key=LABEL_STUDIO_API_TOKEN
     )
     # A basic request to verify connection is working
     me = client.users.whoami()
