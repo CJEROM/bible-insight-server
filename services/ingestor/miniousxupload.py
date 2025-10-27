@@ -26,6 +26,10 @@ POSTGRES_DB = os.getenv("POSTGRES_DB")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+MINIO_USERNAME = os.getenv("MINIO_USERNAME")
+MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
+
 LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
 LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
 
@@ -86,9 +90,12 @@ class MinioUSXUpload:
 
         # Create Label Studio Project for this specific translation of the bible
         label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
-        translation_project = label_studio_client.start_project(
-            title=self.translation_title,
+        me = label_studio_client.users.whoami()
+
+        label_studio_client.projects.create(
+            created_by=me.email,
             description=self.translation_name,
+            is_draft=True,
             label_config="""
                 <View>
                     <Text name="text" value="$text"/>
@@ -98,7 +105,31 @@ class MinioUSXUpload:
                         <Choice value="Place"/>
                     </Choices>
                 </View>
-            """
+            """,
+            title=self.translation_title,
+            show_skip_button=True
+        )
+
+        # Because I believe this is the only case we will use label studio, we create a project and it will auto increment like SERIAL PRIMARY KEY, 
+        #       because of this we can align it with translation_id from database, and therefore connect project
+        #   note: This is fragile and therefore might changge in the future, and require tighter coupling
+        
+        # Consider whether require bucket for each project
+        label_studio_client.import_storage.s3.create(
+            project=self.translation_id,
+            bucket="bible-nlp",
+            prefix=f"{self.translation_name}/import/",
+            aws_access_key_id=MINIO_USERNAME,
+            aws_secret_access_key=MINIO_PASSWORD,
+            s3endpoint=MINIO_ENDPOINT
+        )
+        label_studio_client.export_storage.s3.create(
+            project=self.translation_id,
+            bucket="bible-nlp",
+            prefix=f"{self.translation_name}/export/",
+            aws_access_key_id=MINIO_USERNAME,
+            aws_secret_access_key=MINIO_PASSWORD,
+            s3endpoint=MINIO_ENDPOINT
         )
 
     def get_source(self, source_url):
