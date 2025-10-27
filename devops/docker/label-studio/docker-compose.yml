@@ -40,9 +40,8 @@ services:
       - POSTGRE_HOST=db
       - LABEL_STUDIO_HOST=${LABEL_STUDIO_HOST:-}
       - JSON_LOG=1
-      - LABEL_STUDIO_USERNAME=admin
-      - LABEL_STUDIO_PASSWORD=admin
-      - LABEL_STUDIO_EMAIL=admin@example.com
+      - LABEL_STUDIO_USERNAME=admin@example.com
+      - LABEL_STUDIO_PASSWORD=password
     #      - LOG_LEVEL=DEBUG
     volumes:
       - ./mydata:/label-studio/data:rw

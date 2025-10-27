@@ -97,3 +97,8 @@ if __name__ == "__main__":
         update_env_file(token)
     else:
         print("❌ No token extracted — nothing written.")
+
+    label_studio_client = LabelStudio(
+        api_key=token,
+    )
+    label_studio_client.projects.create()
