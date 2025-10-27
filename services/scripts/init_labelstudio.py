@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import subprocess
 import json
+import ast
 
 from dotenv import load_dotenv
 
@@ -30,21 +31,25 @@ def create_api_token():
         "--username", LABEL_STUDIO_USERNAME
     ], capture_output=True, text=True, check=True)
 
-    print("\nRaw output:\n", result.stdout)
+    # print("\nRaw output:\n", result.stdout)
 
-    # Try to extract token if the output is in JSON format
+    # Remove the header line if present
+    lines = result.stdout.strip().splitlines()
+    if lines[0].startswith("=> User info"):
+        # join all remaining lines into one string
+        result_str = "\n".join(lines[1:]).strip()
+    else:
+        result_str = result.stdout.strip()
+
     try:
-        user_info = json.loads(result.stdout)
-        print("\nUser Token:", user_info.get("token"))
-        return user_info.get("token")
-    except json.JSONDecodeError:
-        # Fallback: simple string search
-        for line in result.stdout.splitlines():
-            if "'token':" in line or '"token":' in line:
-                print("\nExtracted Token Line:", line)
-                return line
-                break
-
+        # Try parsing as a Python literal dict
+        user_info = ast.literal_eval(result_str)
+        token = user_info.get("token")
+        print("\nUser Token:", token)
+        return token
+    except Exception as e:
+        print("⚠️ Failed to parse output:", e)
+        print("Output was:\n", result_str)
         return None
 
     # => User info:
