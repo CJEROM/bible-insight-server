@@ -26,6 +26,10 @@ LABEL_STUDIO_PASSWORD = os.getenv("LABEL_STUDIO_PASSWORD")
 LABEL_STUDIO_EMAIL = os.getenv("LABEL_STUDIO_EMAIL")
 LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
 
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+MINIO_USERNAME = os.getenv("MINIO_USERNAME")
+MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
+
 CONTAINER_NAME = "label-studio-app-1"  # Adjust if your container name differs
 
 def create_legacy_token():
@@ -159,24 +163,61 @@ def update_env_file(new_token, env_var):
 
     return new_token
 
-def generate_token():
-    if not LABEL_STUDIO_API_TOKEN:
-        LABEL_STUDIO_API_TOKEN = find_api_token()
-        if LABEL_STUDIO_API_TOKEN:
-            update_env_file(LABEL_STUDIO_API_TOKEN, "LABEL_STUDIO_API_TOKEN")
-        else:
-            print("❌ No token extracted — nothing written.")
-    else: 
-        print("✅ Token Already exists!")
+def generate_token(new_token):
+    if new_token:
+        update_env_file(new_token, "LABEL_STUDIO_API_TOKEN")
+    else:
+        print("❌ No token extracted — nothing written.")
+
+    return new_token
 
 if __name__ == "__main__":
     MAX_RETRIES = 3
     attempt = 0
 
+    API_TOKEN = LABEL_STUDIO_API_TOKEN
+
     while attempt < MAX_RETRIES:
         try:
-            client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
-            me = client.users.whoami()
+            label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=API_TOKEN)
+            me = label_studio_client.users.whoami()
+
+            label_studio_client.projects.create(
+                title="TEST",
+                description="TEST Description",
+                label_config="""
+                    <View>
+                        <Text name="text" value="$text"/>
+                        <Choices name="category" toName="text">
+                            <Choice value="Noun"/>
+                            <Choice value="Pronoun"/>
+                            <Choice value="Place"/>
+                        </Choices>
+                    </View>
+                """
+            )
+
+            # Because I believe this is the only case we will use label studio, we create a project and it will auto increment like SERIAL PRIMARY KEY, 
+            #       because of this we can align it with translation_id from database, and therefore connect project
+            #   note: This is fragile and therefore might changge in the future, and require tighter coupling
+            
+            # Consider whether require bucket for each project
+            # label_studio_client.import_storage.s3.create(
+            #     project=1,
+            #     bucket="bible-nlp",
+            #     prefix=f"TEST/import/",
+            #     aws_access_key_id=MINIO_USERNAME,
+            #     aws_secret_access_key=MINIO_PASSWORD,
+            #     s3endpoint=MINIO_ENDPOINT
+            # )
+            # label_studio_client.export_storage.s3.create(
+            #     project=1,
+            #     bucket="bible-nlp",
+            #     prefix=f"TEST/export/",
+            #     aws_access_key_id=MINIO_USERNAME,
+            #     aws_secret_access_key=MINIO_PASSWORD,
+            #     s3endpoint=MINIO_ENDPOINT
+            # )
             print(f"✅ Connected to [Label Studio] successfully on try {attempt+1}!")
             break  # success
         except Exception as e:
@@ -184,7 +225,7 @@ if __name__ == "__main__":
             attempt += 1
 
             # Regenerate token only after the first failure
-            LABEL_STUDIO_API_TOKEN = generate_token()
+            API_TOKEN = generate_token(find_api_token())
 
             if attempt == MAX_RETRIES:
                 print("❌ All retries failed. Exiting.")
