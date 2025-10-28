@@ -103,9 +103,11 @@ def find_api_token():
             # Click the login button
             page.click("button:has-text('Log in')")
 
-        page.click("span:has-text('CE')")
+        page.click(f"span:has-text('{LABEL_STUDIO_USERNAME[0:2]}')")
         page.click("span:has-text('Account & Settings')")
         page.click("span:has-text('Personal Access Token')")
+
+        time.sleep(1)
 
         API_TOKEN = refresh_api_token(page)
         while API_TOKEN == None:
@@ -182,42 +184,6 @@ if __name__ == "__main__":
             label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=API_TOKEN)
             me = label_studio_client.users.whoami()
 
-            label_studio_client.projects.create(
-                title="TEST",
-                description="TEST Description",
-                label_config="""
-                    <View>
-                        <Text name="text" value="$text"/>
-                        <Choices name="category" toName="text">
-                            <Choice value="Noun"/>
-                            <Choice value="Pronoun"/>
-                            <Choice value="Place"/>
-                        </Choices>
-                    </View>
-                """
-            )
-
-            # Because I believe this is the only case we will use label studio, we create a project and it will auto increment like SERIAL PRIMARY KEY, 
-            #       because of this we can align it with translation_id from database, and therefore connect project
-            #   note: This is fragile and therefore might changge in the future, and require tighter coupling
-            
-            # Consider whether require bucket for each project
-            # label_studio_client.import_storage.s3.create(
-            #     project=1,
-            #     bucket="bible-nlp",
-            #     prefix=f"TEST/import/",
-            #     aws_access_key_id=MINIO_USERNAME,
-            #     aws_secret_access_key=MINIO_PASSWORD,
-            #     s3endpoint=MINIO_ENDPOINT
-            # )
-            # label_studio_client.export_storage.s3.create(
-            #     project=1,
-            #     bucket="bible-nlp",
-            #     prefix=f"TEST/export/",
-            #     aws_access_key_id=MINIO_USERNAME,
-            #     aws_secret_access_key=MINIO_PASSWORD,
-            #     s3endpoint=MINIO_ENDPOINT
-            # )
             print(f"✅ Connected to [Label Studio] successfully on try {attempt+1}!")
             break  # success
         except Exception as e:
@@ -231,3 +197,41 @@ if __name__ == "__main__":
                 print("❌ All retries failed. Exiting.")
                 raise
     
+    label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=API_TOKEN)
+    me = label_studio_client.users.whoami()
+
+    translation_project = label_studio_client.projects.create(
+        title="TEST",
+        description="TEST Description",
+        label_config="""
+            <View>
+                <Text name="text" value="$text"/>
+                <Choices name="category" toName="text">
+                    <Choice value="Noun"/>
+                    <Choice value="Pronoun"/>
+                    <Choice value="Place"/>
+                </Choices>
+            </View>
+        """
+    )
+
+    print(translation_project.id)
+    
+    # Consider whether require bucket for each project
+    label_studio_client.import_storage.s3.create(
+        project=translation_project.id,
+        bucket="bible-nlp",
+        prefix=f"TEST/import/",
+        aws_access_key_id=MINIO_USERNAME,
+        aws_secret_access_key=MINIO_PASSWORD,
+        s3endpoint=MINIO_ENDPOINT
+    )
+
+    label_studio_client.export_storage.s3.create(
+        project=translation_project.id,
+        bucket="bible-nlp",
+        prefix=f"TEST/export/",
+        aws_access_key_id=MINIO_USERNAME,
+        aws_secret_access_key=MINIO_PASSWORD,
+        s3endpoint=MINIO_ENDPOINT
+    )
