@@ -92,7 +92,7 @@ class MinioUSXUpload:
         label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
         me = label_studio_client.users.whoami()
 
-        label_studio_client.projects.create(
+        translation_project = label_studio_client.projects.create(
             created_by=me.email,
             description=self.translation_name,
             is_draft=True,
@@ -115,22 +115,22 @@ class MinioUSXUpload:
         #   note: This is fragile and therefore might changge in the future, and require tighter coupling
         
         # Consider whether require bucket for each project
-        label_studio_client.import_storage.s3.create(
-            project=self.translation_id,
-            bucket="bible-nlp",
-            prefix=f"{self.translation_name}/import/",
-            aws_access_key_id=MINIO_USERNAME,
-            aws_secret_access_key=MINIO_PASSWORD,
-            s3endpoint=MINIO_ENDPOINT
-        )
-        label_studio_client.export_storage.s3.create(
-            project=self.translation_id,
-            bucket="bible-nlp",
-            prefix=f"{self.translation_name}/export/",
-            aws_access_key_id=MINIO_USERNAME,
-            aws_secret_access_key=MINIO_PASSWORD,
-            s3endpoint=MINIO_ENDPOINT
-        )
+        # label_studio_client.import_storage.s3.create(
+        #     project=translation_project.id,
+        #     bucket="bible-nlp",
+        #     prefix=f"{self.translation_name}/import/",
+        #     aws_access_key_id=MINIO_USERNAME,
+        #     aws_secret_access_key=MINIO_PASSWORD,
+        #     s3endpoint=MINIO_ENDPOINT
+        # )
+        # label_studio_client.export_storage.s3.create(
+        #     project=translation_project.id,
+        #     bucket="bible-nlp",
+        #     prefix=f"{self.translation_name}/export/",
+        #     aws_access_key_id=MINIO_USERNAME,
+        #     aws_secret_access_key=MINIO_PASSWORD,
+        #     s3endpoint=MINIO_ENDPOINT
+        # )
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
