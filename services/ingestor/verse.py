@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup, Tag, NavigableString
 import re
+import json
 
 class Verse:
     def __init__(self, chapter_xml, verse_ref, chapter_occurence_id, db_conn):
@@ -90,4 +91,9 @@ class Verse:
 
         # We can however programatically set up how we want to project and interfaces etc to be created through the api and then call the data import
         # or automate our very own machine learning backend to highlight specific things for us :)
+        
+        # create a json file in downloads folder like text-DBL-AGREEMENT-import
+
+        # Then append verse to it with annotation aspects as part of the json in the file, then at the end for translation upload it to project.
+        # Should create the file on minio-usx-upload (then should upload the file to minio on finish uploading, while also reading it to import into label studio)
         pass
