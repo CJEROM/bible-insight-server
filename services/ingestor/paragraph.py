@@ -112,7 +112,7 @@ class Paragraph:
             self.cur.execute("""
                 INSERT INTO bible.strongsoccurence (verse_ref, translation_id, text, xml, strong_code) 
                 VALUES (%s, %s, %s, %s, %s)
-            """, (self.getVerseForStrongs(strong_occurence), self.translation_id, strong_occurence.get_text(), strong_occurence, strong_code))
+            """, (self.getVerseForStrongs(strong_occurence), self.translation_id, strong_occurence.get_text(), str(strong_occurence), strong_code))
             additions += 1
 
         if additions > 0:
