@@ -2,6 +2,8 @@ from pathlib import Path
 import subprocess
 import requests
 import time
+import os
+import shutil
 
 def restart_docker(container):
     base = Path(__file__).parent.parent
@@ -9,6 +11,14 @@ def restart_docker(container):
 
     # Destroy existing instance + connected volumes
     subprocess.run(["docker", "compose", "down", "-v"], cwd=scripts_dir)
+
+    # Delete any folders inside this containers folder
+    for root, dirs, files in os.walk(scripts_dir, topdown=False):
+        for d in dirs:
+            dir_path = os.path.join(root, d)
+            print(f"Deleting folder: {dir_path}")
+            shutil.rmtree(dir_path)  # removes the entire directory and its contents
+
     # Restart Docker instance
     subprocess.run(["docker", "compose", "up", "-d"], cwd=scripts_dir)
 
@@ -56,7 +66,7 @@ if __name__ == "__main__":
         # restart_docker("memgraph")
         initialise_script("init_database.py", 3)
         initialise_script("init_minio.py", 0)
-        initialise_script("init_labelstudio.py", 30) # Label Studio has a long delay before operational
+        initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
         # start_api_server() 
         run_script(".\ingestor\ingestor.py")
         print("FINISHED Script")
