@@ -132,8 +132,9 @@ class Chapter:
     def createChapter(self):
         self.cur.execute("""
             SELECT chapter_ref FROM bible.chapters WHERE chapter_ref = %s
-        """, (self.chapter_ref))
+        """, (self.chapter_ref,))
         chapter_found = self.cur.fetchone()
+        
         if chapter_found == None:
             book_code, chapter_num = self.chapter_ref.split(" ")
             self.cur.execute("""
@@ -141,6 +142,7 @@ class Chapter:
                 VALUES (%s, %s, %s, %s)
             """, (book_code, int(chapter_num), self.chapter_ref, False))
             self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))
+            print(f"     Non-Standard Chapter Created: {self.chapter_ref}")
 
     def createParagraphs(self):
         additions = 0
