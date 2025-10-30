@@ -23,6 +23,15 @@ def initialise_script(file_name, delay):
         cwd=scripts_dir
     )
 
+def run_script(file_name):
+    base = Path(__file__).parent
+    scripts_dir = base
+
+    subprocess.run(
+        ["python3", file_name], 
+        cwd=scripts_dir
+    )
+
 def start_api_server():
     base = Path(__file__).parent
     scripts_dir = base / "api"
@@ -49,6 +58,7 @@ if __name__ == "__main__":
         initialise_script("init_minio.py", 0)
         initialise_script("init_labelstudio.py", 30) # Label Studio has a long delay before operational
         # start_api_server() 
+        run_script(".\ingestor\ingestor.py")
         print("FINISHED Script")
     except:
         pass
