@@ -71,7 +71,7 @@ class MinioUSXUpload:
         # Create JSON file for the NLP data to store and open it properly
         nlp_import_file = Path(__file__).parents[2] / "downloads" / f"{self.translation_title}.json"
         with open(nlp_import_file, 'w', encoding="utf-8") as f:
-            f.write("[{")
+            f.write("[")
 
         self.translation_name = None
 
@@ -121,7 +121,7 @@ class MinioUSXUpload:
 
         # Close the json file properly
         with open(nlp_import_file, 'a', encoding="utf-8") as f:
-            f.write("}]")
+            f.write("]")
 
         # Remove the *last* comma before a closing bracket } or ] from nlp data file, for valid json
         file_data = nlp_import_file.read_text(encoding="utf-8")

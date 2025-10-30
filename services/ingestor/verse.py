@@ -109,10 +109,11 @@ class Verse:
             "data": {
                 "text": self.text,
                 "verse_ref": self.verse_ref
-            },
+            }
         }
 
         with open(nlp_import_file, 'a', encoding="utf-8") as f:
             f.write("\n")
-            f.write(json.dump(nlp_data))
+            json.dump(nlp_data, f)
+            f.write(",")
             
