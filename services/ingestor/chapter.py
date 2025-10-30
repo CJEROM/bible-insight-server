@@ -114,6 +114,7 @@ class Chapter:
         self.cur = self.conn.cursor()
         
         # Create a Chapter Occurence
+        self.createChapter()
         self.cur.execute("""
             INSERT INTO bible.chapteroccurences (chapter_ref, book_map_id) 
             VALUES (%s, %s)
@@ -126,6 +127,20 @@ class Chapter:
         # self.createTokens()
 
         self.conn.commit()
+
+    # This is to validate the addition of non standard chapters outside the normal 1189 if there are any for a particular translation
+    def createChapter(self):
+        self.cur.execute("""
+            SELECT chapter_ref FROM bible.chapters WHERE chapter_ref = %s
+        """, (self.chapter_ref))
+        chapter_found = self.cur.fetchone()
+        if chapter_found == None:
+            book_code, chapter_num = self.chapter_ref.split(" ")
+            self.cur.execute("""
+                INSERT INTO bible.chapters (book_code, chapter_num, chapter_ref, standard) 
+                VALUES (%s, %s, %s, %s)
+            """, (book_code, int(chapter_num), self.chapter_ref, False))
+            self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))
 
     def createParagraphs(self):
         additions = 0

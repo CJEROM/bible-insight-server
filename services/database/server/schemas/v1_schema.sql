@@ -186,6 +186,7 @@ CREATE TABLE IF NOT EXISTS bible.chapters (
     book_code               TEXT,
     chapter_num             INT,
     chapter_ref             TEXT UNIQUE,
+    standard                BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (book_code) REFERENCES bible.books (code)
 );
 
