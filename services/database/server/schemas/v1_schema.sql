@@ -222,7 +222,17 @@ CREATE TABLE IF NOT EXISTS bible.verses (
     id              SERIAL PRIMARY KEY,
     chapter_ref     TEXT,
     verse_ref       TEXT UNIQUE,
+    standard        BOOLEAN DEFAULT TRUE, -- Whether this is standard verse or weird combo verse e.g. GEN 1:1-2
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref)
+);
+
+-- For linking non standard verses to their normal counter parts e.g. GEN 1:1-2 => GEN 1:1, GEN 1:2
+CREATE TABLE IF NOT EXISTS bible.verses (
+    id                          SERIAL PRIMARY KEY,
+    non_standard_verse_ref      TEXT,
+    verse_ref                   TEXT,
+    FOREIGN KEY (non_standard_verse_ref) REFERENCES bible.verses (verse_ref),
+    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref)
 );
 
 -- DROP TABLE IF EXISTS bible.verseoccurences;

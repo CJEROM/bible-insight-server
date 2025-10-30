@@ -28,6 +28,26 @@ class Verse:
         self.getVerseAndNoteXML()
         self.getVerseText()
 
+        verse_splits = len(self.verse_ref.split("-"))
+        chapter_ref, verse_num = verse_splits[0].split(":")[0]
+
+        # Check whether verse_ref is non standard e.g. GEN 1:1-2
+        if verse_splits > 1:
+            # Create new non standard verse first (to preseve foreign key constraint in db as well before verse occurence created)
+            self.cur.execute("""
+                INSERT INTO bible.verses (chapter_ref, verse_ref, standard) 
+                VALUES (%s, %s, %s)
+            """, (chapter_ref, self.verse_ref, False))
+
+            start_verse = int(verse_num)
+            end_verse = int(verse_splits[1]) + 1 # because range is non inclusive
+            for verse in range(start_verse, end_verse):
+                new_verse_ref = f"{chapter_ref}:{verse}"
+                self.cur.execute("""
+                    INSERT INTO bible.verses (non_standard_verse_ref, verse_ref) 
+                    VALUES (%s, %s)
+                """, (self.verse_ref, new_verse_ref))
+
         self.cur.execute("""
             INSERT INTO bible.verseoccurences (chapter_occ_id, verse_ref, text, xml) 
             VALUES (%s, %s, %s, %s)
