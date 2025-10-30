@@ -197,63 +197,65 @@ if __name__ == "__main__":
                 print("❌ All retries failed. Exiting.")
                 raise
     
-    label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=API_TOKEN)
-    me = label_studio_client.users.whoami()
+    # label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=API_TOKEN)
+    # me = label_studio_client.users.whoami()
 
-    translation_project = label_studio_client.projects.create(
-        title="TEST",
-        description="TEST Description",
-        label_config="""
-            <View>
-                <Text name="text" value="$text"/>
-                <Choices name="category" toName="text">
-                    <Choice value="Noun"/>
-                    <Choice value="Pronoun"/>
-                    <Choice value="Place"/>
-                </Choices>
-            </View>
-        """
-    )
+    # translation_project = label_studio_client.projects.create(
+    #     title="TEST",
+    #     description="TEST Description",
+    #     label_config="""
+    #         <View>
+    #             <Text name="text" value="$text"/>
+    #             <Choices name="category" toName="text">
+    #                 <Choice value="Noun"/>
+    #                 <Choice value="Pronoun"/>
+    #                 <Choice value="Place"/>
+    #             </Choices>
+    #         </View>
+    #     """
+    # )
 
-    print(translation_project.id)
+    # print(translation_project.id)
     
-    # Import requires actual files to be present at location in object storage
-    # label_studio_client.import_storage.s3.create(
+    # # Import requires actual files to be present at location in object storage
+    # # label_studio_client.import_storage.s3.create(
+    # #     s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
+    # #     aws_access_key_id=MINIO_USERNAME,
+    # #     aws_secret_access_key=MINIO_PASSWORD,
+    # #     project=translation_project.id,
+    # #     bucket="bible-nlp",
+    # #     prefix=f"import/",
+    # #     title="TEST Import"
+    # # )
+
+    # # Creates export path in bucket
+    # export_storage = label_studio_client.export_storage.s3.create(
     #     s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
     #     aws_access_key_id=MINIO_USERNAME,
     #     aws_secret_access_key=MINIO_PASSWORD,
     #     project=translation_project.id,
     #     bucket="bible-nlp",
-    #     prefix=f"import/",
+    #     prefix=f"export/",
     #     title="TEST Import"
     # )
 
-    # Creates export path in bucket
-    export_storage = label_studio_client.export_storage.s3.create(
-        s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
-        aws_access_key_id=MINIO_USERNAME,
-        aws_secret_access_key=MINIO_PASSWORD,
-        project=translation_project.id,
-        bucket="bible-nlp",
-        prefix=f"export/",
-        title="TEST Import"
-    )
+    # label_studio_client.tasks.create(
+    #     data={
+    #         "text": "In the beginning God created the heavens and the earth.",
+    #         "verse": "GEN 1:1"
+    #     },
+    #     project=translation_project.id,
+    # )
 
-    label_studio_client.tasks.create(
-        data={"image": "https://example.com/image.jpg", "text": "Hello, world!"},
-        project=translation_project.id,
-        is_labeled=True
-    )
+    # # Creates export snapshot
+    # export_snapshot = label_studio_client.projects.exports.create(
+    #     id=translation_project.id,
+    # )
 
-    # Creates export snapshot
-    export_snapshot = label_studio_client.projects.exports.create(
-        id=translation_project.id,
-    )
-
-    # Sync details to minio
-    label_studio_client.export_storage.s3.sync(
-        id=export_storage.id
-    )
+    # # Sync details to minio
+    # label_studio_client.export_storage.s3.sync(
+    #     id=export_storage.id
+    # )
 
     # It doesn't seem to do sync of export snapshot properly so either figure it out or manually upload them
 
