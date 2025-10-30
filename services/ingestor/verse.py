@@ -1,6 +1,8 @@
 from bs4 import BeautifulSoup, Tag, NavigableString
 import re
-import json
+
+from pathlib import Path
+import os
 
 class Verse:
     def __init__(self, chapter_xml, verse_ref, chapter_occurence_id, db_conn):
@@ -22,6 +24,8 @@ class Verse:
     def createVerse(self):
         self.getVerseAndNoteXML()
         self.getVerseText()
+
+        self.createLabelStudioTask()
 
         self.cur.execute("""
             INSERT INTO bible.verseoccurences (chapter_occ_id, verse_ref, text, xml) 
@@ -73,13 +77,13 @@ class Verse:
         self.text = temp_verse_xml.get_text().strip()
         # CHANGE LOGIC TO EXTRACT JUST CONTINUOS TEXT, NO LINE BREAKS
 
-    def createQuotesOccurences():
+    def createQuotesOccurences(self):
         # Consider here creating objects for
         # Quotes
         # 
         pass
 
-    def createLabelStudioTask():
+    def createLabelStudioTask(self):
         # After receiving text start feeding into label studio project to create tasks for annotating this verse translation accordingly
         # Perhaps be selective only for instances where quotes have been found
         # Or doing a quick nlp if a pronoun or a noun has been found in this verse, then try and highlight for later, 
