@@ -59,14 +59,14 @@ class Verse:
         # Regex to get everything between opening and closing paragraph tag
         start_tag = self.chapter_xml.find("verse", sid=self.verse_ref)
         end_tag = self.chapter_xml.find("verse", eid=self.verse_ref)
-        para_tag = str(start_tag.find_parent("para")).split(">")[0] + ">"
+        para_tag = "<usx>" + str(start_tag.find_parent("para")).split(">")[0] + ">"
 
         search_string = f"{start_tag}.*{end_tag}"
         verse_xml = para_tag + "\n"
         verse_found = re.search(search_string, str(self.chapter_xml), re.DOTALL)
         
         verse_xml += verse_found.group(0) if verse_found != None else ""
-        verse_xml += "\n</para>"
+        verse_xml += "\n</para></usx>"
         
         self.xml = verse_xml
 
