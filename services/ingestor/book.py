@@ -8,12 +8,14 @@ from chapter import Chapter
 
 # Changing since will only be relevant for text anyway
 class Book:
-    def __init__(self, language_id, translation_id, book_map_id, file_id, book_string, db_conn):
+    def __init__(self, language_id, translation_id, book_map_id, file_id, book_string, db_conn, translation_title):
         self.language_id = language_id
         self.translation_id = translation_id
         self.book_map_id = book_map_id
         self.file_id = file_id
         self.book_xml = BeautifulSoup(book_string, "xml")
+
+        self.translation_title = translation_title
 
         # Adds a database connection
         self.conn = db_conn
@@ -57,7 +59,7 @@ class Book:
             chapter_text += "\n</usx>"
 
             # Create Chapter Classes
-            Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, chapter_text, self.conn)
+            Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, chapter_text, self.conn, self.translation_title)
             additions += 1
         
         if additions > 0:

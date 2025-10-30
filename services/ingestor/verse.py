@@ -3,9 +3,10 @@ import re
 
 from pathlib import Path
 import os
+import json
 
 class Verse:
-    def __init__(self, chapter_xml, verse_ref, chapter_occurence_id, db_conn):
+    def __init__(self, chapter_xml, verse_ref, chapter_occurence_id, db_conn, translation_title):
         # Adds a database connection
         self.conn = db_conn
         self.cur = self.conn.cursor()
@@ -13,6 +14,8 @@ class Verse:
         self.chapter_xml = chapter_xml
         self.chapter_occurence_id = chapter_occurence_id
         self.verse_ref = verse_ref
+
+        self.translation_title = translation_title
 
         self.xml = None
         self.text = None
@@ -25,12 +28,12 @@ class Verse:
         self.getVerseAndNoteXML()
         self.getVerseText()
 
-        self.createLabelStudioTask()
-
         self.cur.execute("""
             INSERT INTO bible.verseoccurences (chapter_occ_id, verse_ref, text, xml) 
             VALUES (%s, %s, %s, %s)
         """, (self.chapter_occurence_id, self.verse_ref, self.text, str(self.xml)))
+
+        self.createLabelStudioTask()
 
     def getVerseAndNoteXML(self):
         # Regex to get everything between opening and closing paragraph tag
@@ -100,4 +103,16 @@ class Verse:
 
         # Then append verse to it with annotation aspects as part of the json in the file, then at the end for translation upload it to project.
         # Should create the file on minio-usx-upload (then should upload the file to minio on finish uploading, while also reading it to import into label studio)
-        pass
+        nlp_import_file = Path(__file__).parents[2] / "downloads" / f"{self.translation_title}.json"
+
+        nlp_data = {
+            "data": {
+                "text": self.text,
+                "verse_ref": self.verse_ref
+            },
+        }
+
+        with open(nlp_import_file, 'a', encoding="utf-8") as f:
+            f.write("\n")
+            f.write(json.dump(nlp_data))
+            

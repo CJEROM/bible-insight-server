@@ -101,12 +101,13 @@ language_code_map = {
 }
 
 class Chapter:
-    def __init__(self, language_id, translation_id, book_map_id, chapter_ref, chapter_text, db_conn):
+    def __init__(self, language_id, translation_id, book_map_id, chapter_ref, chapter_text, db_conn, translation_title):
         self.language_id = language_id
         self.translation_id = translation_id
         self.book_map_id = book_map_id
         self.chapter_ref = chapter_ref
         self.chapter_xml = BeautifulSoup(chapter_text, "xml")
+        self.translation_title = translation_title
 
         # Adds a database connection
         self.conn = db_conn
@@ -146,7 +147,7 @@ class Chapter:
         for verse in all_verses:
             verse_ref = verse.get("sid")
             if verse_ref:
-                Verse(self.chapter_xml, verse_ref, self.chapter_occurence_id, self.conn)
+                Verse(self.chapter_xml, verse_ref, self.chapter_occurence_id, self.conn, self.translation_title)
                 additions += 1
 
         if additions > 0:

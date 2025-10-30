@@ -65,6 +65,13 @@ class MinioUSXUpload:
         # Fetch and print result
         # version = self.cur.fetchone()
         # print("Connected successfully! PostgreSQL version:", version)
+        
+        self.translation_title = f"{self.medium}-{self.dbl_id}-{self.agreement_id}"
+
+        # Create JSON file for the NLP data to store and open it properly
+        nlp_import_file = Path(__file__).parents[2] / "downloads" / f"{self.translation_title}.json"
+        with open(nlp_import_file, 'w', encoding="utf-8") as f:
+            f.write("[{")
 
         self.translation_name = None
 
@@ -85,8 +92,6 @@ class MinioUSXUpload:
 
         duration = round(time.time() - self.start_time, 2)
         print(f"✅ Completed Translation Import in {duration} seconds!\n")
-
-        self.translation_title = f"{self.medium}-{self.dbl_id}-{self.agreement_id}"
 
         # Create Label Studio Project for this specific translation of the bible
         label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
@@ -113,24 +118,44 @@ class MinioUSXUpload:
         # Because I believe this is the only case we will use label studio, we create a project and it will auto increment like SERIAL PRIMARY KEY, 
         #       because of this we can align it with translation_id from database, and therefore connect project
         #   note: This is fragile and therefore might changge in the future, and require tighter coupling
-        
-        # Consider whether require bucket for each project
-        # label_studio_client.import_storage.s3.create(
-        #     project=translation_project.id,
-        #     bucket="bible-nlp",
-        #     prefix=f"{self.translation_name}/import/",
-        #     aws_access_key_id=MINIO_USERNAME,
-        #     aws_secret_access_key=MINIO_PASSWORD,
-        #     s3endpoint=MINIO_ENDPOINT
-        # )
-        # label_studio_client.export_storage.s3.create(
-        #     project=translation_project.id,
-        #     bucket="bible-nlp",
-        #     prefix=f"{self.translation_name}/export/",
-        #     aws_access_key_id=MINIO_USERNAME,
-        #     aws_secret_access_key=MINIO_PASSWORD,
-        #     s3endpoint=MINIO_ENDPOINT
-        # )
+
+        # Close the json file properly
+        with open(nlp_import_file, 'a', encoding="utf-8") as f:
+            f.write("}]")
+
+        # Remove the *last* comma before a closing bracket } or ] from nlp data file, for valid json
+        file_data = nlp_import_file.read_text(encoding="utf-8")
+        cleaned_nlp_data = re.sub(r',(\s*[}\]])', r'\1', file_data)
+        nlp_import_file.write_text(cleaned_nlp_data, encoding="utf-8")
+
+        # We check for file existence
+        if nlp_import_file.exists():
+            # Upload the json file with nlp data to label to the database
+            self.upload_file(f"{self.translation_title}/import/", nlp_import_file, "application/json")
+            
+            # Import requires actual files to be present at location in object storage
+            import_storage = label_studio_client.import_storage.s3.create(
+                s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
+                aws_access_key_id=MINIO_USERNAME,
+                aws_secret_access_key=MINIO_PASSWORD,
+                project=translation_project.id,
+                bucket="bible-nlp",
+                prefix=f"{self.translation_title}/imports/",
+                title="TEST Import"
+            )
+
+            export_storage = label_studio_client.export_storage.s3.create(
+                s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
+                aws_access_key_id=MINIO_USERNAME,
+                aws_secret_access_key=MINIO_PASSWORD,
+                project=translation_project.id,
+                bucket="bible-nlp",
+                prefix=f"{self.translation_title}/exports/",
+                title="TEST Import"
+            )
+            print("✅ Imported NLP Data File!")
+        else:
+            print("❌ Failed NLP Data File Import!")
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
@@ -250,7 +275,9 @@ class MinioUSXUpload:
         metadata_xml = BeautifulSoup(metadata_file_content, "xml")
         self.update_translationinfo_db(metadata_xml)
         self.translation_metadata_xml = metadata_xml
-        self.translation_name = f"{metadata_xml.find("identification").find("abbreviationLocal").text}: {metadata_xml.find("identification").find("name").text}"
+        translation_abbreviation = metadata_xml.find("identification").find("abbreviationLocal").text
+        translation_full_name = metadata_xml.find("identification").find("name").text
+        self.translation_name = f"{translation_abbreviation}: {translation_full_name}"
 
         self.revision = metadata_xml.find("DBLMetadata").get("revision")
         revision_note = metadata_xml.find("archiveStatus").find("comments")
@@ -327,7 +354,7 @@ class MinioUSXUpload:
                     self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
                     book_map_id = self.cur.fetchone()[0]
 
-                    Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn)
+                    Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn, self.translation_title)
                 if self.medium == "audio":
                     # Audio and eventually video don't have any connection but in serving the files themselves for consumption
                     #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
