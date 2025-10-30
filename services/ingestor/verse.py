@@ -28,11 +28,11 @@ class Verse:
         self.getVerseAndNoteXML()
         self.getVerseText()
 
-        verse_splits = len(self.verse_ref.split("-"))
-        chapter_ref, verse_num = verse_splits[0].split(":")[0]
+        verse_splits = self.verse_ref.split("-")
+        chapter_ref, verse_num = verse_splits[0].split(":")
 
         # Check whether verse_ref is non standard e.g. GEN 1:1-2
-        if verse_splits > 1:
+        if len(verse_splits) > 1:
             # Create new non standard verse first (to preseve foreign key constraint in db as well before verse occurence created)
             self.cur.execute("""
                 INSERT INTO bible.verses (chapter_ref, verse_ref, standard) 
