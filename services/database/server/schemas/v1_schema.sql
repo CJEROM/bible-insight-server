@@ -132,6 +132,33 @@ CREATE TABLE IF NOT EXISTS bible.translationrelationships (
 
 -- ================================================== bible.books ==================================================
 
+-- DROP TABLE IF EXISTS bible.labellingprojects;
+CREATE TABLE IF NOT EXISTS bible.labellingprojects (
+    id                  INT PRIMARY KEY,
+    label_config        XML
+);
+
+-- DROP TABLE IF EXISTS bible.translationlabellingprojects;
+CREATE TABLE IF NOT EXISTS bible.translationlabellingprojects (
+    id                  SERIAL PRIMARY KEY,
+    translation_id      INT,
+    project_id          INT,
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id),
+    FOREIGN KEY (project_id) REFERENCES bible.labelingprojects (id)
+);
+
+
+-- DROP TABLE IF EXISTS bible.labellingprojects;
+CREATE TABLE IF NOT EXISTS bible.labellingfiles (
+    id                  SERIAL PRIMARY KEY,
+    file_id             INT,
+    project_id          INT,
+    FOREIGN KEY (project_id) REFERENCES bible.labellingprojects (id),
+    FOREIGN KEY (file_id) REFERENCES bible.files (id)
+);
+
+-- ================================================== bible.books ==================================================
+
 -- DROP TABLE IF EXISTS bible.books;
 CREATE TABLE IF NOT EXISTS bible.books (
     id              SERIAL PRIMARY KEY,

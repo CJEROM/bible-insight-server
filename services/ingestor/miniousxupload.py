@@ -8,6 +8,7 @@ import shutil
 import re
 import time
 from label_studio_sdk import LabelStudio
+import json
 
 from book import Book
 
@@ -97,24 +98,22 @@ class MinioUSXUpload:
         label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
         me = label_studio_client.users.whoami()
 
+        project_label_config = """
+            <View>
+                <Text name="text" value="$text"/>
+                <Choices name="category" toName="text">
+                    <Choice value="Noun"/>
+                    <Choice value="Pronoun"/>
+                    <Choice value="Place"/>
+                </Choices>
+            </View>
+        """
+
         translation_project = label_studio_client.projects.create(
             title=self.translation_title,
             description=self.translation_name,
-            label_config="""
-                <View>
-                    <Text name="text" value="$text"/>
-                    <Choices name="category" toName="text">
-                        <Choice value="Noun"/>
-                        <Choice value="Pronoun"/>
-                        <Choice value="Place"/>
-                    </Choices>
-                </View>
-            """
+            label_config=project_label_config
         )
-
-        # Because I believe this is the only case we will use label studio, we create a project and it will auto increment like SERIAL PRIMARY KEY, 
-        #       because of this we can align it with translation_id from database, and therefore connect project
-        #   note: This is fragile and therefore might changge in the future, and require tighter coupling
 
         # Close the json file properly
         with open(nlp_import_file, 'a', encoding="utf-8") as f:
@@ -143,7 +142,7 @@ class MinioUSXUpload:
 
             label_studio_client.projects.import_tasks(
                 id=translation_project.id, 
-                request=cleaned_nlp_data
+                request=json.loads(cleaned_nlp_data)
             )
 
             # export_storage = label_studio_client.export_storage.s3.create(
@@ -153,8 +152,36 @@ class MinioUSXUpload:
             #     project=translation_project.id,
             #     bucket="bible-nlp",
             #     prefix=f"{self.translation_title}/exports/",
-            #     title="TEST Import"
+            #     title="TEST Export"
             # )
+            self.cur.execute("""
+                INSERT INTO bible.labellingprojects (id, label_config) 
+                VALUES (%s, %s)
+                RETURNING id;
+            """, (
+                translation_project.id,
+                project_label_config
+            ))
+
+            self.cur.execute("""
+                INSERT INTO bible.translationlabellingprojects (translation_id, project_id) 
+                VALUES (%s, %s)
+                RETURNING id;
+            """, (
+                self.translation_id,
+                translation_project.id
+            ))
+
+            # For when deciding to perhaps upload to minio
+            # self.cur.execute("""
+            #     INSERT INTO bible.translationlabellingprojects (translation_id, project_id) 
+            #     VALUES (%s, %s)
+            #     RETURNING id;
+            # """, (
+            #     self.translation_id,
+            #     translation_project.id
+            # ))
+
             print("✅ Imported NLP Data File!")
         else:
             print("❌ Failed NLP Data File Import!")
