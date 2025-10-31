@@ -17,17 +17,16 @@ class Verse:
 
         self.translation_title = translation_title
 
-        self.xml = None
-        self.text = None
+        self.conn.commit()
+
+        self.xml = self.getVerseAndNoteXML()
+        self.text = self.getVerseText(self.xml)
 
         self.createVerse()
 
         self.conn.commit()
     
     def createVerse(self):
-        self.getVerseAndNoteXML()
-        self.getVerseText()
-
         verse_splits = self.verse_ref.split("-")
         chapter_ref, verse_num = verse_splits[0].split(":")
 
@@ -68,10 +67,10 @@ class Verse:
         verse_xml += verse_found.group(0) if verse_found != None else ""
         verse_xml += "\n</para></usx>"
         
-        self.xml = verse_xml
+        return verse_xml
 
-    def getVerseText(self):
-        temp_verse_xml = BeautifulSoup(str(self.xml), "xml")
+    def getVerseText(self, verse_xml):
+        temp_verse_xml = BeautifulSoup(str(verse_xml), "xml")
 
         verse_sub_paras = temp_verse_xml.find_all("para")
 
@@ -81,14 +80,23 @@ class Verse:
             para_style = para.get("style")
 
             if para_style != None:
+                # Get latest translation (the one we are currently working on)
+                translation_id = None
+                try:
+                    self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
+                    translation_id = self.cur.fetchone()[0]
+                except Exception as e:
+                    self.conn.rollback()
+                    translation_id = 1
+
                 self.cur.execute("""
-                    SELECT versetext FROM bible.styles WHERE style=%s
-                """, (para_style,))
-                result = self.cur.fetchone()
+                    SELECT versetext FROM bible.styles WHERE style = %s AND source_file_id = (SELECT style_file FROM bible.translations WHERE id = %s);
+                """, (para_style,translation_id))
+                result = self.cur.fetchone()[0]
 
-                is_versetext = result[0] if result else None
+                is_versetext = True if result else False
 
-                if str(is_versetext) != True:
+                if is_versetext == False:
                     para.decompose()
 
                 # Remove <note> tags completely
@@ -97,8 +105,8 @@ class Verse:
                     for note in para.find_all("note"):
                         note.decompose()
 
-        self.text = temp_verse_xml.get_text().strip()
-        # CHANGE LOGIC TO EXTRACT JUST CONTINUOS TEXT, NO LINE BREAKS
+        final_text = temp_verse_xml.get_text().strip()
+        return final_text
 
     def createQuotesOccurences(self):
         # Consider here creating objects for
