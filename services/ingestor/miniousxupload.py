@@ -128,28 +128,33 @@ class MinioUSXUpload:
         # We check for file existence
         if nlp_import_file.exists():
             # Upload the json file with nlp data to label to the database
-            self.upload_file(f"{self.translation_title}/import/", nlp_import_file, "application/json")
+            # self.upload_file(f"{self.translation_title}/import/", nlp_import_file, "application/json", "bible-nlp")
             
-            # Import requires actual files to be present at location in object storage
-            import_storage = label_studio_client.import_storage.s3.create(
-                s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
-                aws_access_key_id=MINIO_USERNAME,
-                aws_secret_access_key=MINIO_PASSWORD,
-                project=translation_project.id,
-                bucket="bible-nlp",
-                prefix=f"{self.translation_title}/imports/",
-                title="TEST Import"
+            # # Import requires actual files to be present at location in object storage
+            # import_storage = label_studio_client.import_storage.s3.create(
+            #     s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
+            #     aws_access_key_id=MINIO_USERNAME,
+            #     aws_secret_access_key=MINIO_PASSWORD,
+            #     project=translation_project.id,
+            #     bucket="bible-nlp",
+            #     prefix=f"{self.translation_title}/imports/",
+            #     title="TEST Import"
+            # )
+
+            label_studio_client.projects.import_tasks(
+                id=translation_project.id, 
+                request=cleaned_nlp_data
             )
 
-            export_storage = label_studio_client.export_storage.s3.create(
-                s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
-                aws_access_key_id=MINIO_USERNAME,
-                aws_secret_access_key=MINIO_PASSWORD,
-                project=translation_project.id,
-                bucket="bible-nlp",
-                prefix=f"{self.translation_title}/exports/",
-                title="TEST Import"
-            )
+            # export_storage = label_studio_client.export_storage.s3.create(
+            #     s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
+            #     aws_access_key_id=MINIO_USERNAME,
+            #     aws_secret_access_key=MINIO_PASSWORD,
+            #     project=translation_project.id,
+            #     bucket="bible-nlp",
+            #     prefix=f"{self.translation_title}/exports/",
+            #     title="TEST Import"
+            # )
             print("✅ Imported NLP Data File!")
         else:
             print("❌ Failed NLP Data File Import!")
@@ -377,8 +382,10 @@ class MinioUSXUpload:
         elif file_location.is_file():
             Path(file_location).unlink(missing_ok=True)
 
-    def upload_file(self, object_name, file_path, content_type):
-        self.client.fput_object(self.bucket, object_name, str(file_path), content_type=content_type)
+    def upload_file(self, object_name, file_path, content_type, bucket=None):
+        if bucket == None:
+            bucket = self.bucket
+        self.client.fput_object(bucket, object_name, str(file_path), content_type=content_type)
         info = self.client.stat_object(self.bucket, object_name)
         # Example
             # Object(
