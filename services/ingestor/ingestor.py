@@ -113,11 +113,11 @@ class Ingestor:
         """, (dbl_id,))
 
         self.cur.execute("""
-            INSERT INTO bible.translations (dbl_id, agreement_id) VALUES(%s, %s);
+            INSERT INTO bible.translations (dbl_id, agreement_id) VALUES(%s, %s) RETURNING id;
         """, (dbl_id, agreement_id))
         self.conn.commit()
 
-        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
+        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
         return self.cur.fetchone()[0] # Return file_id to link to
 
     def get_downloads(self):

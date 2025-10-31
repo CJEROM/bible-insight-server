@@ -98,9 +98,8 @@ class MinioUSXUpload:
         me = label_studio_client.users.whoami()
 
         translation_project = label_studio_client.projects.create(
-            created_by=me.email,
+            title=self.translation_title,
             description=self.translation_name,
-            is_draft=True,
             label_config="""
                 <View>
                     <Text name="text" value="$text"/>
@@ -110,9 +109,7 @@ class MinioUSXUpload:
                         <Choice value="Place"/>
                     </Choices>
                 </View>
-            """,
-            title=self.translation_title,
-            show_skip_button=True
+            """
         )
 
         # Because I believe this is the only case we will use label studio, we create a project and it will auto increment like SERIAL PRIMARY KEY, 
@@ -167,9 +164,10 @@ class MinioUSXUpload:
         # If not create new and return it
         self.cur.execute("""
             INSERT INTO bible.sources (url) 
-            VALUES (%s);
+            VALUES (%s)
+            RETURNING id;
         """, (source_url,))
-        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.sources",))
+        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.sources",))
         return self.cur.fetchone()[0]
 
     def unzip_folder(self, zip_path):
@@ -218,14 +216,15 @@ class MinioUSXUpload:
         
         self.cur.execute("""
             INSERT INTO bible.languages (iso, name, namelocal, scriptdirection) 
-            VALUES (%s, %s, %s, %s);
+            VALUES (%s, %s, %s, %s)
+            RETURNING id;
         """, (
             language_xml.find("iso").text,
             language_xml.find("name").text,
             language_xml.find("nameLocal").text,
             language_xml.find("scriptDirection").text
         ))
-        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.languages",))
+        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.languages",))
         return self.cur.fetchone()[0]
     
     def update_translationinfo_db(self, metadata_xml):
@@ -349,9 +348,9 @@ class MinioUSXUpload:
                 # Then update the database linking to them
                 if self.medium == "text":
                     self.cur.execute("""
-                        INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s);
+                        INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s) RETURNING id;
                     """, (book, self.translation_id, file_id, short_name, long_name))
-                    self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
+                    # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
                     book_map_id = self.cur.fetchone()[0]
 
                     Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn, self.translation_title)
@@ -360,9 +359,9 @@ class MinioUSXUpload:
                     #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
                     #   Since below are all the database references it needs.
                     self.cur.execute("""
-                        INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s);
+                        INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s) RETURNING id;
                     """, (book, self.translation_id, None, short_name, long_name))
-                    self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
+                    # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
                     book_map_id = self.cur.fetchone()[0]
 
                     self.cur.execute("""
@@ -418,8 +417,9 @@ class MinioUSXUpload:
         self.cur.execute("""
             INSERT INTO bible.files (etag, type, file_path, bucket, source_id) 
             VALUES (%s, %s, %s, %s, %s)
+            RETURNING id;
         """, (info.etag, info.content_type, info.object_name, info.bucket_name, self.source_id))
-        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.files",))
+        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.files",))
 
         file_id = self.cur.fetchone()[0]
 
@@ -497,9 +497,10 @@ class MinioUSXUpload:
                 self.cur.execute("""
                     INSERT INTO bible.styles (style, name, description, versetext, publishable, source_file_id) 
                     VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING id;
                 """, (style, style_name, style_description, style_versetext, style_publishable, styles_file_id))
 
-                self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.styles",))
+                # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.styles",))
                 style_id = self.cur.fetchone()[0]
 
                 previous_style_parent = style_parent

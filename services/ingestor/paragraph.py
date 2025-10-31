@@ -67,8 +67,9 @@ class Paragraph:
         self.cur.execute("""
             INSERT INTO bible.paragraphs (chapter_occ_id, style_id, parent_para, xml, versetext) 
             VALUES (%s, %s, %s, %s, %s)
+            RETURNING id;
         """, (self.chapter_occurence_id, self.style_id, None, str(self.para_xml), self.getParaText()))
-        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.paragraphs",))
+        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.paragraphs",))
         self.paragraph_id = self.cur.fetchone()[0]
 
     def getVerseForStrongs(self, strong_xml):
