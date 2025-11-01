@@ -12,6 +12,12 @@ SMART_QUOTES = {
     "single_close": ['’']
 }
 
+SMART_QUOTES_PATTERN = (
+    r"[\u201C\u201D]"      # Smart double “ ”
+    r"|[\u2018]"           # Smart single opening ‘
+    r"|[\u2019]"           # Smart single closing ’
+)
+
 class Verse:
     def __init__(self, chapter_xml, verse_ref, chapter_occurence_id, db_conn, translation_title):
         # Adds a database connection
@@ -151,22 +157,28 @@ class Verse:
     def detect_smart_quotes(self, doc):
         results = []
 
-        for i, char in enumerate(self.text):
-            # 1. Smart double quotes → always include
+        # Use regex to locate all smart quotes
+        for match in re.finditer(SMART_QUOTES_PATTERN, self.text):
+            start = match.start()
+            end = match.end()
+            char = match.group()
+
+            # Smart double quotes → always include
             if char in SMART_QUOTES["double"]:
-                results.append(self.create_ls_result(i, i+1, char))
+                results.append(self.create_ls_result(start, end, char, "Double Quote"))
 
-            # 2. Smart single opening quote → always include
+            # Smart single opening quote → always include
             elif char in SMART_QUOTES["single_open"]:
-                results.append(self.create_ls_result(i, i+1, char))
+                results.append(self.create_ls_result(start, end, char))
 
-            # 3. Smart single closing quote — only include if not apostrophe
+            # Smart single closing quote — only include if not apostrophe
             elif char in SMART_QUOTES["single_close"]:
-                if not self.is_apostrophe_in_token(doc, i):
-                    results.append(self.create_ls_result(i, i+1, char))
-
-                # Otherwise include as quotation
-                results.append(self.create_ls_result(i, i+1, char))
+                if not self.is_apostrophe_in_token(doc, start):
+                    results.append(self.create_ls_result(start, end, char))
+                # If apostrophe, you can skip or include depending on logic.
+                # If you want to still include BOTH, keep this line:
+                else:
+                    pass  # remove if you want to include apostrophes as quotes
 
         return results
     
