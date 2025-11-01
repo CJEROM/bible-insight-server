@@ -15,3 +15,9 @@ flask
 json
 sqlite3
 label_studio_sdk
+spacy
+ast
+dotenv
+json
+
+# python -m spacy download en_core_web_sm
