@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS bible.translationrelationships (
     -- FOREIGN KEY (to_translation) REFERENCES bible.translations (dbl_id)
 );
 
--- ================================================== bible.books ==================================================
+-- ================================================== Label Studio Compatible Tables ==================================================
 
 -- DROP TABLE IF EXISTS bible.labellingprojects;
 CREATE TABLE IF NOT EXISTS bible.labellingprojects (
@@ -388,6 +388,24 @@ CREATE TABLE IF NOT EXISTS bible.entityoccurence (
 );
 
 -- ================================================== [] ==================================================
+
+CREATE TABLE pos_lookup (
+    id SERIAL PRIMARY KEY,
+    pos_tag VARCHAR(10) NOT NULL UNIQUE,  -- e.g. 'NOUN', 'VERB'
+    description TEXT NOT NULL             -- e.g. 'Noun, a person, place, or thing'
+);
+
+CREATE TABLE tag_lookup (
+    id SERIAL PRIMARY KEY,
+    tag VARCHAR(10) NOT NULL UNIQUE,
+    description TEXT NOT NULL
+);
+
+CREATE TABLE dep_lookup (
+    id SERIAL PRIMARY KEY,
+    dep VARCHAR(20) NOT NULL UNIQUE,
+    description TEXT NOT NULL
+);
 
 -- Only storing important bible.tokens
 -- DROP TABLE IF EXISTS bible.tokens;
