@@ -195,11 +195,10 @@ class Verse:
 
         # Store all token related pos in for pre annotated labelling
         for token in doc:
-            start = token.idx
-            end = start + len(token.text)
-            label = token.pos_
             if token.pos_ in ["NOUN", "PROPN", "PRON"]:
-                results.append(self.create_ls_result(start, end, token.text, label_map.get(label)))
+                start = token.idx
+                end = start + len(token.text)
+                results.append(self.create_ls_result(start, end, token.text, label_map.get(token.pos_)))
 
         return results
 
