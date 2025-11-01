@@ -144,15 +144,14 @@ class Verse:
                 if "’" in token.text and len(token.text) > 1:
                     return True
                 # Check whether the ’ character if by itself is tagged as punctuation POS
-                if token.pos_ == "PUNC":
+                if token.pos_ == "PUNCT":
                     return True
         return False
 
-    def detect_smart_quotes(self, text):
-        doc = self.nlp(text)
+    def detect_smart_quotes(self, doc):
         results = []
 
-        for i, char in enumerate(text):
+        for i, char in enumerate(self.text):
             # 1. Smart double quotes → always include
             if char in SMART_QUOTES["double"]:
                 results.append(self.create_ls_result(i, i+1, char))
@@ -170,6 +169,13 @@ class Verse:
                 results.append(self.create_ls_result(i, i+1, char))
 
         return results
+    
+    def detect_entities(self):
+        doc = self.nlp(self.text)
+        # Inherit results for smart quotes first, then add nouns and pronouns found on top
+        results = self.detect_smart_quotes(doc)
+
+
 
     def createLabelStudioTask(self):
         # After receiving text start feeding into label studio project to create tasks for annotating this verse translation accordingly
@@ -188,8 +194,7 @@ class Verse:
 
         # Then append verse to it with annotation aspects as part of the json in the file, then at the end for translation upload it to project.
         # Should create the file on minio-usx-upload (then should upload the file to minio on finish uploading, while also reading it to import into label studio)
-        prediction_results = []
-
+        prediction_results = self.detect_entities()
 
         nlp_import_file = Path(__file__).parents[2] / "downloads" / f"{self.translation_title}.json"
 
