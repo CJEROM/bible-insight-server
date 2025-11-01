@@ -4,6 +4,13 @@ import re
 from pathlib import Path
 import os
 import json
+import spacy
+
+SMART_QUOTES = {
+    "double": ['“', '”'],
+    "single_open": ['‘'],
+    "single_close": ['’']
+}
 
 class Verse:
     def __init__(self, chapter_xml, verse_ref, chapter_occurence_id, db_conn, translation_title):
@@ -18,6 +25,8 @@ class Verse:
         self.translation_title = translation_title
 
         self.conn.commit()
+
+        self.nlp = spacy.load("en_core_web_sm")
 
         self.xml = self.getVerseAndNoteXML()
         self.text = self.getVerseText(self.xml)
@@ -111,8 +120,50 @@ class Verse:
     def createQuotesOccurences(self):
         # Consider here creating objects for
         # Quotes
-        # 
+        # Can create a separete class for analysing quotes later on
         pass
+
+    def create_ls_result(self, start, end, text_part, label="Quote"):
+        return {
+            "id": f"{start}-{end}",
+            "from_name": "label",
+            "to_name": "text",
+            "type": "labels",
+            "value": {
+                "start": start,
+                "end": end,
+                "text": text_part,
+                "labels": [label]
+            }
+        }
+
+    def detect_smart_quotes(self, text):
+        
+        doc = self.nlp(text)
+        results = []
+
+        for i, char in enumerate(text):
+            # 1. Smart double quotes → always include
+            if char in SMART_QUOTES["double"]:
+                results.append(self.create_ls_result(i, i+1, char))
+
+            # 2. Smart single opening quote → always include
+            elif char in SMART_QUOTES["single_open"]:
+                results.append(self.create_ls_result(i, i+1, char))
+
+            # 3. Smart single closing quote — only include if not apostrophe
+            elif char in SMART_QUOTES["single_close"]:
+                prev = text[i-1] if i > 0 else " "
+                next_ = text[i+1] if i < len(text) - 1 else " "
+
+                # If both neighbors are alphabetic = apostrophe → skip
+                if prev.isalpha() and next_.isalpha():
+                    continue
+
+                # Otherwise include as quotation
+                results.append(self.create_ls_result(i, i+1, char))
+
+        return results
 
     def createLabelStudioTask(self):
         # After receiving text start feeding into label studio project to create tasks for annotating this verse translation accordingly
@@ -131,13 +182,23 @@ class Verse:
 
         # Then append verse to it with annotation aspects as part of the json in the file, then at the end for translation upload it to project.
         # Should create the file on minio-usx-upload (then should upload the file to minio on finish uploading, while also reading it to import into label studio)
+        prediction_results = []
+
+
         nlp_import_file = Path(__file__).parents[2] / "downloads" / f"{self.translation_title}.json"
 
         nlp_data = {
             "data": {
                 "text": self.text,
                 "verse_ref": self.verse_ref
-            }
+            },
+            "predictions": [
+                {
+                    "model_version": "one",
+                    "score": 0.5,
+                    "result": prediction_results
+                }
+            ]
         }
 
         with open(nlp_import_file, 'a', encoding="utf-8") as f:
