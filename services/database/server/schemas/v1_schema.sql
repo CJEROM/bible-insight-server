@@ -144,9 +144,8 @@ CREATE TABLE IF NOT EXISTS bible.translationlabellingprojects (
     translation_id      INT,
     project_id          INT,
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id),
-    FOREIGN KEY (project_id) REFERENCES bible.labelingprojects (id)
+    FOREIGN KEY (project_id) REFERENCES bible.labellingprojects (id)
 );
-
 
 -- DROP TABLE IF EXISTS bible.labellingprojects;
 CREATE TABLE IF NOT EXISTS bible.labellingfiles (
