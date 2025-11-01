@@ -136,9 +136,19 @@ class Verse:
                 "labels": [label]
             }
         }
+    
+    def is_apostrophe_in_token(self, doc, index):
+        for token in doc:
+            if token.idx <= index < token.idx + len(token.text):
+                # Check token contains the ’ character and is longer than 1 char
+                if "’" in token.text and len(token.text) > 1:
+                    return True
+                # Check whether the ’ character if by itself is tagged as punctuation POS
+                if token.pos_ == "PUNC":
+                    return True
+        return False
 
     def detect_smart_quotes(self, text):
-        
         doc = self.nlp(text)
         results = []
 
@@ -153,12 +163,8 @@ class Verse:
 
             # 3. Smart single closing quote — only include if not apostrophe
             elif char in SMART_QUOTES["single_close"]:
-                prev = text[i-1] if i > 0 else " "
-                next_ = text[i+1] if i < len(text) - 1 else " "
-
-                # If both neighbors are alphabetic = apostrophe → skip
-                if prev.isalpha() and next_.isalpha():
-                    continue
+                if not self.is_apostrophe_in_token(doc, i):
+                    results.append(self.create_ls_result(i, i+1, char))
 
                 # Otherwise include as quotation
                 results.append(self.create_ls_result(i, i+1, char))
