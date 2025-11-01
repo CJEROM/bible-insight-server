@@ -170,12 +170,26 @@ class Verse:
 
         return results
     
-    def detect_entities(self):
+    def detect_tokens_to_label(self):
         doc = self.nlp(self.text)
         # Inherit results for smart quotes first, then add nouns and pronouns found on top
         results = self.detect_smart_quotes(doc)
 
+        label_map = {
+            "NOUN": "Noun", 
+            "PROPN": "Proper Noun", 
+            "PRON": "Pronoun"
+        }
 
+        # Store all token related pos in for pre annotated labelling
+        for token in doc:
+            start = token.idx
+            end = start + len(token.text)
+            label = token.pos_
+            if token.pos_ in ["NOUN", "PROPN", "PRON"]:
+                results.append(self.create_ls_result(start, end, token.text, label_map.get(label)))
+
+        return results
 
     def createLabelStudioTask(self):
         # After receiving text start feeding into label studio project to create tasks for annotating this verse translation accordingly
@@ -194,8 +208,6 @@ class Verse:
 
         # Then append verse to it with annotation aspects as part of the json in the file, then at the end for translation upload it to project.
         # Should create the file on minio-usx-upload (then should upload the file to minio on finish uploading, while also reading it to import into label studio)
-        prediction_results = self.detect_entities()
-
         nlp_import_file = Path(__file__).parents[2] / "downloads" / f"{self.translation_title}.json"
 
         nlp_data = {
@@ -207,7 +219,7 @@ class Verse:
                 {
                     "model_version": "one",
                     "score": 0.5,
-                    "result": prediction_results
+                    "result": self.detect_tokens_to_label()
                 }
             ]
         }
