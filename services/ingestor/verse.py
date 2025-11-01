@@ -150,7 +150,7 @@ class Verse:
                 if "’" in token.text and len(token.text) > 1:
                     return True
                 # Check whether the ’ character if by itself is tagged as punctuation POS
-                if token.pos_ == "PUNCT":
+                if token.pos_ != "PUNCT":
                     return True
         return False
 
