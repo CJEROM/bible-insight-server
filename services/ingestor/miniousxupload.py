@@ -69,11 +69,6 @@ class MinioUSXUpload:
         
         self.translation_title = f"{self.medium}-{self.dbl_id}-{self.agreement_id}"
 
-        # Create JSON file for the NLP data to store and open it properly
-        nlp_import_file = Path(__file__).parents[2] / "downloads" / f"{self.translation_title}.json"
-        with open(nlp_import_file, 'w', encoding="utf-8") as f:
-            f.write("[")
-
         self.translation_name = None
 
         # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
@@ -94,7 +89,7 @@ class MinioUSXUpload:
 
         # Create Label Studio Project for this specific translation of the bible
         label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
-        me = label_studio_client.users.whoami()
+        # me = label_studio_client.users.whoami()
 
         # Should consider how else to do this
         project_label_config = """
@@ -124,77 +119,33 @@ class MinioUSXUpload:
             label_config=project_label_config
         )
 
-        # Close the json file properly
-        with open(nlp_import_file, 'a', encoding="utf-8") as f:
-            f.write("]")
+        # For now not sure how this works
+        export_storage = label_studio_client.export_storage.s3.create(
+            s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
+            aws_access_key_id=MINIO_USERNAME,
+            aws_secret_access_key=MINIO_PASSWORD,
+            project=translation_project.id,
+            bucket="bible-nlp",
+            prefix=f"{self.translation_title}/exports/",
+            title="TEST Export"
+        )
 
-        # Remove the *last* comma before a closing bracket } or ] from nlp data file, for valid json
-        file_data = nlp_import_file.read_text(encoding="utf-8")
-        cleaned_nlp_data = re.sub(r',(\s*[}\]])', r'\1', file_data)
-        nlp_import_file.write_text(cleaned_nlp_data, encoding="utf-8")
+        self.cur.execute("""
+            INSERT INTO bible.labellingprojects (id) 
+            VALUES (%s)
+            RETURNING id;
+        """, (
+            translation_project.id,
+        ))
 
-        # We check for file existence
-        if nlp_import_file.exists():
-            # Upload the json file with nlp data to label to the database
-            
-            # # Import requires actual files to be present at location in object storage
-            # import_storage = label_studio_client.import_storage.s3.create(
-            #     s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
-            #     aws_access_key_id=MINIO_USERNAME,
-            #     aws_secret_access_key=MINIO_PASSWORD,
-            #     project=translation_project.id,
-            #     bucket="bible-nlp",
-            #     prefix=f"{self.translation_title}/imports/",
-            #     title="TEST Import"
-            # )
-
-            label_studio_client.projects.import_tasks(
-                id=translation_project.id, 
-                request=json.loads(cleaned_nlp_data)
-            )
-
-            # For now not sure how this works
-            export_storage = label_studio_client.export_storage.s3.create(
-                s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
-                aws_access_key_id=MINIO_USERNAME,
-                aws_secret_access_key=MINIO_PASSWORD,
-                project=translation_project.id,
-                bucket="bible-nlp",
-                prefix=f"{self.translation_title}/exports/",
-                title="TEST Export"
-            )
-
-            self.cur.execute("""
-                INSERT INTO bible.labellingprojects (id, label_config) 
-                VALUES (%s, %s)
-                RETURNING id;
-            """, (
-                translation_project.id,
-                project_label_config
-            ))
-
-            self.cur.execute("""
-                INSERT INTO bible.translationlabellingprojects (translation_id, project_id) 
-                VALUES (%s, %s)
-                RETURNING id;
-            """, (
-                self.translation_id,
-                translation_project.id
-            ))
-
-            # For when deciding to perhaps upload to minio
-            self.cur.execute("""
-                INSERT INTO bible.labellingfiles (file_id, project_id) 
-                VALUES (%s, %s)
-                RETURNING id;
-            """, (
-                self.upload_file(f"{self.translation_title}/import/{self.translation_title}", nlp_import_file, "application/json", "bible-nlp"),
-                translation_project.id
-            ))
-
-            print("✅ Imported NLP Data File!")
-        else:
-            print("❌ Failed NLP Data File Import!")
+        self.cur.execute("""
+            INSERT INTO bible.translationlabellingprojects (translation_id, project_id) 
+            VALUES (%s, %s)
+            RETURNING id;
+        """, (
+            self.translation_id,
+            translation_project.id
+        ))
 
         self.conn.commit()
         self.cur.close()

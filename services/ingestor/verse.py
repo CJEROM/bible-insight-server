@@ -52,8 +52,6 @@ class Verse:
             VALUES (%s, %s, %s, %s)
         """, (self.chapter_occurence_id, self.verse_ref, self.text, str(self.xml)))
 
-        self.createLabelStudioTask()
-
     def getVerseAndNoteXML(self):
         # Regex to get everything between opening and closing paragraph tag
         start_tag = self.chapter_xml.find("verse", sid=self.verse_ref)

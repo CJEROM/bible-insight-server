@@ -1,6 +1,7 @@
 import spacy
 import json
 from pathlib import Path
+import re
 
 SMART_QUOTES = {
     "double": ['“', '”'],
@@ -137,3 +138,4 @@ class Labeller:
 
         
 if __name__ == "__main__":
+    Labeller()
