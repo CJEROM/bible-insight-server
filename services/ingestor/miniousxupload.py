@@ -88,8 +88,6 @@ class MinioUSXUpload:
                 self.check_files(self.process_location)
 
         self.conn.commit()
-        self.cur.close()
-        self.conn.close()
 
         duration = round(time.time() - self.start_time, 2)
         print(f"✅ Completed Translation Import in {duration} seconds!\n")
@@ -185,6 +183,10 @@ class MinioUSXUpload:
             print("✅ Imported NLP Data File!")
         else:
             print("❌ Failed NLP Data File Import!")
+
+        self.conn.commit()
+        self.cur.close()
+        self.conn.close()
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
