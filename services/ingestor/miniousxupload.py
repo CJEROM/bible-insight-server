@@ -96,15 +96,26 @@ class MinioUSXUpload:
         label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
         me = label_studio_client.users.whoami()
 
+        # Should consider how else to do this
         project_label_config = """
-            <View>
-                <Text name="text" value="$text"/>
-                <Choices name="category" toName="text">
-                    <Choice value="Noun"/>
-                    <Choice value="Pronoun"/>
-                    <Choice value="Place"/>
-                </Choices>
-            </View>
+        <View>
+            <Relations>
+                <Relation value="org:founded_by"/>
+                <Relation value="org:founded"/>
+            </Relations>
+            <Labels name="label" toName="text">
+                <Label value="Person" background="#e74c3c"/>        <!-- Red -->
+                <Label value="Location" background="#9b59b6"/>      <!-- Purple -->
+                <Label value="Group" background="#f1c40f"/>         <!-- Yellow -->
+                <Label value="Pronoun" background="#27ae60"/>       <!-- Green -->
+                <Label value="Proper Noun" background="#3498db"/>   <!-- Light Blue -->
+                <Label value="Noun" background="#16a085"/>          <!-- Teal -->
+                <Label value="Double Quote" background="#e67e22"/>  <!-- Orange -->
+                <Label value="Quote" background="#d35400"/>         <!-- Dark Orange -->
+            </Labels>
+
+            <Text name="text" value="$text"/>
+        </View>
         """
 
         translation_project = label_studio_client.projects.create(
@@ -125,7 +136,6 @@ class MinioUSXUpload:
         # We check for file existence
         if nlp_import_file.exists():
             # Upload the json file with nlp data to label to the database
-            
             
             # # Import requires actual files to be present at location in object storage
             # import_storage = label_studio_client.import_storage.s3.create(
