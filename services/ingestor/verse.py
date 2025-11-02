@@ -18,6 +18,12 @@ SMART_QUOTES_PATTERN = (
     r"|[\u2019]"           # Smart single closing ’
 )
 
+PRONOUN_REFERENTS = {
+    "he", "him", "his", "she", "her", "hers",
+    "they", "them", "their", "you", "your",
+    "we", "us", "our", "i", "me", "my"
+}
+
 class Verse:
     def __init__(self, chapter_xml, verse_ref, chapter_occurence_id, db_conn, translation_title):
         # Adds a database connection
@@ -129,7 +135,7 @@ class Verse:
         # Can create a separete class for analysing quotes later on
         pass
 
-    def create_ls_result(self, start, end, text_part, label="Quote"):
+    def create_ls_result(self, start, end, text_part, label):
         return {
             "id": f"{start}-{end}",
             "from_name": "label",
@@ -165,20 +171,18 @@ class Verse:
 
             # Smart double quotes → always include
             if char in SMART_QUOTES["double"]:
-                results.append(self.create_ls_result(start, end, char, "Double Quote"))
+                results.append(self.create_ls_result(start, end, char, "Q"))
 
             # Smart single opening quote → always include
             elif char in SMART_QUOTES["single_open"]:
-                results.append(self.create_ls_result(start, end, char))
+                results.append(self.create_ls_result(start, end, char, "Q"))
 
             # Smart single closing quote — only include if not apostrophe
             elif char in SMART_QUOTES["single_close"]:
                 if not self.is_apostrophe_in_token(doc, start):
-                    results.append(self.create_ls_result(start, end, char))
-                # If apostrophe, you can skip or include depending on logic.
-                # If you want to still include BOTH, keep this line:
-                else:
-                    pass  # remove if you want to include apostrophes as quotes
+                    results.append(self.create_ls_result(start, end, char, "Q"))
+                else: # if actually apostrophe
+                    results.append(self.create_ls_result(start, end, char, "APOS"))
 
         return results
     
@@ -187,18 +191,20 @@ class Verse:
         # Inherit results for smart quotes first, then add nouns and pronouns found on top
         results = self.detect_smart_quotes(doc)
 
-        label_map = {
-            "NOUN": "Noun", 
-            "PROPN": "Proper Noun", 
-            "PRON": "Pronoun"
-        }
-
         # Store all token related pos in for pre annotated labelling
         for token in doc:
-            if token.pos_ in ["NOUN", "PROPN", "PRON"]:
+            if token.pos_ == "NOUN": # Noun
                 start = token.idx
                 end = start + len(token.text)
-                results.append(self.create_ls_result(start, end, token.text, label_map.get(token.pos_)))
+                results.append(self.create_ls_result(start, end, token.text, "NOUN"))
+            elif token.pos_ == "PRON" and token.text.lower() in PRONOUN_REFERENTS: # Pronoun (that refers to people)
+                start = token.idx
+                end = start + len(token.text)
+                results.append(self.create_ls_result(start, end, token.text, "PRON"))
+            elif token.pos_ == "PROPN": # Proper Noun
+                start = token.idx
+                end = start + len(token.text)
+                results.append(self.create_ls_result(start, end, token.text, ""))
 
         return results
 
