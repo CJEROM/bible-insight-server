@@ -104,14 +104,14 @@ class MinioUSXUpload:
                 <Relation value="org:founded"/>
             </Relations>
             <Labels name="label" toName="text">
-                <Label value="Person" background="#e74c3c"/>        <!-- Red -->
-                <Label value="Location" background="#9b59b6"/>      <!-- Purple -->
-                <Label value="Group" background="#f1c40f"/>         <!-- Yellow -->
-                <Label value="Pronoun" background="#27ae60"/>       <!-- Green -->
-                <Label value="Proper Noun" background="#3498db"/>   <!-- Light Blue -->
-                <Label value="Noun" background="#16a085"/>          <!-- Teal -->
-                <Label value="Double Quote" background="#e67e22"/>  <!-- Orange -->
-                <Label value="Quote" background="#d35400"/>         <!-- Dark Orange -->
+                <Label value="PER" background="#e74c3c"/>        <!-- Red -->
+                <Label value="LOC" background="#9b59b6"/>      <!-- Purple -->
+                <Label value="GRP" background="#f1c40f"/>         <!-- Yellow -->
+                <Label value="PRON" background="#27ae60"/>       <!-- Green -->
+                <Label value="Divine" background="#3498db"/>   <!-- Light Blue -->
+                <Label value="NOUN" background="#16a085"/>          <!-- Teal -->
+                <Label value="APOS" background="#e67e22"/>  <!-- Orange -->
+                <Label value="Q" background="#d35400"/>         <!-- Dark Orange -->
             </Labels>
 
             <Text name="text" value="$text"/>
