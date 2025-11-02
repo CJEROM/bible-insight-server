@@ -399,7 +399,7 @@ class MinioUSXUpload:
                     # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
                     book_map_id = self.cur.fetchone()[0]
 
-                    Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn, self.translation_title)
+                    Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn)
                 if self.medium == "audio":
                     # Audio and eventually video don't have any connection but in serving the files themselves for consumption
                     #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
