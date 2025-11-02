@@ -193,11 +193,7 @@ class Verse:
 
         # Store all token related pos in for pre annotated labelling
         for token in doc:
-            if token.pos_ == "NOUN": # Noun
-                start = token.idx
-                end = start + len(token.text)
-                results.append(self.create_ls_result(start, end, token.text, "NOUN"))
-            elif token.pos_ == "PRON" and token.text.lower() in PRONOUN_REFERENTS: # Pronoun (that refers to people)
+            if token.pos_ == "PRON" and token.text.lower() in PRONOUN_REFERENTS: # Pronoun (that refers to people)
                 start = token.idx
                 end = start + len(token.text)
                 results.append(self.create_ls_result(start, end, token.text, "PRON"))
