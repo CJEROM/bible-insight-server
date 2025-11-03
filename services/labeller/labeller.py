@@ -88,8 +88,42 @@ class Labeller:
         results = self.cur.fetchall()
         
         for code, etag, object_name, bucket in results:
-            print(self.stream_file(object_name, bucket))
+            book_file_content = self.stream_file(object_name, bucket)
+            book_xml = BeautifulSoup(book_file_content, "xml")
+            # Go though paragraph by paragraph
+            book_text = self.getParaText(book_xml)
+            print(book_text)
             break
+
+    def getParaText(self, book_xml):
+        temp_book_xml = BeautifulSoup(str(book_xml), "xml")
+
+        book_paras = temp_book_xml.find_all("para")
+
+        # Check for para tags
+        for para in book_paras:
+            # print(para)
+            para_style = para.get("style")
+
+            if para_style != None:
+                self.cur.execute("""
+                    SELECT versetext FROM bible.styles WHERE style = %s AND source_file_id = (SELECT style_file FROM bible.translations WHERE id = %s);
+                """, (para_style, self.translation_id))
+                result = self.cur.fetchone()[0]
+
+                # If not part of actual scripture text then remove
+                is_versetext = True if result else False
+                if is_versetext == False:
+                    para.decompose()
+
+                # Remove <note> tags completely
+                all_notes = para.find_all("note")
+                if len(all_notes) > 0:
+                    for note in para.find_all("note"):
+                        note.decompose()
+
+        final_text = temp_book_xml.get_text().strip()
+        return final_text
 
 if __name__ == "__main__":
     # Can try querying all finished projects in labellingproject or translationlabellingprojects tables 
