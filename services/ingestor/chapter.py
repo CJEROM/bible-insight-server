@@ -122,8 +122,8 @@ class Chapter:
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))
         self.chapter_occurence_id = self.cur.fetchone()[0]
 
-        self.createParagraphs()
         self.createVerseOccurences()
+        self.createParagraphs()
         # self.createTokens()
 
         self.conn.commit()
