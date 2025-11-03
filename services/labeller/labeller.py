@@ -55,9 +55,9 @@ class Labeller:
         )
 
         self.start_time = time.time()
-        self.export_word_list()
+        exports = self.export_word_list()
         duration = round(time.time() - self.start_time, 2)
-        print(f"✅ Completed Word List Import in {duration} seconds!\n")
+        print(f"✅ Migrated [{exports}] Words to DB in {duration} seconds for translation [{self.translation_id}]!\n")
 
         self.conn.commit()
         self.cur.close()
@@ -112,10 +112,17 @@ class Labeller:
 
     def export_word_list(self):
         word_list = self.get_word_list()
+        words_added = []
         for word in word_list:
-            self.cur.execute("""
-                INSERT INTO bible.word_list (text) VALUES (%s);
-            """, (word,))
+            try:
+                self.cur.execute("""
+                    INSERT INTO bible.word_list (text) VALUES (%s);
+                """, (word,))
+                words_added.append(word)
+            except Exception as e:
+                pass
+
+        return len(words_added)
 
     def get_para_text(self, book_xml):
         temp_book_xml = BeautifulSoup(str(book_xml), "xml")
