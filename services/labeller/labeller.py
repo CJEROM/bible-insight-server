@@ -32,7 +32,7 @@ MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
 TOKEN_PATTERN = re.compile(r"[A-Za-z]+(?:'[A-Za-z]+)?|[0-9]+|[^\w\s]")
 
 class Labeller:
-    def __init__(self, translation_id, nlp_words_filepath):
+    def __init__(self, nlp_words_filepath, translation_id=None):
         self.nlp = spacy.load("en_core_web_sm")
         self.translation_id = translation_id
         self.nlp_words_filepath = nlp_words_filepath
@@ -55,10 +55,16 @@ class Labeller:
             secure=False
         )
 
-        self.start_time = time.time()
-        exports = self.export_word_list()
-        duration = round(time.time() - self.start_time, 2)
-        print(f"✅ Migrated [{exports}] Words to DB in {duration} seconds for translation [{self.translation_id}]!\n")
+        if self.translation_id == None:
+            self.cur.execute("""SELECT translation_id FROM bible.translationlabellingprojects;""")
+            translations = self.cur.fetchall()
+
+            for id in translations:
+                self.translation_id = id
+                self.start_time = time.time()
+                exports = self.export_word_list()
+                duration = round(time.time() - self.start_time, 2)
+                print(f"✅ Migrated [{exports}] Words to DB in {duration} seconds for translation [{self.translation_id}]!\n")
 
         self.conn.commit()
         self.cur.close()
@@ -182,4 +188,5 @@ class Labeller:
 if __name__ == "__main__":
     # Can try querying all finished projects in labellingproject or translationlabellingprojects tables 
     #       as candidates for working on
-    Labeller(1, "C:\Users\CephJ\Documents\git\bible-insight-server\archive\nlp_words.txt")
+    nlp_file = "C:\Users\CephJ\Documents\git\bible-insight-server\archive\nlp_words.txt"
+    Labeller(nlp_file, 1)
