@@ -32,9 +32,10 @@ MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
 TOKEN_PATTERN = re.compile(r"[A-Za-z]+(?:'[A-Za-z]+)?|[0-9]+|[^\w\s]")
 
 class Labeller:
-    def __init__(self, translation_id):
+    def __init__(self, translation_id, nlp_words_filepath):
         self.nlp = spacy.load("en_core_web_sm")
         self.translation_id = translation_id
+        self.nlp_words_filepath = nlp_words_filepath
 
         # Adds a database connection
         self.conn = psycopg2.connect(
@@ -112,13 +113,18 @@ class Labeller:
 
     def export_word_list(self):
         word_list = self.get_word_list()
+        nlp_words = self.load_nlp_words()
         words_added = []
         for word in word_list:
             try:
+                is_nlp = word in nlp_words
+
                 self.cur.execute("""
-                    INSERT INTO bible.word_list (text) VALUES (%s);
-                """, (word,))
-                words_added.append(word)
+                    INSERT INTO bible.word_list (text, nlp) 
+                    VALUES (%s, %s)
+                    RETURNING id;
+                """, (word, is_nlp))
+                words_added.append(self.cur.fetchone())
             except Exception as e:
                 pass
 
@@ -168,7 +174,12 @@ class Labeller:
     def get_word_frequencies(self, tokens):
         return Counter(tokens)  # returns a dict-like object with counts
 
+    def load_nlp_words(self):
+        # These are words that beforehand I have already identified as of interest to my labelling set up
+        with open(self.nlp_words_filepath, 'r', encoding='utf-8') as f:
+            return set(line.strip() for line in f if line.strip())
+
 if __name__ == "__main__":
     # Can try querying all finished projects in labellingproject or translationlabellingprojects tables 
     #       as candidates for working on
-    Labeller(1)
+    Labeller(1, "C:\Users\CephJ\Documents\git\bible-insight-server\archive\nlp_words.txt")
