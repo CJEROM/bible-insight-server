@@ -602,11 +602,15 @@ class MinioUSXUpload:
 
                 # Validates any non standard chapters that might apear outside ones initialised originally
                 if found_chapter == None:
-                    print(book_code, int(chapter_num), chapter_ref)
-                    self.cur.execute("""
-                        INSERT INTO bible.chapters (book_code, chapter_num, chapter_ref, standard) 
-                        VALUES (%s, %s, %s, %s);
-                    """, (book_code, int(chapter_num), chapter_ref, False))
+                    try:
+                        print(book_code, int(chapter_num), chapter_ref)
+                        self.cur.execute("""
+                            INSERT INTO bible.chapters (book_code, chapter_num, chapter_ref, standard) 
+                            VALUES (%s, %s, %s, %s);
+                        """, (book_code, int(chapter_num), chapter_ref, False))
+                    except Exception as e:
+                        print(f"❌ Skipped Chapter Creation of [{chapter_ref}]")
+                        # In the case it can't seem to create a new chapter then skip the chapter (won't take it as important)
 
                 for verse in range(1, (int(verse_count)+1)):
                     verse_ref = chapter_ref + ":" + str(verse)

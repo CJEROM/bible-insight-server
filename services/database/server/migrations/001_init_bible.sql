@@ -474,6 +474,13 @@ INSERT INTO bible.chapters (id, book_code, chapter_num, chapter_ref) VALUES
    (1183, 'REV', 16, 'REV 16'), (1184, 'REV', 17, 'REV 17'), (1185, 'REV', 18, 'REV 18'), (1186, 'REV', 19, 'REV 19'), (1187, 'REV', 20, 'REV 20'),
    (1188, 'REV', 21, 'REV 21'), (1189, 'REV', 22, 'REV 22');
 
+-- Reset sequence so next ID = 1190
+SELECT setval(
+    pg_get_serial_sequence('bible.chapters', 'id'),
+    1189,
+    true
+);
+
 INSERT INTO bible.bookgroups (testament, level) VALUES 
     (TRUE, 1), -- ID = 1, New Testament
     (TRUE, 1), -- ID = 2, Old Testament
