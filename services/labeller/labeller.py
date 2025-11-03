@@ -53,7 +53,7 @@ class Labeller:
             secure=False
         )
 
-        self.get_book_files()
+        self.get_word_list()
 
         self.conn.commit()
         self.cur.close()
@@ -89,7 +89,10 @@ class Labeller:
         """, (self.translation_id,))
 
         db_books = self.cur.fetchall()
+        return db_books
 
+    def get_word_list(self):
+        db_books = self.get_book_files()
         translation_text = ""
         
         for code, etag, object_name, bucket in db_books:
@@ -102,7 +105,8 @@ class Labeller:
 
         results = self.get_word_frequencies(self.get_tokens_without_puntuation(translation_text))
         # results = self.get_tokens_without_puntuation(translation_text)
-        print(results)
+        results.keys()
+        print(results.keys())
 
     def get_para_text(self, book_xml):
         temp_book_xml = BeautifulSoup(str(book_xml), "xml")
