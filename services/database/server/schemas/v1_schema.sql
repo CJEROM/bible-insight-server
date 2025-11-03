@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS bible.translationrelationships (
 -- DROP TABLE IF EXISTS bible.labellingprojects;
 CREATE TABLE IF NOT EXISTS bible.labellingprojects (
     id                  INT PRIMARY KEY,
-    label_config        XML
+    exports             INT DEFAULT 0
 );
 
 -- DROP TABLE IF EXISTS bible.translationlabellingprojects;
@@ -318,7 +318,7 @@ CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
     FOREIGN KEY (to_verse_end) REFERENCES bible.verses (verse_ref)
 );
 
--- ================================================== Linked Components ==================================================
+-- ================================================== Strongs Components ==================================================
 
 -- DROP TABLE IF EXISTS bible.strongs;
 CREATE TABLE IF NOT EXISTS bible.strongs (
@@ -340,11 +340,6 @@ CREATE TABLE IF NOT EXISTS bible.strongsoccurence (
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id),
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref),
     FOREIGN KEY (strong_code) REFERENCES bible.strongs (code)
-);
-
--- DROP TABLE IF EXISTS bible.entities;
-CREATE TABLE IF NOT EXISTS bible.entities (
-    id              SERIAL PRIMARY KEY
 );
 
 -- ================================================== Text Based Information ==================================================
@@ -376,6 +371,11 @@ CREATE TABLE IF NOT EXISTS bible.quotes (
     FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id)
 );
 
+-- DROP TABLE IF EXISTS bible.entities;
+CREATE TABLE IF NOT EXISTS bible.entities (
+    id              SERIAL PRIMARY KEY
+);
+
 -- This will also count as Entity Names to some degree since we are counting each occurence and mentions of them, but this could have start and end
 -- DROP TABLE IF EXISTS bible.entityoccurence;
 CREATE TABLE IF NOT EXISTS bible.entityoccurence (
@@ -388,23 +388,7 @@ CREATE TABLE IF NOT EXISTS bible.entityoccurence (
 
 -- ================================================== [] ==================================================
 
-CREATE TABLE pos_lookup (
-    id SERIAL PRIMARY KEY,
-    pos_tag VARCHAR(10) NOT NULL UNIQUE,  -- e.g. 'NOUN', 'VERB'
-    description TEXT NOT NULL             -- e.g. 'Noun, a person, place, or thing'
-);
 
-CREATE TABLE tag_lookup (
-    id SERIAL PRIMARY KEY,
-    tag VARCHAR(10) NOT NULL UNIQUE,
-    description TEXT NOT NULL
-);
-
-CREATE TABLE dep_lookup (
-    id SERIAL PRIMARY KEY,
-    dep VARCHAR(20) NOT NULL UNIQUE,
-    description TEXT NOT NULL
-);
 
 -- Only storing important bible.tokens
 -- DROP TABLE IF EXISTS bible.tokens;
@@ -427,6 +411,25 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id)
 );
 
+-- ================================================== Spacy Look up Tables ==================================================
+
+CREATE TABLE public.pos_lookup (
+    id SERIAL PRIMARY KEY,
+    pos_tag VARCHAR(10) NOT NULL UNIQUE,  -- e.g. 'NOUN', 'VERB'
+    description TEXT NOT NULL             -- e.g. 'Noun, a person, place, or thing'
+);
+
+CREATE TABLE public.tag_lookup (
+    id SERIAL PRIMARY KEY,
+    tag VARCHAR(10) NOT NULL UNIQUE,
+    description TEXT NOT NULL
+);
+
+CREATE TABLE public.dep_lookup (
+    id SERIAL PRIMARY KEY,
+    dep VARCHAR(20) NOT NULL UNIQUE,
+    description TEXT NOT NULL
+);
 
 -- ================================================== User Based Data ==================================================
 
