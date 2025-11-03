@@ -413,6 +413,12 @@ CREATE TABLE IF NOT EXISTS bible.entityrelationships (
 	FOREIGN KEY (relationship) REFERENCES bible.relationship_lookup (relationship)
 );
 
+-- 
+-- CREATE VIEW bible.entity_aliases AS
+-- SELECT DISTINCT
+-- FROM table_name
+-- WHERE conditions;
+
 -- ================================================== [] ==================================================
 
 -- Only storing important bible.tokens
