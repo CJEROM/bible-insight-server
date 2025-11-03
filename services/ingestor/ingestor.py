@@ -149,8 +149,6 @@ class Ingestor:
                 print("✅ Succesful Log In")
             else:
                 print("Already logged in")
-        
-            hi = True # Placeholder, to limit to 1 download
 
             self.cur.execute("""
                 SELECT dbl_id, agreement_id FROM bible.DBLInfo;
@@ -167,72 +165,68 @@ class Ingestor:
 
                 new_path = None
 
-                if hi:
-                    # dbl_id = "52a82b80a85343c5"
-                    # agreement_id = 279707
+                # dbl_id = "52a82b80a85343c5"
+                # agreement_id = 279707
 
-                    # Go to the DBL translation page
-                    url = "https://app.library.bible/content/" + dbl_id + "/download?agreementId=" + str(agreement_id)
-                    page.goto(url)  # Replace with your URL
+                # Go to the DBL translation page
+                url = "https://app.library.bible/content/" + dbl_id + "/download?agreementId=" + str(agreement_id)
+                page.goto(url)  # Replace with your URL
 
-                    # Wait for the download button to appear
-                    # Inspect the page and adjust the selector to match the button
-                    page.wait_for_selector("button:has-text('Download')")  
+                # Wait for the download button to appear
+                # Inspect the page and adjust the selector to match the button
+                page.wait_for_selector("button:has-text('Download')")  
 
-                    zip_button = page.query_selector("button:has-text('Download ZIP')")
-                    if zip_button:
+                zip_button = page.query_selector("button:has-text('Download ZIP')")
+                if zip_button:
 
-                        # Trigger the download
-                        with page.expect_download() as download_info:
-                            page.click("button:has-text('Download ZIP')")  # Click the download button
-                        download = download_info.value
+                    # Trigger the download
+                    with page.expect_download() as download_info:
+                        page.click("button:has-text('Download ZIP')")  # Click the download button
+                    download = download_info.value
 
-                        # Save to your folder
-                        new_path = Path(self.download_path) / download.suggested_filename
-                        download.save_as(os.path.join(self.download_path, download.suggested_filename))
-                        print(f"✅ Downloaded ZIP: {new_path}")
+                    # Save to your folder
+                    new_path = Path(self.download_path) / download.suggested_filename
+                    download.save_as(os.path.join(self.download_path, download.suggested_filename))
+                    print(f"✅ Downloaded ZIP: {new_path}")
 
-                        MinioUSXUpload(self.client, "text", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
-                    else:
-                        print("⚠️ No ZIP button found, assuming audio download instead")
-                        # Expand all folders
-                        self.expand_all_folders(page)
-
-                        page.wait_for_load_state("networkidle")
-                        
-                        download_folder_name = f"audio-{dbl_id}-{agreement_id}"
-
-                        file_buttons = page.query_selector_all("button[aria-label^='Download']")
-
-                        for btn in file_buttons:
-                            filename = btn.get_attribute("aria-label").replace("Download ", "").strip()
-
-                            book = filename.split(".")[0].split("_")[0]
-                            folder_names = ["release", "audio", book]
-                            if filename == "metadata.xml":
-                                folder_names = []
-
-                            folder_path = os.path.join(Path(self.download_path) / download_folder_name, *folder_names)
-                            os.makedirs(folder_path, exist_ok=True)
-
-                            # Trigger download
-                            with page.expect_download() as download_info:
-                                btn.click()
-                            download = download_info.value
-                            download.save_as(os.path.join(folder_path, filename))
-
-                            # print(f"✅ Downloaded {filename} → {folder_path}")
-
-                        new_path = Path(self.download_path) / download_folder_name
-                        
-                        print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
-
-                        MinioUSXUpload(self.client, "audio", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
-
-                    hi = False
-                
+                    MinioUSXUpload(self.client, "text", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
                 else:
-                    print(f"❌ Skipping ...")
+                    print("⚠️ No ZIP button found, assuming audio download instead")
+                    # Expand all folders
+                    self.expand_all_folders(page)
+
+                    page.wait_for_load_state("networkidle")
+                    
+                    download_folder_name = f"audio-{dbl_id}-{agreement_id}"
+
+                    file_buttons = page.query_selector_all("button[aria-label^='Download']")
+
+                    for btn in file_buttons:
+                        filename = btn.get_attribute("aria-label").replace("Download ", "").strip()
+
+                        book = filename.split(".")[0].split("_")[0]
+                        folder_names = ["release", "audio", book]
+                        if filename == "metadata.xml":
+                            folder_names = []
+
+                        folder_path = os.path.join(Path(self.download_path) / download_folder_name, *folder_names)
+                        os.makedirs(folder_path, exist_ok=True)
+
+                        # Trigger download
+                        with page.expect_download() as download_info:
+                            btn.click()
+                        download = download_info.value
+                        download.save_as(os.path.join(folder_path, filename))
+
+                        # print(f"✅ Downloaded {filename} → {folder_path}")
+
+                    new_path = Path(self.download_path) / download_folder_name
+                    
+                    print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
+
+                    MinioUSXUpload(self.client, "audio", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
+
+                # break
 
             browser.close()
 
