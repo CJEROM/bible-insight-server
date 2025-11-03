@@ -116,6 +116,10 @@ class Labeller:
 
     def get_para_text(self, book_xml):
         temp_book_xml = BeautifulSoup(str(book_xml), "xml")
+        
+        # Gets Rid of the book tag that would be included and add Translation name to word list
+        book_tag = temp_book_xml.find("book")
+        book_tag.decompose()
 
         book_paras = temp_book_xml.find_all("para")
 
