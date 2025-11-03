@@ -7,6 +7,7 @@ from label_studio_sdk import LabelStudio
 from pathlib import Path
 from bs4 import BeautifulSoup
 import os
+from collections import Counter
 
 from dotenv import load_dotenv
 
@@ -26,6 +27,8 @@ POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
 MINIO_USERNAME = os.getenv("MINIO_USERNAME")
 MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
+
+TOKEN_PATTERN = re.compile(r"[A-Za-z]+(?:'[A-Za-z]+)?|[0-9]+|[^\w\s]")
 
 class Labeller:
     def __init__(self, translation_id):
@@ -85,17 +88,23 @@ class Labeller:
             WHERE btf.translation_id = %s;
         """, (self.translation_id,))
 
-        results = self.cur.fetchall()
+        db_books = self.cur.fetchall()
+
+        translation_text = ""
         
-        for code, etag, object_name, bucket in results:
+        for code, etag, object_name, bucket in db_books:
             book_file_content = self.stream_file(object_name, bucket)
             book_xml = BeautifulSoup(book_file_content, "xml")
             # Go though paragraph by paragraph
-            book_text = self.getParaText(book_xml)
-            print(book_text)
+            book_text = self.get_para_text(book_xml)
+            translation_text += book_text + "\n"
             break
 
-    def getParaText(self, book_xml):
+        results = self.get_word_frequencies(self.get_tokens_without_puntuation(translation_text))
+        # results = self.get_tokens_without_puntuation(translation_text)
+        print(results)
+
+    def get_para_text(self, book_xml):
         temp_book_xml = BeautifulSoup(str(book_xml), "xml")
 
         book_paras = temp_book_xml.find_all("para")
@@ -124,6 +133,16 @@ class Labeller:
 
         final_text = temp_book_xml.get_text().strip()
         return final_text
+
+    def get_tokens(self, text):
+        return TOKEN_PATTERN.findall(text)
+    
+    def get_tokens_without_puntuation(self, text):
+        return [t for t in self.get_tokens(text) if re.match(r"[A-Za-z0-9]", t)]
+        # Keeps only words & numbers, removes punctuation
+
+    def get_word_frequencies(self, tokens):
+        return Counter(tokens)  # returns a dict-like object with counts
 
 if __name__ == "__main__":
     # Can try querying all finished projects in labellingproject or translationlabellingprojects tables 
