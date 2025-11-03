@@ -427,6 +427,7 @@ CREATE TABLE IF NOT EXISTS bible.word_list (
     id          SERIAL PRIMARY KEY,
     text        TEXT NOT NULL UNIQUE,   -- unique word
     lemma_id    INT,                    -- root/lemma (self-reference if needed)
+    nlp         BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (lemma_id) REFERENCES bible.word_list (id)
 );
 
