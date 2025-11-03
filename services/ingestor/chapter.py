@@ -134,6 +134,7 @@ class Chapter:
             SELECT chapter_ref FROM bible.chapters WHERE chapter_ref = %s
         """, (self.chapter_ref,))
         chapter_found = self.cur.fetchone()
+        print(chapter_found)
 
         if chapter_found == None:
             book_code, chapter_num = self.chapter_ref.split(" ")

@@ -593,8 +593,22 @@ class MinioUSXUpload:
 
             for chapter in range(1,len(sections)):
                 chapter_num, verse_count = sections[chapter].split(":")
+                chapter_ref = book_code + " " + chapter_num
+
+                self.cur.execute("""
+                    SELECT id FROM bible.chapters WHERE chapter_ref=%s
+                """, (chapter_ref,))
+                found_chapter = self.cur.fetchone()
+
+                # Validates any non standard chapters that might apear outside ones initialised originally
+                if found_chapter == None:
+                    print(book_code, int(chapter_num), chapter_ref)
+                    self.cur.execute("""
+                        INSERT INTO bible.chapters (book_code, chapter_num, chapter_ref, standard) 
+                        VALUES (%s, %s, %s, %s);
+                    """, (book_code, int(chapter_num), chapter_ref, False))
+
                 for verse in range(1, (int(verse_count)+1)):
-                    chapter_ref = book_code + " " + chapter_num
                     verse_ref = chapter_ref + ":" + str(verse)
 
                     self.cur.execute("""
