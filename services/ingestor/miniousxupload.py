@@ -148,7 +148,6 @@ class MinioUSXUpload:
         ))
 
         self.conn.commit()
-        self.cur.close()
         self.conn.close()
 
     def get_source(self, source_url):
