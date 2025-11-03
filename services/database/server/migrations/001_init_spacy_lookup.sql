@@ -1,3 +1,4 @@
+SET search_path TO public;
 
 INSERT INTO pos_lookup (pos_tag, description) 
 VALUES

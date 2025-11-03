@@ -442,7 +442,7 @@ CREATE TABLE IF NOT EXISTS bible.word_frequencies (
     translation_id  INT NOT NULL,
     -- tag             TEXT,  -- OPTIONAL: could use a lookup table (Person, Location, etc.)
     FOREIGN KEY (word_id) REFERENCES bible.word_list (id),
-    FOREIGN KEY (translation_id) REFERENCES bible.translations (id),
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id)
 );
 
 -- Only storing important bible.tokens

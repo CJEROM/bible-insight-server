@@ -1,3 +1,5 @@
+SET search_path TO bible;
+
 INSERT INTO bible.readhistory (scripture_reference) VALUES 
     ('GEN 1:1');
 

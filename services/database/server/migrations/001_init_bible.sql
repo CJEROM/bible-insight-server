@@ -1,3 +1,4 @@
+SET search_path TO bible;
 
 INSERT INTO bible.books (code, total_chapters) VALUES
     ('GEN', 50),
