@@ -371,6 +371,8 @@ CREATE TABLE IF NOT EXISTS bible.quotes (
     FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id)
 );
 
+-- ================================================== Entities ==================================================
+
 -- DROP TABLE IF EXISTS bible.entities;
 CREATE TABLE IF NOT EXISTS bible.entities (
     id              SERIAL PRIMARY KEY
@@ -386,9 +388,32 @@ CREATE TABLE IF NOT EXISTS bible.entityoccurence (
 	FOREIGN KEY (occurence_id) REFERENCES bible.occurences (id)
 );
 
+-- Will act as lookup not so much as source of truth, tho it can, and definetly something to work on
+-- DROP TABLE IF EXISTS bible.relationship_lookup;
+CREATE TABLE IF NOT EXISTS bible.relationship_lookup (
+    id              SERIAL PRIMARY KEY,
+	relationship    TEXT UNIQUE
+);
+
+-- DROP TABLE IF EXISTS bible.relationship_lookup;
+CREATE TABLE IF NOT EXISTS bible.relationship_map (
+    id              SERIAL PRIMARY KEY,
+	relationship    TEXT,
+    FOREIGN KEY (relationship) REFERENCES bible.relationship_lookup (relationship)
+);
+
+-- DROP TABLE IF EXISTS bible.entityrelationships;
+CREATE TABLE IF NOT EXISTS bible.entityrelationships (
+    id              SERIAL PRIMARY KEY,
+	from_entity		INT,
+	to_entity	    INT,
+    relationship    TEXT,
+	FOREIGN KEY (from_entity) REFERENCES bible.entities (id),
+    FOREIGN KEY (to_entity) REFERENCES bible.entities (id),
+	FOREIGN KEY (relationship) REFERENCES bible.relationship_lookup (relationship)
+);
+
 -- ================================================== [] ==================================================
-
-
 
 -- Only storing important bible.tokens
 -- DROP TABLE IF EXISTS bible.tokens;
