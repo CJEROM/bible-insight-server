@@ -43,7 +43,7 @@ class Verse:
             for verse in range(start_verse, end_verse):
                 new_verse_ref = f"{chapter_ref}:{verse}"
                 self.cur.execute("""
-                    INSERT INTO bible.verses (non_standard_verse_ref, verse_ref) 
+                    INSERT INTO bible.verse_correction (non_standard_verse_ref, verse_ref) 
                     VALUES (%s, %s)
                 """, (self.verse_ref, new_verse_ref))
 
