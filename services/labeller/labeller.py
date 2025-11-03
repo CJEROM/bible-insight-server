@@ -8,6 +8,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import os
 from collections import Counter
+import time
 
 from dotenv import load_dotenv
 
@@ -53,7 +54,10 @@ class Labeller:
             secure=False
         )
 
+        self.start_time = time.time()
         self.export_word_list()
+        duration = round(time.time() - self.start_time, 2)
+        print(f"✅ Completed Word List Import in {duration} seconds!\n")
 
         self.conn.commit()
         self.cur.close()
@@ -101,7 +105,6 @@ class Labeller:
             # Go though paragraph by paragraph
             book_text = self.get_para_text(book_xml)
             translation_text += book_text + "\n"
-            break
 
         results = self.get_word_frequencies(self.get_tokens_without_puntuation(translation_text))
         # results = self.get_tokens_without_puntuation(translation_text)
