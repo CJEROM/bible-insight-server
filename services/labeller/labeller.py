@@ -53,7 +53,7 @@ class Labeller:
             secure=False
         )
 
-        self.get_word_list()
+        self.export_word_list()
 
         self.conn.commit()
         self.cur.close()
@@ -105,8 +105,14 @@ class Labeller:
 
         results = self.get_word_frequencies(self.get_tokens_without_puntuation(translation_text))
         # results = self.get_tokens_without_puntuation(translation_text)
-        results.keys()
-        print(results.keys())
+        return results.keys()
+
+    def export_word_list(self):
+        word_list = self.get_word_list()
+        for word in word_list:
+            self.cur.execute("""
+                INSERT INTO bible.word_list (text) VALUES (%s);
+            """, (word,))
 
     def get_para_text(self, book_xml):
         temp_book_xml = BeautifulSoup(str(book_xml), "xml")
