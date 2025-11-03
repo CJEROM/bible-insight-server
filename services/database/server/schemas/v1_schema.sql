@@ -395,7 +395,7 @@ CREATE TABLE IF NOT EXISTS bible.relationship_lookup (
 	relationship    TEXT UNIQUE
 );
 
--- DROP TABLE IF EXISTS bible.relationship_lookup;
+-- DROP TABLE IF EXISTS bible.relationship_map;
 CREATE TABLE IF NOT EXISTS bible.relationship_map (
     id              SERIAL PRIMARY KEY,
 	relationship    TEXT,
@@ -420,6 +420,30 @@ CREATE TABLE IF NOT EXISTS bible.entityrelationships (
 -- WHERE conditions;
 
 -- ================================================== [] ==================================================
+
+-- Used to store unique list of words used for this bible translation to use as initial list to check against
+-- DROP TABLE IF EXISTS bible.word_list;
+CREATE TABLE IF NOT EXISTS bible.word_list (
+    id          SERIAL PRIMARY KEY,
+    text        TEXT NOT NULL UNIQUE,   -- unique word
+    lemma_id    INT,                    -- root/lemma (self-reference if needed)
+    FOREIGN KEY (lemma_id) REFERENCES bible.word_list (id)
+);
+
+CREATE TABLE IF NOT EXISTS bible.word_tags (
+    id      SERIAL PRIMARY KEY,
+    name    TEXT UNIQUE NOT NULL -- e.g. "Person", "Location", "Entity"
+);
+
+-- DROP TABLE IF EXISTS bible.relationship_lookup;
+CREATE TABLE IF NOT EXISTS bible.word_frequencies (
+    id              SERIAL PRIMARY KEY,
+    word_id         INT NOT NULL,
+    translation_id  INT NOT NULL,
+    -- tag             TEXT,  -- OPTIONAL: could use a lookup table (Person, Location, etc.)
+    FOREIGN KEY (word_id) REFERENCES bible.word_list (id),
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id),
+);
 
 -- Only storing important bible.tokens
 -- DROP TABLE IF EXISTS bible.tokens;
