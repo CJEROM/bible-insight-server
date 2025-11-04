@@ -280,13 +280,11 @@ CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
     id              SERIAL PRIMARY KEY,
 	file_id			INTEGER,
     from_verse_ref  TEXT,
-    to_verse_start  TEXT,
-    to_verse_end    TEXT,
+    to_verse_ref    TEXT,
     xml             XML,
 	FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE,
     FOREIGN KEY (from_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
-    FOREIGN KEY (to_verse_start) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
-    FOREIGN KEY (to_verse_end) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE
+    FOREIGN KEY (to_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE
 );
 
 -- ================================================== Strongs Components ==================================================
