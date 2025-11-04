@@ -6,7 +6,7 @@ import os
 import json
 
 class Verse:
-    def __init__(self, chapter_xml, verse_ref, chapter_occurence_id, db_conn):
+    def __init__(self, chapter_xml, verse_ref, chapter_occurence_id, db_conn, is_special_case=False):
         # Adds a database connection
         self.conn = db_conn
         self.cur = self.conn.cursor()
@@ -14,11 +14,11 @@ class Verse:
         self.chapter_xml = chapter_xml
         self.chapter_occurence_id = chapter_occurence_id
         self.verse_ref = verse_ref
+        self.is_special_case = is_special_case
 
-        self.conn.commit()
-
-        self.xml = self.getVerseAndNoteXML()
-        self.text = self.getVerseText(self.xml)
+        if self.is_special_case == False:
+            self.xml = self.getVerseAndNoteXML()
+            self.text = self.getVerseText(self.xml)
 
         self.createVerse()
 
@@ -65,10 +65,11 @@ class Verse:
                     VALUES (%s, %s)
                 """, (self.verse_ref, new_verse_ref))
 
-        self.cur.execute("""
-            INSERT INTO bible.verseoccurences (chapter_occ_id, verse_ref, text, xml) 
-            VALUES (%s, %s, %s, %s)
-        """, (self.chapter_occurence_id, self.verse_ref, self.text, str(self.xml)))
+        if self.is_special_case == False:
+            self.cur.execute("""
+                INSERT INTO bible.verseoccurences (chapter_occ_id, verse_ref, text, xml) 
+                VALUES (%s, %s, %s, %s)
+            """, (self.chapter_occurence_id, self.verse_ref, self.text, str(self.xml)))
 
     def getVerseAndNoteXML(self):
         # Regex to get everything between opening and closing paragraph tag
