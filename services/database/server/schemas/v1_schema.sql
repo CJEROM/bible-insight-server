@@ -268,14 +268,16 @@ CREATE TABLE IF NOT EXISTS bible.excludedverses (
 -- ================================================== Cross References & Footnotes ==================================================
 
 CREATE TABLE IF NOT EXISTS bible.translationfootnotes (
-    id              SERIAL PRIMARY KEY,
+    id                  SERIAL PRIMARY KEY,
 	book_map_id			INTEGER,
-    translation_id  INTEGER,
-    verse_ref       TEXT,
-    xml             XML,
-	text			TEXT,
+    translation_id      INTEGER,
+    verse_ref           TEXT,
+    chapter_ref         TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
+    xml                 XML,
+	text			    TEXT,
 	FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
+    FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE
 );
 

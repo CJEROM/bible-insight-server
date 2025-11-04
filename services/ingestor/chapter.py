@@ -186,6 +186,7 @@ class Chapter:
 
             note_verse = note_verse.text.strip()
             note_verse = re.sub(r"[^\w\s:-]", "", note_verse) # Cleans verse_ref as sometimes has full stop after (plus going a bit overkill if anything else used)
+            note_verse_num = note_verse.split(":")[1]
 
             # What verse this note is in
             book_code = self.chapter_ref.split(" ")[0]
@@ -194,10 +195,17 @@ class Chapter:
             # Just create footnote with its text
             if note_type == "f":
                 note_text = this_note.find("char", style="ft").get_text() # Grabs footnote text
-                self.cur.execute("""
-                    INSERT INTO bible.translationfootnotes (book_map_id, translation_id, verse_ref, xml, text) 
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (self.book_map_id, self.translation_id, note_verse_ref, str(this_note), note_text))
+                # If footnote is actually for a chapter instead of an entire verse
+                if note_verse_num == "0":
+                    self.cur.execute("""
+                        INSERT INTO bible.translationfootnotes (book_map_id, translation_id, chapter_ref, xml, text) 
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (self.book_map_id, self.translation_id, self.chapter_ref, str(this_note), note_text))
+                else:
+                    self.cur.execute("""
+                        INSERT INTO bible.translationfootnotes (book_map_id, translation_id, verse_ref, xml, text) 
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (self.book_map_id, self.translation_id, note_verse_ref, str(this_note), note_text))
             elif note_type == "x":
                 # Get all ref objects to create cross references for this verse
                 for ref in this_note.find_all("ref"):
