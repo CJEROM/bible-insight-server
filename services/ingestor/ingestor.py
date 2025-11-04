@@ -68,7 +68,7 @@ class Ingestor:
         self.cur.close()
         self.conn.close()
 
-        duration = time.time() - self.start_time, 2
+        duration = time.time() - self.start_time
         hours = int(duration // 3600)
         minutes = int((duration % 3600) // 60)
         seconds = int(duration % 60)
