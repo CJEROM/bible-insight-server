@@ -16,11 +16,12 @@ class Verse:
         self.verse_ref = verse_ref
         self.is_special_case = is_special_case
 
+        self.createVerse()
+
         if self.is_special_case == False:
             self.xml = self.getVerseAndNoteXML()
             self.text = self.getVerseText(self.xml)
-
-        self.createVerse()
+            self.createVerseOccurence()
 
         self.conn.commit()
     
@@ -65,11 +66,11 @@ class Verse:
                     VALUES (%s, %s)
                 """, (self.verse_ref, new_verse_ref))
 
-        if self.is_special_case == False:
-            self.cur.execute("""
-                INSERT INTO bible.verseoccurences (chapter_occ_id, verse_ref, text, xml) 
-                VALUES (%s, %s, %s, %s)
-            """, (self.chapter_occurence_id, self.verse_ref, self.text, str(self.xml)))
+    def createVerseOccurence(self):
+        self.cur.execute("""
+            INSERT INTO bible.verseoccurences (chapter_occ_id, verse_ref, text, xml) 
+            VALUES (%s, %s, %s, %s)
+        """, (self.chapter_occurence_id, self.verse_ref, self.text, str(self.xml)))
 
     def getVerseAndNoteXML(self):
         # Regex to get everything between opening and closing paragraph tag
