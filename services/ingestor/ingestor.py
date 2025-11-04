@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import psycopg2
+import time
 
 from playwright.sync_api import sync_playwright
 import os
@@ -37,6 +38,8 @@ class Ingestor:
         # Worth adding option, that if dbl_id and agreement_id have been passed in, run just the class for that translation
         #       This would be useful when enforcing foreign key constraints with translation relationships
 
+        self.start_time = time.time()
+
         # Folder where you want downloads to go
         self.download_path = "C:/Users/CephJ/Documents/git/bible-insight-server/downloads"
         os.makedirs(self.download_path, exist_ok=True)
@@ -64,6 +67,16 @@ class Ingestor:
         self.conn.commit()
         self.cur.close()
         self.conn.close()
+
+        duration = time.time() - self.start_time, 2
+        hours = int(duration // 3600)
+        minutes = int((duration % 3600) // 60)
+        seconds = int(duration % 60)
+        milliseconds = int((duration % 1) * 1000)  # or *100 for .mm format
+
+        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
+
+        print(f"✅ Completed Ingestor in [{formatted_duration}]!\n")
 
     def expand_all_folders(self, page):
         """

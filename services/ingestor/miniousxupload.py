@@ -84,8 +84,15 @@ class MinioUSXUpload:
 
         self.conn.commit()
 
-        duration = round(time.time() - self.start_time, 2)
-        print(f"✅ Completed Translation Import in {duration} seconds!\n")
+        duration = time.time() - self.start_time, 2
+        hours = int(duration // 3600)
+        minutes = int((duration % 3600) // 60)
+        seconds = int(duration % 60)
+        milliseconds = int((duration % 1) * 1000)  # or *100 for .mm format
+
+        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
+
+        print(f"✅ Completed Translation Import in [{formatted_duration}]!\n")
 
         # Create Label Studio Project for this specific translation of the bible
         label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
