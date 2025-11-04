@@ -124,6 +124,7 @@ class Chapter:
 
         self.createVerseOccurences()
         self.createParagraphs()
+        self.createTranslationNotes()
         # self.createTokens()
 
         self.conn.commit()
@@ -172,6 +173,37 @@ class Chapter:
         if additions > 0:
             # print(f"    [{additions}] Verse Occurences added to database")
             pass
+
+    def createTranslationNotes(self):
+        # Go through chapter and grab all cross references and footnotes, and write to database
+        for this_note in self.chapter_xml.find_all("note"):
+            note_type = this_note.get("style")
+            
+            ref = this_note.find("char", style="fr") # Specific to footnote
+            if ref == None:
+                ref = this_note.find("char", style="xo") # Specific to cross reference
+
+            ref = ref.text.strip()
+
+            # What verse this note is in
+            note_verse_ref = self.chapter_ref.split(" ")[0] + " " + ref
+
+            # Just create footnote with its text
+            if note_type == "f":
+                self.db.execute("""
+                    INSERT OR REPLACE INTO TranslationFootNotes (verse_ref, xml) 
+                    VALUES (?, ?)
+                """, (note_verse_ref, str(this_note)))
+            elif note_type == "x":
+                # Get all ref objects to create cross references for this verse
+                for ref in this_note.find_all("ref"):
+                    to_ref = ref.get("loc") # e.g. [ISA 28:11-12] OR [ISA 28:11]
+                    Verse(chapter_xml=None, verse_ref=to_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
+
+                    self.db.execute("""
+                        INSERT OR REPLACE INTO TranslationRefNotes (from_verse_ref, to_verse_ref, xml) 
+                        VALUES (?, ?, ?, ?)
+                    """, (note_verse_ref, to_ref, str(this_note)))
 
     # ================================================================================================================= TOKENIZATION LOGIC =================================================================================================================
 
@@ -316,6 +348,7 @@ class Chapter:
                         # ISA 28:11-12
                         to_verse_start = split_ref[0] # ISA 28:11
                         to_verse_end = None if len(split_ref) == 1 else to_verse_start.split(":")[0] + ":" + split_ref[1] # "ISA 28" + ":" + 12
+                        
 
                         self.db.execute("""
                             INSERT OR REPLACE INTO TranslationRefNotes (from_verse_ref, to_verse_start, to_verse_end, xml) 
