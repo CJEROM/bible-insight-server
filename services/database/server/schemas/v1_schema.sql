@@ -269,23 +269,27 @@ CREATE TABLE IF NOT EXISTS bible.excludedverses (
 
 CREATE TABLE IF NOT EXISTS bible.translationfootnotes (
     id              SERIAL PRIMARY KEY,
-	file_id			INTEGER,
+	book_map_id			INTEGER,
+    translation_id  INTEGER,
     verse_ref       TEXT,
     xml             XML,
 	text			TEXT,
-	FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE,
-    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE
+	FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
+    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
     id              SERIAL PRIMARY KEY,
-	file_id			INTEGER,
+	book_map_id			INTEGER,
+    translation_id  INTEGER,
     from_verse_ref  TEXT,
     to_verse_ref    TEXT,
     xml             XML,
-	FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE,
+	FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
     FOREIGN KEY (from_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
-    FOREIGN KEY (to_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE
+    FOREIGN KEY (to_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE
 );
 
 -- ================================================== Strongs Components ==================================================
@@ -489,7 +493,7 @@ CREATE TABLE IF NOT EXISTS bible.userhighlights (
 CREATE TABLE IF NOT EXISTS bible.readhistory (
     history_id              SERIAL PRIMARY KEY,
     date_time               TEXT DEFAULT CURRENT_TIMESTAMP,
-    book_map_id            INTEGER,
+    book_map_id             INTEGER,
     scripture_reference     TEXT,
 	user_id					INTEGER,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
