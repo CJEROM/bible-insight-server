@@ -623,7 +623,7 @@ class MinioUSXUpload:
                     if verse_id == None:
                         self.cur.execute("""
                             INSERT INTO bible.verses (chapter_ref, verse_ref, verse) 
-                            VALUES (%s, %s)
+                            VALUES (%s, %s, %s)
                         """, (chapter_ref, verse_ref, str(verse)))
                         additions += 1
         

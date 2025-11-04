@@ -43,7 +43,7 @@ class Verse:
                 # Create new non standard verse first (to preseve foreign key constraint in db as well before verse occurence created)
                 self.cur.execute("""
                     INSERT INTO bible.verses (chapter_ref, verse_ref, standard, verse) 
-                    VALUES (%s, %s, %s)
+                    VALUES (%s, %s, %s, %s)
                 """, (chapter_ref, self.verse_ref, False, verse_num))
 
                 start_verse = int(verse_num)
@@ -60,7 +60,7 @@ class Verse:
             if self.verse_ref[-1].isalpha(): # e.g. EXO 28:29a
                 self.cur.execute("""
                     INSERT INTO bible.verses (chapter_ref, verse_ref, standard, verse) 
-                    VALUES (%s, %s, %s)
+                    VALUES (%s, %s, %s, %s)
                 """, (chapter_ref, self.verse_ref, False, verse_num))
                 
                 new_verse_ref = self.verse_ref[:-1]
