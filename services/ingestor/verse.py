@@ -27,7 +27,7 @@ class Verse:
     def createVerse(self):
         # Check whether non-standard verse has been added or not
         self.cur.execute("""
-            SELECT id FROM bible.verses WHERE style = %s;
+            SELECT id FROM bible.verses WHERE verse_ref = %s;
         """, (self.verse_ref,))
         verse_found = self.cur.fetchone()
 
