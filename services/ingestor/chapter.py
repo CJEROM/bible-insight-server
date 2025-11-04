@@ -200,12 +200,36 @@ class Chapter:
                     self.cur.execute("""
                         INSERT INTO bible.translationfootnotes (book_map_id, translation_id, chapter_ref, xml, text) 
                         VALUES (%s, %s, %s, %s, %s)
+                        RETURNING id;
                     """, (self.book_map_id, self.translation_id, self.chapter_ref, str(this_note), note_text))
                 else:
                     self.cur.execute("""
                         INSERT INTO bible.translationfootnotes (book_map_id, translation_id, verse_ref, xml, text) 
                         VALUES (%s, %s, %s, %s, %s)
+                        RETURNING id;
                     """, (self.book_map_id, self.translation_id, note_verse_ref, str(this_note), note_text))
+
+                footnote_id = self.cur.fetchone()[0]
+
+                refs_in_footnotes = this_note.find_all("ref")
+                for ref in refs_in_footnotes:
+                    to_ref = ref.get("loc") # e.g. [ISA 28:11-12] OR [ISA 28:11]
+                    Verse(chapter_xml=None, verse_ref=to_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
+
+                    self.cur.execute("""
+                        INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_verse_ref, xml) 
+                        VALUES (%s, %s, %s, %s, %s)
+                        RETURNING id;
+                    """, (self.book_map_id, self.translation_id, note_verse_ref, to_ref, str(this_note)))
+
+                    cross_ref_id = self.cur.fetchone()[0]
+                    
+                    # Since the footnote was used as cross reference we create a cross reference for it but link it to the current footnote
+                    self.cur.execute("""
+                        INSERT INTO bible.translation_note_mapping (foot_note, cross_ref) 
+                        VALUES (%s, %s)
+                        RETURNING id;
+                    """, (footnote_id, cross_ref_id))
             elif note_type == "x":
                 # Get all ref objects to create cross references for this verse
                 for ref in this_note.find_all("ref"):

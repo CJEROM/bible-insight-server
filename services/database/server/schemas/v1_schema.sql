@@ -294,6 +294,14 @@ CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS bible.translation_note_mapping (
+    id              SERIAL PRIMARY KEY,
+    foot_note       INTEGER,
+    cross_ref       INTEGER,
+    FOREIGN KEY (foot_note) REFERENCES bible.translationfootnotes (id),
+    FOREIGN KEY (cross_ref) REFERENCES bible.translationrefnotes (id)
+);
+
 -- ================================================== Strongs Components ==================================================
 
 CREATE TABLE IF NOT EXISTS bible.strongs (
