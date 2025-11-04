@@ -225,6 +225,7 @@ CREATE TABLE IF NOT EXISTS bible.verses (
     id              SERIAL PRIMARY KEY,
     chapter_ref     TEXT,
     verse_ref       TEXT UNIQUE,
+    verse           TEXT,
     standard        BOOLEAN DEFAULT TRUE, -- Whether this is standard verse or weird combo verse e.g. GEN 1:1-2
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE
 );
