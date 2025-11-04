@@ -18,6 +18,8 @@ class Verse:
 
         self.createVerse()
 
+        self.conn.commit()
+
         if self.is_special_case == False:
             self.xml = self.getVerseAndNoteXML()
             self.text = self.getVerseText(self.xml)
@@ -54,6 +56,7 @@ class Verse:
                     """, (self.verse_ref, new_verse_ref))
             
             # Taking account of secondary non standard verse
+            print(self.verse_ref, self.verse_ref[-1], self.verse_ref[-1].isalpha())
             if self.verse_ref[-1].isalpha(): # e.g. EXO 28:29a
                 self.cur.execute("""
                     INSERT INTO bible.verses (chapter_ref, verse_ref, standard) 
