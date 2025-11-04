@@ -214,9 +214,9 @@ class Chapter:
                 refs_in_footnotes = this_note.find_all("ref")
                 for ref in refs_in_footnotes:
                     to_ref = ref.get("loc") # e.g. [ISA 28:11-12] OR [ISA 28:11]
-                    ref_splits = to_ref.split("-") # Refs in footnotes tend to also just be to chapters
+                    ref_splits = to_ref.split("-")[0].split(":") # Refs in footnotes tend to also just be chapters
 
-                    if len(ref_splits) == 1: # if there is no verse and only a chapter
+                    if len(ref_splits) == 1: # if the to ref is only a chapter
                         self.cur.execute("""
                             INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml) 
                             VALUES (%s, %s, %s, %s, %s)
