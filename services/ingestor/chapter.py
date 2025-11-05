@@ -283,6 +283,8 @@ class Chapter:
                         start_chapter = int(ref_splits[0].split(":")[0]) # "6:31" => 6
                         end_chapter = int(ref_splits[1].split(":")[0]) # "7:20" => 7
 
+                        parent_ref_entry = None
+
                         # We split the cross reference into 3 and store that instead of it together
                         for chapter in range(int(start_chapter), end_chapter+1):
                             if chapter == start_chapter:
@@ -295,7 +297,9 @@ class Chapter:
                                 self.cur.execute("""
                                     INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_verse_ref, xml) 
                                     VALUES (%s, %s, %s, %s, %s)
+                                    RETURNING id;
                                 """, (self.book_map_id, self.translation_id, note_verse_ref, new_ref, str(this_note)))
+                                parent_ref_entry = self.cur.fetchone()[0]
                             elif chapter == end_chapter:
                                 new_chapter_ref = book_code + " " + str(chapter)
                                 verse_start = 1
@@ -304,15 +308,15 @@ class Chapter:
                                 print(new_chapter_ref, new_ref)
                                 Verse(chapter_xml=None, verse_ref=new_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
                                 self.cur.execute("""
-                                    INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_verse_ref, xml) 
-                                    VALUES (%s, %s, %s, %s, %s)
-                                """, (self.book_map_id, self.translation_id, note_verse_ref, new_ref, str(this_note)))
+                                    INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_verse_ref, xml, parent_ref) 
+                                    VALUES (%s, %s, %s, %s, %s, %s)
+                                """, (self.book_map_id, self.translation_id, note_verse_ref, new_ref, str(this_note), parent_ref_entry))
                             else: # if anything else like in case of 2KI 6:31-8:20 and chapter = 7, then link to whole chapter
                                 new_ref = book_code + " " + str(chapter) # e.g. 2KI 7
                                 self.cur.execute("""
-                                    INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml) 
-                                    VALUES (%s, %s, %s, %s, %s)
-                                """, (self.book_map_id, self.translation_id, note_verse_ref, new_ref, str(this_note)))
+                                    INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml, parent_ref) 
+                                    VALUES (%s, %s, %s, %s, %s, %s)
+                                """, (self.book_map_id, self.translation_id, note_verse_ref, new_ref, str(this_note), parent_ref_entry))
 
 
     # ================================================================================================================= TOKENIZATION LOGIC =================================================================================================================
