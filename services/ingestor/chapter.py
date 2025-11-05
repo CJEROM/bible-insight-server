@@ -196,7 +196,12 @@ class Chapter:
 
             # Just create footnote with its text
             if note_type == "f":
-                note_text = this_note.find("char", style="ft").get_text() # Grabs footnote text
+                note_text = this_note.find("char", style="ft") # Grabs footnote text
+                if note_text:
+                    note_text = note_text.get_text()
+                else:
+                    continue
+                
                 # If footnote is actually for a chapter instead of an entire verse
                 if note_verse_num == "0" or note_verse_num == None:
                     self.cur.execute("""
