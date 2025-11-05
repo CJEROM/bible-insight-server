@@ -24,26 +24,26 @@ class Book:
         """, (self.book_map_id,))
         self.book_code = self.cur.fetchone()[0]
 
-        self.book_structure = self.getBookStructure(bible_structure_info)
-        # print(self.book_structure)
+        self.bible_structure = self.getBibleStructure(bible_structure_info)
         
         self.createTextChapters()
 
         self.conn.commit()
 
-    def getBookStructure(self, bible_structure_info: str):
+    def getBibleStructure(self, bible_structure_info: str):
         # Go through bible versification
         for line in bible_structure_info.splitlines():
-            # if it start with the book_code we are going through
-            if line.startswith(self.book_code):
-                # Step 1: Remove book abbreviation (first word)
-                parts = line.split()
-                book = parts[0]         # "1SA"
-                chapters = parts[1:]    # ["1:28", "2:36", ..., "31:13"]
+            # Step 1: Remove book abbreviation (first word)
+            parts = line.split()
+            book = parts[0]         # "1SA"
+            chapters = parts[1:]    # ["1:28", "2:36", ..., "31:13"]
 
-                # Step 2: Convert "x:y" into dictionary x -> y where x => "1SA 1" and y => 28
-                chapter_dict = {book + " " + ch.split(':')[0]: int(ch.split(':')[1]) for ch in chapters}
-                return chapter_dict
+            # Step 2: Convert "x:y" into dictionary x -> y e.g. x => "1SA 1" and y => 28
+            chapter_dict = {
+                f"{book} {ch.split(':')[0]}": int(ch.split(':')[1]) 
+                for ch in chapters
+            }
+            return chapter_dict
             
         return dict() # In case it didn't find it at all return an empty dict
 
@@ -76,7 +76,7 @@ class Book:
             chapter_text += "\n</usx>"
 
             # Create Chapter Classes
-            Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, chapter_text, self.conn, self.book_structure.get(chapter_ref))
+            Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, chapter_text, self.conn, self.bible_structure)
             additions += 1
 
             log_file = Path(__file__).parents[2] / "downloads" / f"translation-{self.translation_id}-log.txt"

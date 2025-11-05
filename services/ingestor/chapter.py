@@ -101,14 +101,14 @@ language_code_map = {
 }
 
 class Chapter:
-    def __init__(self, language_id, translation_id, book_map_id, chapter_ref, chapter_text, db_conn, chapter_verses):
+    def __init__(self, language_id, translation_id, book_map_id, chapter_ref, chapter_text, db_conn, bible_structure):
         self.language_id = language_id
         self.translation_id = translation_id
         self.book_map_id = book_map_id
         self.chapter_ref = chapter_ref
         self.chapter_xml = BeautifulSoup(chapter_text, "xml")
 
-        self.chapter_verses = chapter_verses
+        self.bible_structure = bible_structure
 
         # Adds a database connection
         self.conn = db_conn
@@ -286,14 +286,16 @@ class Chapter:
                         # We split the cross reference into 3 and store that instead of it together
                         for chapter in range(int(start_chapter), end_chapter+1):
                             if chapter == start_chapter:
-                                new_ref = book_code + " " + ref_splits[0] + "-" + str(self.chapter_verses) # e.g. 2KI 6:31-33
+                                new_chapter_ref = book_code + " " + ref_splits[0]
+                                new_ref = new_chapter_ref + "-" + str(self.bible_structure.get(new_chapter_ref)) # e.g. 2KI 6:31-33
                                 Verse(chapter_xml=None, verse_ref=new_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
                                 self.cur.execute("""
                                     INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_verse_ref, xml) 
                                     VALUES (%s, %s, %s, %s, %s)
                                 """, (self.book_map_id, self.translation_id, note_verse_ref, new_ref, str(this_note)))
                             elif chapter == end_chapter:
-                                new_ref = book_code + " " + str(chapter) + "1-" + ref_splits[1].split(":")[1] # e.g. 2KI 7:1-20
+                                new_chapter_ref = book_code + " " + str(chapter)
+                                new_ref = new_chapter_ref + "1-" + ref_splits[1].split(":")[1] # e.g. 2KI 7:1-20
                                 Verse(chapter_xml=None, verse_ref=new_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
                                 self.cur.execute("""
                                     INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_verse_ref, xml) 
