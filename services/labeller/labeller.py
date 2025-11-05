@@ -61,10 +61,15 @@ class Labeller:
 
             for id in translations:
                 self.translation_id = id
-                self.start_time = time.time()
+                start_time = time.time()
                 exports = self.export_word_list()
-                duration = round(time.time() - self.start_time, 2)
+                duration = round(time.time() - start_time, 2)
                 print(f"✅ Migrated [{exports}] Words to DB in {duration} seconds for translation [{self.translation_id}]!\n")
+        else:
+            start_time = time.time()
+            exports = self.export_word_list()
+            duration = round(time.time() - start_time, 2)
+            print(f"✅ Migrated [{exports}] Words to DB in {duration} seconds for translation [{self.translation_id}]!\n")
 
         self.conn.commit()
         self.cur.close()
@@ -188,5 +193,5 @@ class Labeller:
 if __name__ == "__main__":
     # Can try querying all finished projects in labellingproject or translationlabellingprojects tables 
     #       as candidates for working on
-    nlp_file = "C:\Users\CephJ\Documents\git\bible-insight-server\archive\nlp_words.txt"
+    nlp_file = Path(__file__).parents[2] / "archive" / "nlp_words.txt"
     Labeller(nlp_file, 1)
