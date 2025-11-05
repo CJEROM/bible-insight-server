@@ -25,6 +25,7 @@ class Book:
         self.book_code = self.cur.fetchone()[0]
 
         self.bible_structure = self.getBibleStructure(bible_structure_info)
+        print(self.bible_structure)
         
         self.createTextChapters()
 
@@ -32,20 +33,17 @@ class Book:
 
     def getBibleStructure(self, bible_structure_info: str):
         # Go through bible versification
+        chapter_dict = {}
         for line in bible_structure_info.splitlines():
-            # Step 1: Remove book abbreviation (first word)
             parts = line.split()
-            book = parts[0]         # "1SA"
-            chapters = parts[1:]    # ["1:28", "2:36", ..., "31:13"]
-
-            # Step 2: Convert "x:y" into dictionary x -> y e.g. x => "1SA 1" and y => 28
-            chapter_dict = {
-                f"{book} {ch.split(':')[0]}": int(ch.split(':')[1]) 
-                for ch in chapters
-            }
-            return chapter_dict
+            book = parts[0]
+            chapters = parts[1:]
             
-        return dict() # In case it didn't find it at all return an empty dict
+            for ch in chapters:
+                chapter_num, verse_count = ch.split(':')
+                chapter_dict[f"{book} {chapter_num}"] = int(verse_count)
+                
+        return chapter_dict
 
     # Purpose is to split xml up into chapters, for token processing
     def createTextChapters(self):
