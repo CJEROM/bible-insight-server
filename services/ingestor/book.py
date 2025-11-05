@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-import pathlib
+from pathlib import Path
 import re
 
 import psycopg2
@@ -59,7 +59,12 @@ class Book:
             # Create Chapter Classes
             Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, chapter_text, self.conn)
             additions += 1
+
+            log_file = Path(__file__).parents[2] / "downloads" / f"translation-{self.translation_id}-log.txt"
+            with open(log_file, 'a', encoding="utf-8") as f:
+                f.write(f"{chapter_ref}\n")
         
         if additions > 0:
-            print(f"    [{additions}] Chapters added for {self.book_code[0]}")
+            # print(f"    [{additions}] Chapters added for {self.book_code[0]}")
+            pass # Ignore this printing for now to just test what translations are robust enough to work in here and which aren't
    
