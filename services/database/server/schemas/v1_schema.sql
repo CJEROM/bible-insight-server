@@ -286,11 +286,13 @@ CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
 	book_map_id			INTEGER,
     translation_id      INTEGER,
     from_verse_ref      TEXT,
+    from_chapter_ref      TEXT,
     to_verse_ref        TEXT,
     to_chapter_ref      TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
     xml                 XML,
 	FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
     FOREIGN KEY (from_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
+    FOREIGN KEY (from_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
     FOREIGN KEY (to_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (to_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE

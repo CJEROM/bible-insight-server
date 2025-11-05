@@ -216,9 +216,22 @@ class Chapter:
                     to_ref = ref.get("loc") # e.g. [ISA 28:11-12] OR [ISA 28:11]
                     ref_splits = to_ref.split("-")[0].split(":") # Refs in footnotes tend to also just be chapters
 
-                    if len(ref_splits) == 1 or note_verse_num == "0": # if the to ref is only a chapter
+                    if len(ref_splits) == 1 and note_verse_num == "0": # if the to_ref and from_ref are chapters
+                        self.cur.execute("""
+                            INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_chapter_ref, to_chapter_ref, xml) 
+                            VALUES (%s, %s, %s, %s, %s)
+                            RETURNING id;
+                        """, (self.book_map_id, self.translation_id, note_verse_ref, to_ref, str(this_note)))
+                    elif len(ref_splits) == 1: # if the to_ref is a chapter
                         self.cur.execute("""
                             INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml) 
+                            VALUES (%s, %s, %s, %s, %s)
+                            RETURNING id;
+                        """, (self.book_map_id, self.translation_id, note_verse_ref, to_ref, str(this_note)))
+                    elif note_verse_num == "0": # if from_ref is a chapter
+                        Verse(chapter_xml=None, verse_ref=to_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
+                        self.cur.execute("""
+                            INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_chapter_ref, to_verse_ref, xml) 
                             VALUES (%s, %s, %s, %s, %s)
                             RETURNING id;
                         """, (self.book_map_id, self.translation_id, note_verse_ref, to_ref, str(this_note)))
