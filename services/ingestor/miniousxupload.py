@@ -348,6 +348,10 @@ class MinioUSXUpload:
                 book_info = metadata_xml.find("name", id=content.get("name"))
                 short_name = book_info.find("short").text
                 long_name = book_info.find("long").text
+
+                # Skip any that are not Hebrews book
+                # if found_book[0] != "HEB":
+                #     continue
                 
                 # Then update the database linking to them
                 if self.medium == "text":
@@ -356,7 +360,6 @@ class MinioUSXUpload:
                     """, (book, self.translation_id, file_id, short_name, long_name))
                     # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
                     book_map_id = self.cur.fetchone()[0]
-
                     Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn, self.bible_structure_info)
                 if self.medium == "audio":
                     # Audio and eventually video don't have any connection but in serving the files themselves for consumption
