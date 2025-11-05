@@ -8,7 +8,7 @@ from chapter import Chapter
 
 # Changing since will only be relevant for text anyway
 class Book:
-    def __init__(self, language_id, translation_id, book_map_id, file_id, book_string, db_conn):
+    def __init__(self, language_id, translation_id, book_map_id, file_id, book_string, db_conn, bible_structure_info):
         self.language_id = language_id
         self.translation_id = translation_id
         self.book_map_id = book_map_id
@@ -22,11 +22,30 @@ class Book:
         self.cur.execute("""
             SELECT book_code FROM bible.booktofile WHERE id = %s;
         """, (self.book_map_id,))
-        self.book_code = self.cur.fetchone()
+        self.book_code = self.cur.fetchone()[0]
+
+        self.book_structure = self.getBookStructure(bible_structure_info)
+        # print(self.book_structure)
         
         self.createTextChapters()
 
         self.conn.commit()
+
+    def getBookStructure(self, bible_structure_info: str):
+        # Go through bible versification
+        for line in bible_structure_info.splitlines():
+            # if it start with the book_code we are going through
+            if line.startswith(self.book_code):
+                # Step 1: Remove book abbreviation (first word)
+                parts = line.split()
+                book = parts[0]         # "1SA"
+                chapters = parts[1:]    # ["1:28", "2:36", ..., "31:13"]
+
+                # Step 2: Convert "x:y" into dictionary x -> y where x => "1SA 1" and y => 28
+                chapter_dict = {book + " " + ch.split(':')[0]: int(ch.split(':')[1]) for ch in chapters}
+                return chapter_dict
+            
+        return dict() # In case it didn't find it at all return an empty dict
 
     # Purpose is to split xml up into chapters, for token processing
     def createTextChapters(self):
@@ -57,7 +76,7 @@ class Book:
             chapter_text += "\n</usx>"
 
             # Create Chapter Classes
-            Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, chapter_text, self.conn)
+            Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, chapter_text, self.conn, self.book_structure.get(chapter_ref))
             additions += 1
 
             log_file = Path(__file__).parents[2] / "downloads" / f"translation-{self.translation_id}-log.txt"

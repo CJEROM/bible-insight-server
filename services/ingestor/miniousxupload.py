@@ -70,6 +70,7 @@ class MinioUSXUpload:
         self.translation_title = f"{self.medium}-{self.dbl_id}-{self.agreement_id}"
 
         self.translation_name = None
+        self.bible_structure_info = None
 
         # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
         match medium:
@@ -356,7 +357,7 @@ class MinioUSXUpload:
                     # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
                     book_map_id = self.cur.fetchone()[0]
 
-                    Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn)
+                    Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn, self.bible_structure_info)
                 if self.medium == "audio":
                     # Audio and eventually video don't have any connection but in serving the files themselves for consumption
                     #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
@@ -555,6 +556,7 @@ class MinioUSXUpload:
         file_sections = [m.group(1).strip() if m else "" for m in matches]
 
         self.createVerses(file_sections[0])
+        self.bible_structure_info = file_sections[0]
         self.createExcludedVerses(file_sections[2])
     
     def createExcludedVerses(self, section_text):
