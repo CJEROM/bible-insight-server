@@ -237,13 +237,14 @@ class Ingestor:
                     
                     print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
 
-                    try:
-                        log_file = Path(__file__).parents[2] / "downloads" / f"translation-{self.translation_id}-log.txt"
-                        with open(log_file, 'w', encoding="utf-8") as f:
-                            f.write(f"Translation: [{dbl_id}-{agreement_id}] with ID [{translation_id}]\n")
-                        MinioUSXUpload(self.client, "audio", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
-                    except Exception as e:
-                        print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
+                    log_file = Path(__file__).parents[2] / "downloads" / f"translation-{translation_id}-log.txt"
+                    with open(log_file, 'w', encoding="utf-8") as f:
+                        f.write(f"Translation: [{dbl_id}-{agreement_id}] with ID [{translation_id}]\n")
+                        try:
+                            MinioUSXUpload(self.client, "audio", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
+                        except Exception as e:
+                            f.write(f"\nERROR\n\n{e}\n")
+                            print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
 
                 # break
 
