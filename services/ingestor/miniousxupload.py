@@ -616,7 +616,7 @@ class MinioUSXUpload:
                         """, (book_code, int(chapter_num), chapter_ref, False))
                         print(f"     Non-Standard Chapter Created: {self.chapter_ref}")
                     except Exception as e:
-                        print(f"❌ Skipped Chapter Creation of [{chapter_ref}]")
+                        print(f"❌ Skipped Chapter Creation of [{chapter_ref}] because of {e}")
                         # In the case it can't seem to create a new chapter then skip the chapter (won't take it as important)
 
                 for verse in range(1, (int(verse_count)+1)):
