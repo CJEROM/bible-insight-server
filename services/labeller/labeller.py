@@ -59,7 +59,7 @@ class Labeller:
             self.cur.execute("""SELECT translation_id FROM bible.translationlabellingprojects;""")
             translations = self.cur.fetchall()
 
-            for id in translations:
+            for id, in translations:
                 self.translation_id = id
                 start_time = time.time()
                 exports = self.export_word_list()
