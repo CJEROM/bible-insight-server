@@ -173,12 +173,13 @@ class Ingestor:
                     print(f"❌ Translation {dbl_id}-{agreement_id} already exists! Skipping ...")
                     continue # Skip because its already in our system
 
+                # 32664dc3288a28df-265137
+                # dbl_id = "32664dc3288a28df"
+                # agreement_id = 265137
+
                 print(f"\n✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
 
                 new_path = None
-
-                # dbl_id = "52a82b80a85343c5"
-                # agreement_id = 279707
 
                 # Go to the DBL translation page
                 url = "https://app.library.bible/content/" + dbl_id + "/download?agreementId=" + str(agreement_id)
