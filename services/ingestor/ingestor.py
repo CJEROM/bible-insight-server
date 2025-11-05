@@ -148,7 +148,6 @@ class Ingestor:
 
             # Do we need to login?
             if page.query_selector("input[name='email']"):
-                print("Need to log in")
                 # Fill in the username/email and password
                 page.fill("input[name='email']", DBL_USERNAME)
                 page.fill("input[name='password']", DBL_PASSWORD)
@@ -161,7 +160,7 @@ class Ingestor:
                 page.wait_for_url("https://app.library.bible/")
                 print("✅ Succesful Log In")
             else:
-                print("Already logged in")
+                print("     Already logged in") # Assumes that we couldn't find email field in link means we are logged in already
 
             self.cur.execute("""
                 SELECT dbl_id, agreement_id FROM bible.DBLInfo;
@@ -174,7 +173,7 @@ class Ingestor:
                     print(f"❌ Translation {dbl_id}-{agreement_id} already exists! Skipping ...")
                     continue # Skip because its already in our system
 
-                print(f"✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
+                print(f"\n✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
 
                 new_path = None
 

@@ -61,5 +61,5 @@ class Book:
             additions += 1
         
         if additions > 0:
-            print(f"[{additions}] Chapters added for {self.book_code[0]}")
+            print(f"    [{additions}] Chapters added for {self.book_code[0]}")
    

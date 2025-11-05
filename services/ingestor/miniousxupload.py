@@ -522,10 +522,10 @@ class MinioUSXUpload:
                 """, (property_name, property_value, style_id))
 
         if style_additions > 0:
-            print(f"[{style_additions}] Styles loaded into database")
+            print(f"    [{style_additions}] Styles loaded into database")
 
         if property_additions > 0:
-            print(f"[{property_additions}] Properties loaded into database")
+            print(f"    [{property_additions}] Properties loaded into database")
 
     def createVersification(self, file_string):
         # file_xml = BeautifulSoup(file_string, "xml")
@@ -580,7 +580,7 @@ class MinioUSXUpload:
                 additions += 1
 
         if additions > 0:
-            print(f"[{additions}] Excluded Verses added to database")
+            print(f"    [{additions}] Excluded Verses added to database")
     
     def createVerses(self, section_text):
         additions = 0
@@ -635,4 +635,4 @@ class MinioUSXUpload:
                         additions += 1
         
         if additions > 0:
-            print(f"[{additions}] Verses Initialized into database")
+            print(f"    [{additions}] Verses Initialized into database")
