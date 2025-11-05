@@ -159,7 +159,11 @@ class Labeller:
                 self.cur.execute("""
                     SELECT versetext FROM bible.styles WHERE style = %s AND source_file_id = (SELECT style_file FROM bible.translations WHERE id = %s);
                 """, (para_style, self.translation_id))
-                result = self.cur.fetchone()[0]
+                result = self.cur.fetchone()
+                if result:
+                    result = result[0]
+                else:
+                    continue
 
                 # If not part of actual scripture text then remove
                 is_versetext = True if result else False
@@ -194,4 +198,5 @@ if __name__ == "__main__":
     # Can try querying all finished projects in labellingproject or translationlabellingprojects tables 
     #       as candidates for working on
     nlp_file = Path(__file__).parents[2] / "archive" / "nlp_words.txt"
-    Labeller(nlp_file, 1)
+    # Labeller(nlp_file, 1)
+    Labeller(nlp_file)
