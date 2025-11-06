@@ -70,7 +70,7 @@ INSERT INTO bible.dblinfo (dbl_id, agreement_id) VALUES
     ('179568874c45066f', 245511), -- DRA | text | Douay-Rheims American 1899
     ('2f0fd81d7b85b923', 253125), -- F35 | text | The English New Testament According to Family 35
     ('9879dbb7cfe39e4d', 240020), -- WEB | text | World English Bible
-    ('ec290b5045ff54a5', 252291), -- OKE | text | Targum Onkelos Etheridge
+    -- ('ec290b5045ff54a5', 252291), -- OKE | text | Targum Onkelos Etheridge - Not Valid
     ('bba9f40183526463', 259557), -- BSB | text | Berean Standard Bible
     ('7142879509583d59', 242201), -- WEBBE | text | World English Bible British Edition
     ('32339cf2f720ff8e', 265856), -- TCENT | text | The Text-Critical English New Testament
