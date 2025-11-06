@@ -280,8 +280,12 @@ class Labeller:
         # These are words that beforehand I have already identified as of interest to my labelling set up
         file_name = f"{language_iso}-nlp-words.txt" if language_iso != None else "nlp-words.txt"
         file_path = Path(self.nlp_words_filepath) / file_name
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return set(line.strip() for line in f if line.strip())
+        if file_path.exists():
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return set(line.strip() for line in f if line.strip())
+        else:
+            print(f"    {file_path} Not Found => no pre-labelling will occur\n")
+            return set()
 
 if __name__ == "__main__":
     # Can try querying all finished projects in labellingproject or translationlabellingprojects tables 
