@@ -25,7 +25,6 @@ class Book:
         self.book_code = self.cur.fetchone()[0]
 
         self.bible_structure = self.getBibleStructure(bible_structure_info)
-        print(self.bible_structure)
         
         self.createTextChapters()
 
@@ -42,7 +41,7 @@ class Book:
             for ch in chapters:
                 chapter_num, verse_count = ch.split(':')
                 chapter_dict[f"{book} {chapter_num}"] = int(verse_count)
-                
+
         return chapter_dict
 
     # Purpose is to split xml up into chapters, for token processing
