@@ -29,6 +29,9 @@ MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
 MINIO_USERNAME = os.getenv("MINIO_USERNAME")
 MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
 
+LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
+LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
+
 TOKEN_PATTERN = re.compile(r"[A-Za-z]+(?:'[A-Za-z]+)?|[0-9]+|[^\w\s]")
 
 class Labeller:
@@ -53,6 +56,32 @@ class Labeller:
             access_key=MINIO_USERNAME,
             secret_key=MINIO_PASSWORD,
             secure=False
+        )
+
+        self.label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
+        # me = label_studio_client.users.whoami()
+
+        # Should consider how else to do this
+        project_label_config = """
+        <View>
+            <Text name="text" value="$text"/>
+            <View style="box-shadow: 2px 2px 5px #999;
+                        padding: 20px; margin-top: 2em;
+                        border-radius: 5px;">
+                <Header value="Choose if entity related"/>
+                <Choices name="entity" toName="text"
+                        choice="single" showInLine="true">
+                <Choice value="Entity Related"/>
+                <Choice value="N/A"/>
+                </Choices>
+            </View>
+        </View>
+        """
+
+        self.translation_project = self.label_studio_client.projects.create(
+            title="Word List Label",
+            description="For Labelling word list",
+            label_config=project_label_config
         )
 
         if self.translation_id == None:
@@ -136,6 +165,33 @@ class Labeller:
                     RETURNING id;
                 """, (word, is_nlp))
                 words_added.append(self.cur.fetchone())
+
+                if is_nlp: # if is nlp identified already, then pre label that inside the project so that we don't have to do it again
+                    self.label_studio_client.tasks.create(
+                        data={
+                            "text": word
+                        },
+                        predictions=[{
+                            "result": [
+                                {
+                                    "from_name": "entity",    # The name of the <Choices> tag
+                                    "to_name": "text",        # The name of the <Text> tag
+                                    "type": "choices",
+                                    "value": {
+                                        "choices": ["Entity Related"]   # Pre-selected choice
+                                    }
+                                }
+                            ]
+                        }],
+                        project=self.translation_project.id,
+                    )
+                else:
+                    self.label_studio_client.tasks.create(
+                        data={
+                            "text": word
+                        },
+                        project=self.translation_project.id,
+                    )
             except Exception as e:
                 pass
 
