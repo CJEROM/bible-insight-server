@@ -212,6 +212,7 @@ class Chapter:
                         RETURNING id;
                     """, (self.book_map_id, self.translation_id, self.chapter_ref, str(this_note), note_text))
                 else:
+                    Verse(chapter_xml=None, verse_ref=note_verse_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
                     self.cur.execute("""
                         INSERT INTO bible.translationfootnotes (book_map_id, translation_id, verse_ref, xml, text) 
                         VALUES (%s, %s, %s, %s, %s)
