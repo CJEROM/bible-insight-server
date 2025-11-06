@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS bible.translationrelationships (
     id                  SERIAL PRIMARY KEY,
     from_translation    TEXT,
     from_revision       INTEGER,
-    to_translation      INTEGER,
+    to_translation      TEXT,
     to_revision         INTEGER,
     type                TEXT
     -- FOREIGN KEY (from_translation) REFERENCES bible.translationinfo (dbl_id) ON DELETE CASCADE
