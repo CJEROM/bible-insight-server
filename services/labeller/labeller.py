@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 import os
 from collections import Counter
 import time
+import sys
 
 from dotenv import load_dotenv
 
@@ -158,18 +159,27 @@ class Labeller:
 
     def get_word_list(self, language_iso):
         db_books = self.get_book_files(language_iso)
-        language_text = ""
+        total_books = len(db_books)  # ✅ Needed for proper percentage
+        all_tokens = set()
         
-        for code, etag, object_name, bucket, translation_id in db_books:
+        for i, (code, etag, object_name, bucket, translation_id) in enumerate(db_books, start=1):
             book_file_content = self.stream_file(object_name, bucket)
             book_xml = BeautifulSoup(book_file_content, "xml")
             # Go though paragraph by paragraph
             book_text = self.get_para_text(book_xml)
-            language_text += book_text + "\n"
 
-        results = self.get_word_frequencies(self.get_tokens_without_puntuation(language_text))
-        # results = self.get_tokens_without_puntuation(translation_text)
-        return results.keys()
+            # ✅ Extract tokens from this book and merge into set
+            all_tokens.update(self.get_tokens_without_punctuation(book_text))
+
+            # ✅ Proper loading bar (50 characters wide)
+            progress = int((i / total_books) * 50)
+            bar = '#' * progress + '-' * (50 - progress)
+            percentage = int((i / total_books) * 100)
+            sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}%")
+            sys.stdout.flush()
+
+        # results = self.get_word_frequencies(self.get_tokens_without_punctuation(language_text))
+        return all_tokens
 
     def export_word_list(self, language_iso=None):
         word_list = self.get_word_list(language_iso)
@@ -256,9 +266,10 @@ class Labeller:
         return final_text
 
     def get_tokens(self, text):
-        return TOKEN_PATTERN.findall(text)
+        # Turn into set instead
+        return set(TOKEN_PATTERN.findall(text)) # return only unique mentions
     
-    def get_tokens_without_puntuation(self, text):
+    def get_tokens_without_punctuation(self, text):
         return [t for t in self.get_tokens(text) if re.match(r"[A-Za-z0-9]", t)]
         # Keeps only words & numbers, removes punctuation
 
