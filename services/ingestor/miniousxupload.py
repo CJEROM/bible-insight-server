@@ -72,16 +72,24 @@ class MinioUSXUpload:
         self.translation_name = None
         self.bible_structure_info = None
 
-        # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
-        match medium:
-            case "text": # USX Files e.g. for deeper analysis
-                # unzip first
-                self.unzip_folder(self.process_location)
-            case "video": # Videos e.g. for the deaf (sign language)
-                # self.check_files(self.process_location)
-                pass
-            case "audio": # Audio e.g. for the blind or preference
-                self.check_files(self.process_location)
+        log_file = Path(__file__).parents[2] / "downloads" / f"translation-{self.translation_id}-log.txt"
+        with open(log_file, 'a', encoding="utf-8") as f:
+            f.write(f"BOOK: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]\n")
+            try:
+                # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
+                match medium:
+                    case "text": # USX Files e.g. for deeper analysis
+                        # unzip first
+                        self.unzip_folder(self.process_location)
+                    case "video": # Videos e.g. for the deaf (sign language)
+                        # self.check_files(self.process_location)
+                        pass
+                    case "audio": # Audio e.g. for the blind or preference
+                        self.check_files(self.process_location)
+            except Exception as e:
+                f.write(f"\nERROR\n\n{e}\n")
+                print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
+                self.conn.rollback()
 
         self.conn.commit()
 
