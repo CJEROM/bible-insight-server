@@ -58,8 +58,8 @@ class Labeller:
             secure=False
         )
 
-        self.label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
-        # me = label_studio_client.users.whoami()
+        self.label_studio_client = None
+        self.translation_project = None
 
         # Should consider how else to do this
         project_label_config = """
@@ -78,22 +78,23 @@ class Labeller:
         </View>
         """
 
-        self.translation_project = self.label_studio_client.projects.create(
-            title="Word List Label",
-            description="For Labelling word list",
-            label_config=project_label_config
-        )
-
         if self.translation_id == None:
-            self.cur.execute("""SELECT translation_id FROM bible.translationlabellingprojects;""")
-            translations = self.cur.fetchall()
+            self.cur.execute("""SELECT id, iso, name FROM bible.languages;""")
+            languages = self.cur.fetchall()
 
-            for id, in translations:
-                self.translation_id = id
+            for language_id, iso, name in languages:
                 start_time = time.time()
-                exports = self.export_word_list()
+                self.label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
+
+                self.translation_project = self.label_studio_client.projects.create(
+                    title=f"{name} Word List Labels",
+                    description=f"For Labelling word list of language [{language_id}]",
+                    label_config=project_label_config
+                )
+                
+                exports = self.export_word_list(iso)
                 duration = round(time.time() - start_time, 2)
-                print(f"✅ Migrated [{exports}] Words to DB in {duration} seconds for translation [{self.translation_id}]!\n")
+                print(f"✅ Migrated [{exports}] Words to DB in {duration} seconds for the [{name}:{language_id}] language!\n")
         else:
             start_time = time.time()
             exports = self.export_word_list()
@@ -121,39 +122,58 @@ class Labeller:
                 response.close()
                 response.release_conn()
 
-    def get_book_files(self):
-        self.cur.execute("""
-            SELECT 
-                btf.book_code,
-                f.etag,
-                f.file_path,
-                f.bucket
-            FROM bible.booktofile btf 
-                JOIN bible.files f ON btf.file_id = f.id
-            WHERE btf.translation_id = %s;
-        """, (self.translation_id,))
+    def get_book_files(self, language_iso=None):
+        if self.translation_id == None:
+            # Just grab all book files at ones for language, can label other languages too, so perhaps best to pick by language?
+            self.cur.execute("""
+                SELECT 
+                    btf.book_code,
+                    f.etag,
+                    f.file_path,
+                    f.bucket,
+                    tl.translation_id
+                FROM bible.translationlabellingprojects tl 
+                    JOIN bible.booktofile tl ON tl.translation_id = btf.translation_id
+                    JOIN bible.files f ON btf.file_id = f.id
+                    JOIN bible.translations t ON tl.translation_id = t.id
+                    JOIN bible.translationinfo ti ON t.dbl_id = ti.dbl_id
+                    JOIN bible.languages l ON l.id = ti.language_id
+                WHERE l.iso = %s;
+            """, (language_iso,))
+        else:
+            self.cur.execute("""
+                SELECT 
+                    btf.book_code,
+                    f.etag,
+                    f.file_path,
+                    f.bucket,
+                    btf.translation_id
+                FROM bible.booktofile btf 
+                    JOIN bible.files f ON btf.file_id = f.id
+                WHERE btf.translation_id = %s;
+            """, (self.translation_id,))
 
         db_books = self.cur.fetchall()
         return db_books
 
-    def get_word_list(self):
-        db_books = self.get_book_files()
-        translation_text = ""
+    def get_word_list(self, language_iso):
+        db_books = self.get_book_files(language_iso)
+        language_text = ""
         
-        for code, etag, object_name, bucket in db_books:
+        for code, etag, object_name, bucket, translation_id in db_books:
             book_file_content = self.stream_file(object_name, bucket)
             book_xml = BeautifulSoup(book_file_content, "xml")
             # Go though paragraph by paragraph
             book_text = self.get_para_text(book_xml)
-            translation_text += book_text + "\n"
+            language_text += book_text + "\n"
 
-        results = self.get_word_frequencies(self.get_tokens_without_puntuation(translation_text))
+        results = self.get_word_frequencies(self.get_tokens_without_puntuation(language_text))
         # results = self.get_tokens_without_puntuation(translation_text)
         return results.keys()
 
-    def export_word_list(self):
-        word_list = self.get_word_list()
-        nlp_words = self.load_nlp_words()
+    def export_word_list(self, language_iso=None):
+        word_list = self.get_word_list(language_iso)
+        nlp_words = self.load_nlp_words(language_iso)
         words_added = []
         for word in word_list:
             try:
@@ -245,14 +265,16 @@ class Labeller:
     def get_word_frequencies(self, tokens):
         return Counter(tokens)  # returns a dict-like object with counts
 
-    def load_nlp_words(self):
+    def load_nlp_words(self, language_iso):
         # These are words that beforehand I have already identified as of interest to my labelling set up
-        with open(self.nlp_words_filepath, 'r', encoding='utf-8') as f:
+        file_name = f"{language_iso}-nlp-words.txt" if language_iso != None else "nlp-words.txt"
+        file_path = Path(self.nlp_words_filepath) / file_name
+        with open(file_path, 'r', encoding='utf-8') as f:
             return set(line.strip() for line in f if line.strip())
 
 if __name__ == "__main__":
     # Can try querying all finished projects in labellingproject or translationlabellingprojects tables 
     #       as candidates for working on
-    nlp_file = Path(__file__).parents[2] / "archive" / "nlp_words.txt"
+    nlp_path = Path(__file__).parents[2] / "archive"
     # Labeller(nlp_file, 1)
-    Labeller(nlp_file)
+    Labeller(nlp_path)
