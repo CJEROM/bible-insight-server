@@ -624,7 +624,6 @@ class MinioUSXUpload:
                 # Validates any non standard chapters that might apear outside ones initialised originally
                 if found_chapter == None:
                     try:
-                        print(book_code, int(chapter_num), chapter_ref)
                         self.cur.execute("""
                             INSERT INTO bible.chapters (book_code, chapter_num, chapter_ref, standard) 
                             VALUES (%s, %s, %s, %s);
