@@ -9,6 +9,7 @@ import re
 import time
 from label_studio_sdk import LabelStudio
 import json
+import traceback
 
 from book import Book
 
@@ -87,7 +88,8 @@ class MinioUSXUpload:
                     case "audio": # Audio e.g. for the blind or preference
                         self.check_files(self.process_location)
             except Exception as e:
-                f.write(f"\nERROR\n\n{e}\n")
+                error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+                f.write(f"\nERROR\n\n{error_message}\n")
                 print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
                 self.conn.rollback()
 
