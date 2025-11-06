@@ -186,7 +186,7 @@ class Chapter:
             if note_verse == None:
                 note_verse = this_note.find("char", style="xo") # Specific to cross reference
 
-            note_verse = note_verse.text.strip()
+            note_verse = note_verse.get_text().strip()
             note_verse = re.sub(r"[^\w\s:-]", "", note_verse) # Cleans verse_ref as sometimes has full stop after (plus going a bit overkill if anything else used)
             note_verse_num = None
             if len(note_verse.split(":")) > 1:
