@@ -189,7 +189,7 @@ class Chapter:
             if note_verse == None: # if still none meaning we didn't find cross reference or footnote, then just skip this note
                 continue
 
-            note_verse = note_verse.get_text().strip()
+            note_verse = note_verse.get_text().strip().replace(" ", "").replace(".", ":")
             note_verse = re.sub(r"[^\w\s:-]", "", note_verse) # Cleans verse_ref as sometimes has full stop after (plus going a bit overkill if anything else used)
             note_verse_num = None
             if len(note_verse.split(":")) > 1:
