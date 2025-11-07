@@ -136,8 +136,17 @@ class TranslationNote:
         if self.note_type == None:
             return # if note not valid
         
-        self.source_ref = None
+        self.source_ref = self.get_source_ref()
         self.destination_ref = None
+        
+        if self.note_type == "f":
+            text = self.note_xml.find("char", style="ft").get_text().strip()
+            self.create_footnote()
+        elif self.note_type == "x":
+            for ref in self.note_xml.find_all("ref"):
+                text = self.note_xml.find("char", style="xo")
+                to_ref = self.standardise_dash(ref.get("loc"))
+                self.create_cross_references(ref, self.note_xml, )
 
         self.conn.commit()
 
@@ -161,17 +170,20 @@ class TranslationNote:
         pass
 
     def create_footnote(self):
-        self.execute_and_get_id(self.SQL.get("chapter → footnote"), (book_map_id, translation_id, chapter_ref, xml, text))
-        self.execute_and_get_id(self.SQL.get("verse → footnote"), (book_map_id, translation_id, verse_ref, xml, text))
+        self.execute_and_get_id(self.SQL.get("chapter → footnote"), (self.book_map_id, self.translation_id, chapter_ref, self.note_xml, text))
+        self.execute_and_get_id(self.SQL.get("verse → footnote"), (self.book_map_id, self.translation_id, verse_ref, self.note_xml, text))
+
+        for ref in self.note_xml.find_all("ref"):
+            self.create_cross_references(ref, )
 
         self.execute_and_get_id(self.SQL.get("footnote → crossreference"), (foot_note, cross_ref))
         pass
 
-    def create_cross_references(self):
-        self.execute_and_get_id(self.SQL.get("chapter → chapter"), (book_map_id, translation_id, from_chapter_ref, to_chapter_ref, xml, parent_ref))
-        self.execute_and_get_id(self.SQL.get("verse → chapter"), (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml, parent_ref))
-        self.execute_and_get_id(self.SQL.get("verse → verse"), (book_map_id, translation_id, from_verse_ref, to_verse_ref, xml, parent_ref))
-        self.execute_and_get_id(self.SQL.get("chapter → verse"), (book_map_id, translation_id, from_chapter_ref, to_verse_ref, xml, parent_ref))
+    def create_cross_references(self, to_ref, xml, text):
+        self.execute_and_get_id(self.SQL.get("chapter → chapter"), (self.book_map_id, self.translation_id, from_chapter_ref, to_chapter_ref, xml, parent_ref))
+        self.execute_and_get_id(self.SQL.get("verse → chapter"), (self.book_map_id, self.translation_id, from_verse_ref, to_chapter_ref, xml, parent_ref))
+        self.execute_and_get_id(self.SQL.get("verse → verse"), (self.book_map_id, self.translation_id, from_verse_ref, to_verse_ref, xml, parent_ref))
+        self.execute_and_get_id(self.SQL.get("chapter → verse"), (self.book_map_id, self.translation_id, from_chapter_ref, to_verse_ref, xml, parent_ref))
         pass
 
 # ✅ Test examples:
