@@ -10,6 +10,7 @@ import time
 from label_studio_sdk import LabelStudio
 import json
 import traceback
+import sys
 
 from book import Book
 
@@ -333,8 +334,10 @@ class MinioUSXUpload:
         publication = metadata_xml.find("publication", default="true") # Get default files for publication
         contents = publication.find_all("content")
 
+        total_books = len(contents)
+
         # Selectively upload the files I want in the format I want (from metadata)
-        for content in contents:
+        for i, (content) in enumerate(contents):
             # Get the file path for current file
             parts = content.get("src").split("/")
             file_name = parts[-1] # Get filename
@@ -363,16 +366,26 @@ class MinioUSXUpload:
                 # Skip any that are not Hebrews book
                 # if found_book[0] != "HEB":
                 #     continue
+
+                # ✅ Proper loading bar (50 characters wide)
+                progress = int((i / total_books) * 50)
+                bar = '#' * progress + '-' * (50 - progress)
+                percentage = int((i / total_books) * 100)
                 
                 # Then update the database linking to them
                 if self.medium == "text":
+                    sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | {found_book[0]}")
+                    sys.stdout.flush()
+
                     self.cur.execute("""
                         INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s) RETURNING id;
                     """, (book, self.translation_id, file_id, short_name, long_name))
                     # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
                     book_map_id = self.cur.fetchone()[0]
-                    Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn, self.bible_structure_info)
+                    Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn, self.bible_structure_info)                    
                 if self.medium == "audio":
+                    sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | {chapter_ref}")
+                    sys.stdout.flush()
                     # Audio and eventually video don't have any connection but in serving the files themselves for consumption
                     #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
                     #   Since below are all the database references it needs.
