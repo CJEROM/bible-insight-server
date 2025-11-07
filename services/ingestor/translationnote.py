@@ -37,8 +37,40 @@ import psycopg2
 
 class TranslationNote:
     SQL = {
-        "": """
-            S
+        "insert_footnote_for_chapter": """
+            INSERT INTO bible.translationfootnotes (book_map_id, translation_id, chapter_ref, xml, text) 
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id;
+        """,
+        "insert_footnote_for_verse": """
+            INSERT INTO bible.translationfootnotes (book_map_id, translation_id, verse_ref, xml, text) 
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id;
+        """,
+        "from_chapter_insert_chapter_ref": """
+            INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_chapter_ref, to_chapter_ref, xml, parent_ref) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        """,
+        "from_verse_insert_chapter_ref": """
+            INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml, parent_ref) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        """,
+        "from_verse_insert_verse_ref": """
+            INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_verse_ref, xml, parent_ref) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        """,
+        "from_chapter_insert_verse_ref": """
+            INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml, parent_ref) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        """,
+        "map_footnote_to_crossreference": """
+            INSERT INTO bible.translation_note_mapping (foot_note, cross_ref) 
+            VALUES (%s, %s)
+            RETURNING id;
         """,
     }
 
