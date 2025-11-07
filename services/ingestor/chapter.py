@@ -166,13 +166,15 @@ class Chapter:
     def createVerseOccurences(self):
         additions = 0
         all_verses = self.chapter_xml.find_all("verse")
-        latest_ref = all_verses[-1]
+        latest_ref = None
 
         for verse in all_verses:
             verse_ref = verse.get("sid")
             if verse_ref:
                 Verse(self.chapter_xml, verse_ref, self.chapter_occurence_id, self.conn)
                 additions += 1
+
+            latest_ref = verse_ref
 
         if additions > 0:
             # print(f"    [{additions}] Verse Occurences added to database")
