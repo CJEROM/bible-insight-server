@@ -138,3 +138,25 @@ class TranslationNote:
 
     def get_source_ref(self):
         pass
+
+    def create_footnote(self):
+        pass
+
+    def create_cross_references(self):
+        pass
+
+# ✅ Test examples:
+tests = {
+    "GEN 1": "",        # Valid
+    "GEN 10": "",       # Valid
+    "GEN 1:1": "",      # Valid
+    "GEN 1:10": "",     # Valid
+    "GEN 1:1-2": "",    # Valid
+    "GEN 1:1-2:3": "",  # Valid
+    "GEN 1:0": "",      # ❌ Invalid
+    "GEN 0:5": "",      # ❌ Invalid
+    "GEN 0": "",        # ❌ Invalid
+}
+
+if __name__ == "__main__":
+    TranslationNote(None, None, note_xml, db_con))
