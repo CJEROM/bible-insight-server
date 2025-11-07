@@ -1,6 +1,7 @@
 from verse import Verse
 from bs4 import BeautifulSoup, Tag
 import psycopg2
+import re
 
 #region Cases To Handle (both from source and for destination for both cross references and footnotes)
 # 2KI 6:31-7:20
@@ -82,6 +83,24 @@ class TranslationNote:
                 new_ref = ref.replace(dash, "-")
 
         return new_ref
+    
+    def detect_reference_format(self, ref: str):
+        patterns = {
+            # ❌ Catch invalid (chapter or verse is zero)
+            "invalid_zero": r"^[A-Z]{2,4} (\d+:0|\d+:0-\d+|\d+:0-\d+:\d+|0:\d+)",
+
+            # ✅ Valid formats:
+            "multi_chapter_range": r"^[A-Z]{2,4} \d+:\d+-\d+:\d+$",     # GEN 1:1-2:1
+            "verse_range": r"^[A-Z]{2,4} \d+:\d+-\d+$",                 # GEN 1:1-2
+            "single_verse": r"^[A-Z]{2,4} \d+:\d+$",                    # GEN 1:1
+            "chapter_only": r"^[A-Z]{2,4} \d+$",                        # GEN 1
+        }
+
+        for name, pattern in patterns.items():
+            if re.match(pattern, ref):
+                return name
+
+        return "unknown_format"
 
     def __init__(self, book_map_id:int, translation_id:int, note_xml:Tag, db_conn, parent:int=None, param_note_type:str=None):
         self.book_map_id = book_map_id
@@ -94,7 +113,6 @@ class TranslationNote:
         self.note_type = self.get_note_type(param_note_type)
         if self.note_type == None:
             return # if note not valid
-
         
         self.source_ref = None
         self.destination_ref = None
