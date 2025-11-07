@@ -101,6 +101,10 @@ class TranslationNote:
                 return name
 
         return "unknown_format"
+    
+    def execute_and_get_id(self, query, params):
+        self.cur.execute(query, params)
+        return self.cur.fetchone()[0]
 
     def __init__(self, book_map_id:int, translation_id:int, note_xml:Tag, db_conn, parent:int=None, param_note_type:str=None):
         self.book_map_id = book_map_id
