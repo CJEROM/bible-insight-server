@@ -177,6 +177,15 @@ class Chapter:
             # print(f"    [{additions}] Verse Occurences added to database")
             pass
 
+    def standardise_dash(self, ref):
+        new_ref = ref
+        dash_formats = ["–", "—", "−", "–"] # Different dashes used
+        for dash in dash_formats:
+            if dash in ref:
+                new_ref = ref.replace(dash, "-")
+
+        return new_ref
+
     def createTranslationNotes(self):
         # Go through chapter and grab all cross references and footnotes, and write to database
         for this_note in self.chapter_xml.find_all("note"):
@@ -193,6 +202,8 @@ class Chapter:
             # if uses full stop instead of colon for chapter-verse seperation then replace with colon
             if ":" not in note_verse:
                 note_verse = note_verse.replace(".", ":", 1)
+
+            note_verse = self.standardise_dash(note_verse)
 
             note_verse = re.sub(r"[^\w\s:-]", "", note_verse) # Cleans verse_ref as sometimes has full stop after (plus going a bit overkill if anything else used)
             note_verse_num = None
@@ -234,7 +245,7 @@ class Chapter:
 
                 refs_in_footnotes = this_note.find_all("ref")
                 for ref in refs_in_footnotes:
-                    to_ref = ref.get("loc") # e.g. [ISA 28:11-12] OR [ISA 28:11]
+                    to_ref = self.standardise_dash(ref.get("loc")) # e.g. [ISA 28:11-12] OR [ISA 28:11]
                     ref_splits = to_ref.split("-")[0].split(":") # Refs in footnotes tend to also just be chapters
 
                     if len(ref_splits) == 1 and note_verse_num == "0": # if the to_ref and from_ref are chapters
@@ -304,7 +315,7 @@ class Chapter:
             elif note_type == "x":
                 # Get all ref objects to create cross references for this verse
                 for ref in this_note.find_all("ref"):
-                    to_ref = ref.get("loc") # e.g. [ISA 28:11-12] OR [ISA 28:11]
+                    to_ref = self.standardise_dash(ref.get("loc")) # e.g. [ISA 28:11-12] OR [ISA 28:11]
 
                     ref_splits = to_ref.split("-") 
                     
