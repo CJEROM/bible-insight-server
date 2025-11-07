@@ -189,9 +189,14 @@ class Chapter:
             if note_verse == None: # if still none meaning we didn't find cross reference or footnote, then just skip this note
                 continue
 
-            note_verse = note_verse.get_text().strip().replace(" ", "").replace(".", ":")
+            note_verse = note_verse.get_text().strip().replace(" ", "")
+            # if uses full stop instead of colon for chapter-verse seperation then replace with colon
+            if ":" not in note_verse:
+                note_verse = note_verse.replace(".", ":", 1)
+
             note_verse = re.sub(r"[^\w\s:-]", "", note_verse) # Cleans verse_ref as sometimes has full stop after (plus going a bit overkill if anything else used)
             note_verse_num = None
+            
             if len(note_verse.split(":")) > 1:
                 note_verse_num = note_verse.split(":")[1]
 
@@ -215,6 +220,8 @@ class Chapter:
                         RETURNING id;
                     """, (self.book_map_id, self.translation_id, self.chapter_ref, str(this_note), note_text))
                 else:
+                    # how to handle if the verse its coming from has format MAT 1:7-8 for example
+                    print(note_verse_ref)
                     Verse(chapter_xml=None, verse_ref=note_verse_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
                     self.cur.execute("""
                         INSERT INTO bible.translationfootnotes (book_map_id, translation_id, verse_ref, xml, text) 
