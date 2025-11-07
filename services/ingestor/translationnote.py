@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup, Tag
 import psycopg2
 import re
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
