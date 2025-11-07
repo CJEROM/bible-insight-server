@@ -191,14 +191,14 @@ class Chapter:
         for this_note in self.chapter_xml.find_all("note"):
             note_type = this_note.get("style")
             
-            note_verse = this_note.find("char", style="fr") # Specific to footnote reference
-            if note_verse == None:
-                note_verse = this_note.find("char", style="xo") # Specific to cross reference
+            note_verse_text = this_note.find("char", style="fr") # Specific to footnote reference
+            if note_verse_text == None:
+                note_verse_text = this_note.find("char", style="xo") # Specific to cross reference
 
-            if note_verse == None: # if still none meaning we didn't find cross reference or footnote, then just skip this note
+            if note_verse_text == None: # if still none meaning we didn't find cross reference or footnote, then just skip this note
                 continue
 
-            note_verse = note_verse.get_text().strip().replace(" ", "")
+            note_verse = note_verse_text.get_text().strip()
             # if uses full stop instead of colon for chapter-verse seperation then replace with colon
             if ":" not in note_verse:
                 note_verse = note_verse.replace(".", ":", 1)
@@ -214,6 +214,7 @@ class Chapter:
             # What verse this note is in
             book_code = self.chapter_ref.split(" ")[0]
             note_verse_ref = book_code + " " + note_verse
+            print(f"{note_verse_text}, {note_verse}, {note_verse_ref}")
 
             # Just create footnote with its text
             if note_type == "f":
@@ -232,7 +233,7 @@ class Chapter:
                     """, (self.book_map_id, self.translation_id, self.chapter_ref, str(this_note), note_text))
                 else:
                     # how to handle if the verse its coming from has format MAT 1:7-8 for example
-                    print(note_verse_ref)
+                    # print(note_verse_ref)
                     Verse(chapter_xml=None, verse_ref=note_verse_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
                     self.cur.execute("""
                         INSERT INTO bible.translationfootnotes (book_map_id, translation_id, verse_ref, xml, text) 
@@ -343,7 +344,6 @@ class Chapter:
                                 verse_start = ref_splits[0].split(":")[1]
                                 verse_end = self.bible_structure.get(new_chapter_ref)
                                 new_ref = f"{new_chapter_ref}:{verse_start}-{verse_end}" # e.g. 2KI 6:31-33
-                                print(new_chapter_ref, new_ref)
                                 Verse(chapter_xml=None, verse_ref=new_ref, chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
                                 self.cur.execute("""
                                     INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_verse_ref, xml) 
@@ -356,7 +356,6 @@ class Chapter:
                                 verse_start = 1
                                 verse_end = ref_splits[1].split(":")[1]
                                 new_ref = f"{new_chapter_ref}:{verse_start}-{verse_end}" # e.g. 2KI 7:1-20
-                                print(new_chapter_ref, new_ref)
                                 Verse(chapter_xml=None, verse_ref=new_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
                                 self.cur.execute("""
                                     INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_verse_ref, xml, parent_ref) 
