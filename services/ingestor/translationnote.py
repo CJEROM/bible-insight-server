@@ -2,6 +2,39 @@ from verse import Verse
 from bs4 import BeautifulSoup, Tag
 import psycopg2
 
+#region Cases To Handle (both from source and for destination for both cross references and footnotes)
+# 2KI 6:31-7:20
+# COL 2:47-3:1
+# PSA 9:0
+# ISA 28:11-12
+# 1KI 7:8a
+# JOS 3-4
+#endregion
+
+#region Footnotes Samples
+
+    # <note caller="+" style="f"><char style="fr" closed="false">1:17 </char><char style="ft" closed="false">orthodox Jewish</char></note>
+
+    # <note caller="+" style="f">
+    #     <char style="fr" closed="false">1:17 </char><char style="ft" closed="false">
+    #         <char style="xt">
+    #             <ref loc="2CO 5:21">2C 5:21</ref>; 
+    #             <ref loc="ROM 8:4">Ro 8:4</ref>; 
+    #             <ref loc="PHP 3:9">Pp 3:9</ref>
+    #         </char>
+    #     </char>
+    # </note>
+
+    # <note caller="+" style="f"><char style="fr" closed="false">1:17 </char><char style="ft" closed="false">orthodox Jewish</char></note>
+
+#endregion
+
+#region Cross reference Samples
+
+    # <note caller="-" style="x"><char style="xo" closed="false">1:1 </char><char style="xt" closed="false"><ref loc="PSA 51:10">Ps 51:10</ref></char></note>
+
+#endregion
+
 class TranslationNote:
     SQL = {
         "": """
