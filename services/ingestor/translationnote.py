@@ -55,37 +55,37 @@ POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
 class TranslationNote:
     SQL = {
-        "insert_footnote_for_chapter": """
+        "chapter → footnote": """
             INSERT INTO bible.translationfootnotes (book_map_id, translation_id, chapter_ref, xml, text) 
             VALUES (%s, %s, %s, %s, %s)
             RETURNING id;
         """,
-        "insert_footnote_for_verse": """
+        "verse → footnote": """
             INSERT INTO bible.translationfootnotes (book_map_id, translation_id, verse_ref, xml, text) 
             VALUES (%s, %s, %s, %s, %s)
             RETURNING id;
         """,
-        "from_chapter_insert_chapter_ref": """
+        "chapter → chapter": """
             INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_chapter_ref, to_chapter_ref, xml, parent_ref) 
             VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id;
         """,
-        "from_verse_insert_chapter_ref": """
+        "verse → chapter": """
             INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml, parent_ref) 
             VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id;
         """,
-        "from_verse_insert_verse_ref": """
+        "verse → verse": """
             INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_verse_ref, xml, parent_ref) 
             VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id;
         """,
-        "from_chapter_insert_verse_ref": """
+        "chapter → verse": """
             INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml, parent_ref) 
             VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id;
         """,
-        "map_footnote_to_crossreference": """
+        "footnote → crossreference": """
             INSERT INTO bible.translation_note_mapping (foot_note, cross_ref) 
             VALUES (%s, %s)
             RETURNING id;
@@ -157,9 +157,17 @@ class TranslationNote:
         pass
 
     def create_footnote(self):
+        self.SQL.get("chapter → footnote")
+        self.SQL.get("verse → footnote")
+
+        self.SQL.get("footnote → crossreference")
         pass
 
     def create_cross_references(self):
+        self.SQL.get("chapter → chapter")
+        self.SQL.get("verse → chapter")
+        self.SQL.get("verse → verse")
+        self.SQL.get("chapter → verse")
         pass
 
 # ✅ Test examples:
