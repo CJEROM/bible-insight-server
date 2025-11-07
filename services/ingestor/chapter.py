@@ -236,12 +236,41 @@ class Chapter:
                             VALUES (%s, %s, %s, %s, %s)
                             RETURNING id;
                         """, (self.book_map_id, self.translation_id, note_chapter_ref, to_ref, str(this_note)))
-                    elif len(ref_splits) == 1: # if the to_ref is a chapter
-                        self.cur.execute("""
-                            INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml) 
-                            VALUES (%s, %s, %s, %s, %s)
-                            RETURNING id;
-                        """, (self.book_map_id, self.translation_id, note_verse_ref, to_ref, str(this_note)))
+                    elif len(ref_splits) == 1: # if the to_ref is a chapter TRIGGERED CASE FOR: JOS 3-4
+                        chapter_range = to_ref.split("-")
+                        # if the ref is not just to one chapter but a range
+                        if len(chapter_range) > 1:
+                            book_code = chapter_range[0].split(" ")[0]
+
+                            start_chapter = int(chapter_range[0].split(" ")[1])
+                            end_chapter = int(chapter_range[1])
+
+                            parent_ref_entry = None
+                            
+                            # go through range of chapters
+                            for new_chapter in range(start_chapter, end_chapter+1): 
+                                new_chapter_ref = f"{book_code} {new_chapter}"
+
+                                # and set first chapter as parent chapter
+                                if new_chapter == start_chapter:
+                                    self.cur.execute(""" 
+                                        INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml) 
+                                        VALUES (%s, %s, %s, %s, %s)
+                                        RETURNING id;
+                                    """, (self.book_map_id, self.translation_id, note_verse_ref, new_chapter_ref, str(this_note)))
+                                    parent_ref_entry = self.cur.fetchone()[0]
+                                else: # add the rest of the chapters separetely in a fragramented form, with first fragment as parent
+                                    self.cur.execute(""" 
+                                        INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml, parent_ref) 
+                                        VALUES (%s, %s, %s, %s, %s, %s)
+                                        RETURNING id;
+                                    """, (self.book_map_id, self.translation_id, note_verse_ref, new_chapter_ref, str(this_note), parent_ref_entry))
+                        else:
+                            self.cur.execute(""" 
+                                INSERT INTO bible.translationrefnotes (book_map_id, translation_id, from_verse_ref, to_chapter_ref, xml) 
+                                VALUES (%s, %s, %s, %s, %s)
+                                RETURNING id;
+                            """, (self.book_map_id, self.translation_id, note_verse_ref, to_ref, str(this_note)))
                     elif note_verse_num == "0": # if from_ref is a chapter
                         Verse(chapter_xml=None, verse_ref=to_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
                         self.cur.execute("""
