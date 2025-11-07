@@ -144,8 +144,7 @@ class TranslationNote:
             self.create_footnote()
         elif self.note_type == "x":
             for ref in self.note_xml.find_all("ref"):
-                to_ref = self.standardise_dash(ref.get("loc"))
-                self.create_cross_references(to_ref, self.note_xml)
+                self.create_cross_references(ref, self.note_xml)
 
         self.conn.commit()
 
@@ -180,7 +179,6 @@ class TranslationNote:
             self.create_cross_references(ref, self.note_xml)
 
         self.execute_and_get_id(self.SQL.get("footnote → crossreference"), (foot_note, cross_ref))
-        pass
 
     def create_cross_references(self, ref, xml):
         to_ref = self.standardise_dash(ref.get("loc"))
@@ -189,7 +187,6 @@ class TranslationNote:
         self.execute_and_get_id(self.SQL.get("verse → chapter"), (self.book_map_id, self.translation_id, from_verse_ref, to_chapter_ref, xml, self.parent_note))
         self.execute_and_get_id(self.SQL.get("verse → verse"), (self.book_map_id, self.translation_id, from_verse_ref, to_verse_ref, xml, self.parent_note))
         self.execute_and_get_id(self.SQL.get("chapter → verse"), (self.book_map_id, self.translation_id, from_chapter_ref, to_verse_ref, xml, self.parent_note))
-        pass
 
 # ✅ Test examples:
 tests = {
