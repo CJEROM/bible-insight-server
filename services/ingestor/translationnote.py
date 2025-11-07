@@ -2,6 +2,22 @@ from verse import Verse
 from bs4 import BeautifulSoup, Tag
 import psycopg2
 import re
+import os
+
+from dotenv import load_dotenv
+
+# Automatically find the project root (folder containing .env)
+current = Path(__file__).resolve()
+for parent in current.parents:
+    if (parent / ".env").exists():
+        load_dotenv(parent / ".env")
+        break
+
+POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
 #region Cases To Handle (both from source and for destination for both cross references and footnotes)
 # 2KI 6:31-7:20
@@ -159,4 +175,19 @@ tests = {
 }
 
 if __name__ == "__main__":
-    TranslationNote(None, None, note_xml, db_con))
+    note_xml = ""
+    conn = psycopg2.connect(
+        host=POSTGRES_HOST,
+        port=POSTGRES_PORT,
+        dbname=POSTGRES_DB,
+        user=POSTGRES_USERNAME,
+        password=POSTGRES_PASSWORD
+    )
+
+    cur = conn.cursor()
+
+    TranslationNote(None, None, note_xml, conn)
+
+    conn.commit()
+    cur.close()
+    conn.close()
