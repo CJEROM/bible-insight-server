@@ -216,7 +216,7 @@ class Chapter:
             # What verse this note is in
             book_code = self.chapter_ref.split(" ")[0]
             note_verse_ref = book_code + " " + note_verse
-            print(f"{note_verse_text}, {note_verse}, {note_verse_ref}")
+            # print(f"{note_verse_text}, {note_verse}, {note_verse_ref}")
 
             # Just create footnote with its text
             if note_type == "f":
