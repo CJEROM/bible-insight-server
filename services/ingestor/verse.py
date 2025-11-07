@@ -43,7 +43,7 @@ class Verse:
                 # Create new non standard verse first (to preseve foreign key constraint in db as well before verse occurence created)
                 self.cur.execute("""
                     INSERT INTO bible.verses (chapter_ref, verse_ref, standard) 
-                    VALUES (%s, %s, %s, %s)
+                    VALUES (%s, %s, %s)
                 """, (chapter_ref, self.verse_ref, False))
 
                 start_verse = int(verse_num)
