@@ -146,13 +146,16 @@ class TranslationNote:
         if param_note_type != None:
             return param_note_type
         
+        note_type = None
+        
         # if not then figure out from note_xml
         note_style = self.note_xml.get("style")
-        if note_style == "f": # footnote
-            pass
-        if note_style == "x": # cross reference
-            pass
-        pass
+        if note_style == "f" and self.note_xml.find("char", style="ft"): # footnote with valid footnote text
+            note_type = note_style
+        elif note_style == "x": # cross reference
+            note_type = note_style
+        
+        return note_type
 
     def get_source_ref(self):
         pass
