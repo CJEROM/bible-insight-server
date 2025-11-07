@@ -385,6 +385,7 @@ class Chapter:
 
     # ================================================================================================================= TOKENIZATION LOGIC =================================================================================================================
 
+#region legacy code
     def getParagraphStyle(self, para_style):
         style_file_id = self.cur.execute("""
             SELECT id FROM bible.files WHERE translation_id=? AND type=?
@@ -784,3 +785,4 @@ class Chapter:
                     INSERT INTO Quotes (text, start_token) 
                     VALUES (?, ?)
                 """, (token.text, token_id))
+#endregion
