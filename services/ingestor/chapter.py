@@ -126,7 +126,7 @@ class Chapter:
 
         self.conn.commit()
 
-        self.createVerseOccurences()
+        self.last_verse = self.createVerseOccurences()
         self.createParagraphs()
         self.createTranslationNotes()
         # self.createTokens()
@@ -166,6 +166,7 @@ class Chapter:
     def createVerseOccurences(self):
         additions = 0
         all_verses = self.chapter_xml.find_all("verse")
+        latest_ref = all_verses[-1]
 
         for verse in all_verses:
             verse_ref = verse.get("sid")
@@ -176,6 +177,7 @@ class Chapter:
         if additions > 0:
             # print(f"    [{additions}] Verse Occurences added to database")
             pass
+        return latest_ref # how many verses have been created for this translation
 
     def standardise_dash(self, ref):
         new_ref = ref
@@ -231,6 +233,16 @@ class Chapter:
                         VALUES (%s, %s, %s, %s, %s)
                         RETURNING id;
                     """, (self.book_map_id, self.translation_id, self.chapter_ref, str(this_note), note_text))
+                elif len(note_verse_ref.split("-")) > 1 and len(note_verse_ref.split("-")[1].split(":")) > 1: 
+                    # if this note is in a verse like ACT 2:47-3:1
+                    # this only works for when verse is split into next chapter
+                    new_note_verse_ref = note_verse_ref.split("-")[0] # only take the first part as source like ACT 2:47
+                    Verse(chapter_xml=None, verse_ref=new_note_verse_ref,chapter_occurence_id= None, db_conn=self.conn, is_special_case=True)
+                    self.cur.execute("""
+                        INSERT INTO bible.translationfootnotes (book_map_id, translation_id, verse_ref, xml, text) 
+                        VALUES (%s, %s, %s, %s, %s)
+                        RETURNING id;
+                    """, (self.book_map_id, self.translation_id, new_note_verse_ref, str(this_note), note_text))
                 else:
                     # how to handle if the verse its coming from has format MAT 1:7-8 for example
                     # print(note_verse_ref)
