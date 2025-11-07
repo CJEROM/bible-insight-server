@@ -157,17 +157,17 @@ class TranslationNote:
         pass
 
     def create_footnote(self):
-        self.SQL.get("chapter → footnote")
-        self.SQL.get("verse → footnote")
+        self.execute_and_get_id(self.SQL.get("chapter → footnote"), ())
+        self.execute_and_get_id(self.SQL.get("verse → footnote"), ())
 
-        self.SQL.get("footnote → crossreference")
+        self.execute_and_get_id(self.SQL.get("footnote → crossreference"), ())
         pass
 
     def create_cross_references(self):
-        self.SQL.get("chapter → chapter")
-        self.SQL.get("verse → chapter")
-        self.SQL.get("verse → verse")
-        self.SQL.get("chapter → verse")
+        self.execute_and_get_id(self.SQL.get("chapter → chapter"), ())
+        self.execute_and_get_id(self.SQL.get("verse → chapter"), ())
+        self.execute_and_get_id(self.SQL.get("verse → verse"), ())
+        self.execute_and_get_id(self.SQL.get("chapter → verse"), ())
         pass
 
 # ✅ Test examples:
