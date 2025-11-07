@@ -74,8 +74,8 @@ class MinioUSXUpload:
         self.bible_structure_info = None
 
         log_file = Path(__file__).parents[2] / "downloads" / f"translation-{self.translation_id}-log.txt"
-        with open(log_file, 'a', encoding="utf-8") as f:
-            f.write(f"BOOK: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]\n")
+        with open(log_file, 'w', encoding="utf-8") as f:
+            f.write(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]\n")
             try:
                 # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
                 match medium:
@@ -93,17 +93,18 @@ class MinioUSXUpload:
                 print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
                 self.conn.rollback()
 
-        self.conn.commit()
+            self.conn.commit()
 
-        duration = time.time() - self.start_time
-        hours = int(duration // 3600)
-        minutes = int((duration % 3600) // 60)
-        seconds = int(duration % 60)
-        milliseconds = int((duration % 1) * 1000)  # or *100 for .mm format
+            duration = time.time() - self.start_time
+            hours = int(duration // 3600)
+            minutes = int((duration % 3600) // 60)
+            seconds = int(duration % 60)
+            milliseconds = int((duration % 1) * 1000)  # or *100 for .mm format
 
-        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
+            formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
 
-        print(f"✅ Completed Translation Import in [{formatted_duration}]!\n")
+            print(f"✅ Completed Translation Import in [{formatted_duration}]!\n")
+            f.write(f"✅ Completed Translation Import in [{formatted_duration}]!\n")
 
         # Create Label Studio Project for this specific translation of the bible
         label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
