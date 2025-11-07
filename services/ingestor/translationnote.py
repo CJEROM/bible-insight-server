@@ -104,10 +104,11 @@ class TranslationNote:
     def detect_reference_format(self, ref: str):
         patterns = {
             # ❌ Catch invalid (chapter or verse is zero)
-            "invalid_zero": r"^[A-Z]{2,4} (\d+:0|\d+:0-\d+|\d+:0-\d+:\d+|0:\d+)",
+            "invalid_zero": r"^[A-Z]{2,4} (\d+:0|\d+:0-\d+|\d+:0-\d+:\d+|0:\d+)", # e.g. GEN 1:0
 
             # ✅ Valid formats:
             "multi_chapter_range": r"^[A-Z]{2,4} \d+:\d+-\d+:\d+$",     # GEN 1:1-2:1
+            "chapter_range": r"^[A-Z]{2,4} \d+-\d+$",                   # GEN 1-2
             "verse_range": r"^[A-Z]{2,4} \d+:\d+-\d+$",                 # GEN 1:1-2
             "single_verse": r"^[A-Z]{2,4} \d+:\d+$",                    # GEN 1:1
             "chapter_only": r"^[A-Z]{2,4} \d+$",                        # GEN 1
