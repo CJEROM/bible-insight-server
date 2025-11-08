@@ -5,6 +5,8 @@ import re
 import os
 from pathlib import Path
 
+from verse import Verse
+
 from dotenv import load_dotenv
 
 # Automatically find the project root (folder containing .env)
@@ -226,6 +228,9 @@ class TranslationNote:
             elif source_type == "verse":
                 source_ref = partial_ref
         
+        if source_type == "verse":
+            Verse(chapter_xml=None, verse_ref=source_ref, chapter_occurence_id=None, db_conn=self.conn, is_special_case=True)
+        
         return source_ref, source_type
     
     def create_destination_ref(self, ref, raw_xml):
@@ -321,6 +326,9 @@ class TranslationNote:
 
     def create_cross_reference(self, xml, destination_ref, destination_type):
         query = None
+
+        if destination_type == "verse":
+            Verse(chapter_xml=None, verse_ref=destination_ref, chapter_occurence_id=None, db_conn=self.conn, is_special_case=True)
 
         if self.source_type == "verse" and destination_type == "chapter":
             query = self.SQL.get("verse → chapter")
