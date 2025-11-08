@@ -167,11 +167,11 @@ class Ingestor:
             """)
 
             translations = self.cur.fetchall()
-            translations = (
-                "c89622d31b60c444-272278".split("-"),
-                "32339cf2f720ff8e-265856".split("-"),
-                "7644de2e4c5188e5-265855".split("-")
-            )
+            # translations = (
+            #     "c89622d31b60c444-272278".split("-"),
+            #     "32339cf2f720ff8e-265856".split("-"),
+            #     "7644de2e4c5188e5-265855".split("-")
+            # )
 
             for dbl_id, agreement_id in translations:
 
