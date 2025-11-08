@@ -144,12 +144,12 @@ class TranslationNote:
         self.cur.execute(query, params)
         return self.cur.fetchone()[0]
 
-    def __init__(self, book_map_id:int, book_code:str, translation_id:int, note_xml:Tag, db_conn, parent_note:int=None, param_note_type:str=None):
+    def __init__(self, book_map_id:int, book_code:str, translation_id:int, note_xml:Tag, db_conn, param_note_type:str=None):
         self.book_map_id = book_map_id
         self.translation_id = translation_id
         self.note_xml = note_xml
 
-        self.parent_note = parent_note
+        self.parent_note = None
 
         self.conn = db_conn
         self.cur = self.conn.cursor()
