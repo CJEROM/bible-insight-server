@@ -409,8 +409,6 @@ class MinioUSXUpload:
         sys.stdout.flush()
 
         self.conn.commit()
-
-        print("Cleaning Up Artifacts...")
         
         if file_location.is_dir():
             shutil.rmtree(file_location, ignore_errors=True)  # delete folder + contents
