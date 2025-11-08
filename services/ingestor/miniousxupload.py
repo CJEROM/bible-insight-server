@@ -335,6 +335,8 @@ class MinioUSXUpload:
         contents = publication.find_all("content")
 
         total_books = len(contents)
+        bar = None
+        percentage = None
 
         # Selectively upload the files I want in the format I want (from metadata)
         for i, (content) in enumerate(contents):
@@ -374,7 +376,7 @@ class MinioUSXUpload:
                 
                 # Then update the database linking to them
                 if self.medium == "text":
-                    sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | {found_book[0]}")
+                    sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | {found_book[0]} | ")
                     sys.stdout.flush()
 
                     self.cur.execute("""
@@ -384,7 +386,7 @@ class MinioUSXUpload:
                     book_map_id = self.cur.fetchone()[0]
                     Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn, self.bible_structure_info)                    
                 if self.medium == "audio":
-                    sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | {chapter_ref}")
+                    sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | {chapter_ref} | ")
                     sys.stdout.flush()
                     # Audio and eventually video don't have any connection but in serving the files themselves for consumption
                     #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
@@ -398,7 +400,14 @@ class MinioUSXUpload:
                     self.cur.execute("""
                         INSERT INTO bible.chapteroccurences (chapter_ref, file_id, book_to_file_id) VALUES (%s, %s, %s);
                     """, (chapter_ref, file_id, book_map_id))
+
+        progress = int((total_books / total_books) * 50)
+        bar = '#' * progress + '-' * (50 - progress)
+        percentage = int((total_books / total_books) * 100)
         
+        sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | COMPLETED | ")
+        sys.stdout.flush()
+
         self.conn.commit()
 
         print("Cleaning Up Artifacts...")
