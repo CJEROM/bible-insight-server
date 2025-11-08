@@ -144,7 +144,7 @@ class TranslationNote:
         self.cur.execute(query, params)
         return self.cur.fetchone()[0]
 
-    def __init__(self, book_map_id:int, book_code:str, translation_id:int, note_xml:Tag, db_conn, param_note_type:str=None):
+    def __init__(self, book_map_id:int, book_code:str, translation_id:int, note_xml, db_conn):
         self.book_map_id = book_map_id
         self.translation_id = translation_id
         self.note_xml = note_xml
@@ -154,7 +154,7 @@ class TranslationNote:
         self.conn = db_conn
         self.cur = self.conn.cursor()
 
-        self.note_type = self.get_note_type(param_note_type)
+        self.note_type = self.get_note_type()
         if self.note_type == None:
             return # if note not valid
         
@@ -169,11 +169,7 @@ class TranslationNote:
 
         self.conn.commit()
 
-    def get_note_type(self, param_note_type):
-        # if passed into class properly then return that
-        if param_note_type != None:
-            return param_note_type
-        
+    def get_note_type(self):
         note_type = None
         
         # if not then figure out from note_xml
