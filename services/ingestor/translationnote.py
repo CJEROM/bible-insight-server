@@ -231,53 +231,59 @@ class TranslationNote:
         destination_ref, destination_type = (None, None)
 
         cleaned_ref = self.standardise_ref(ref.get("loc"))
-        ref_book_code, ref_origin = cleaned_ref.split(" ")
+        ref_book_code, ref_origin = cleaned_ref.split(" ") # e.g GEN 1 => "GEN", "1"
 
-        format, format_name = self.detect_reference_format(cleaned_ref)
+        format_types, format_name = self.detect_reference_format(cleaned_ref)
+        if None in format_types: # if there is an invalid reference in format
+            return None # don't make a cross reference
 
         main_note = None # parent note that gets returned for linking to footnote, if cross references created through it
 
         # Logic for creating fragments for destination references
-        if len(format) == 1: # Single Format
-            fragment_format = format[0]
-            if fragment_format == None:
-                return None
-            
+        if len(format_types) == 1: # Single Format
             destination_ref = cleaned_ref
-            destination_type = fragment_format
+            destination_type = format_types[0]
             
             main_note = self.create_cross_reference(xml, destination_ref, destination_type)
 
-        elif len(format) == 2: # Double Fragment Format
-            start_range, end_range = ref_origin.split("-")
-            start_chapter = int(start_range.split(":")[0])
-            end_chapter = int(end_range.split(":")[0])
+        elif len(format_types) == 2: # Double Fragment Format
+            if format_name == "verse_range": # Verse class robust enough to handle it so just pass along
+                destination_type = format_types[0]
+                destination_ref = cleaned_ref
+                
+                self.create_cross_reference(xml, destination_ref, destination_type)
+            else:  # currently only have chapter range so this is tailored to that
+                start_range, end_range = ref_origin.split("-")
+                start_chapter = int(start_range.split(":")[0])
+                end_chapter = int(end_range.split(":")[0])
 
-            for chapter in range(start_chapter, end_chapter+1):
-                if chapter == start_chapter:
-                    fragment_format = format[0]
-                    main_note = self.create_cross_reference(xml, destination_ref, destination_type)
-                    self.parent_note = main_note
-                else:
-                    fragment_format = format[1]
+                for chapter in range(start_chapter, end_chapter+1):
+                    destination_ref = f"{ref_book_code} {chapter}"
+                    if chapter == start_chapter:
+                        destination_type = format_types[0]
 
-            self.parent_note = None
+                        main_note = self.create_cross_reference(xml, destination_ref, destination_type)
+                        self.parent_note = main_note
+                    else:
+                        destination_type = format_types[1]
+                
+                        self.create_cross_reference(xml, destination_ref, destination_type)
 
-        elif len(format) == 3: # Multi Fragment Format
+        elif len(format_types) == 3: # Multi Fragment Format
             start_chapter = int()
             end_chapter = int()
             for chapter in range(start_chapter, end_chapter+1):
                 if chapter == start_chapter:
-                    fragment_format = format[0]
+                    fragment_format = format_types[0]
 
                     main_note = self.create_cross_reference(xml, destination_ref, destination_type)
                     self.parent_note = main_note
                 elif chapter == end_chapter:
-                    fragment_format = format[2]
+                    fragment_format = format_types[2]
                 else:
-                    fragment_format = format[1]
+                    fragment_format = format_types[1]
 
-            self.parent_note = None
+        self.parent_note = None
 
         # only first fragment is returned, since the others link to first fragment as parent
         return main_note
