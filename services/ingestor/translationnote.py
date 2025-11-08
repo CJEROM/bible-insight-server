@@ -228,7 +228,8 @@ class TranslationNote:
         
         return source_ref, source_type
     
-    def create_destination_ref(self, ref, xml):
+    def create_destination_ref(self, ref, raw_xml):
+        xml = str(raw_xml)
         destination_ref, destination_type = (None, None)
 
         cleaned_ref = self.standardise_ref(ref.get("loc"))
@@ -310,9 +311,9 @@ class TranslationNote:
 
         # Simpler logic since can only have foot note for a chapter "PSA 46" or verse "LUK 1:17", (verse can be non-standard "MIC 4:14a" or mixed "MAT 12:18-21")
         if self.source_type == "verse":
-            footnote_id = self.execute_and_get_id(self.SQL.get("verse → footnote"), (self.book_map_id, self.translation_id, self.source_ref, self.note_xml, text))
+            footnote_id = self.execute_and_get_id(self.SQL.get("verse → footnote"), (self.book_map_id, self.translation_id, self.source_ref, str(self.note_xml), text))
         elif self.source_type == "chapter":
-            footnote_id = self.execute_and_get_id(self.SQL.get("chapter → footnote"), (self.book_map_id, self.translation_id, self.source_ref, self.note_xml, text))
+            footnote_id = self.execute_and_get_id(self.SQL.get("chapter → footnote"), (self.book_map_id, self.translation_id, self.source_ref, str(self.note_xml), text))
 
         for ref in self.note_xml.find_all("ref"):
             cross_reference_id = self.create_destination_ref(ref, self.note_xml)
