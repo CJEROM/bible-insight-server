@@ -148,7 +148,7 @@ class Chapter:
                 INSERT INTO bible.chapters (book_code, chapter_num, chapter_ref, standard) 
                 VALUES (%s, %s, %s, %s)
                 RETURNING id;
-            """, (book_code, int(chapter_num), self.chapter_ref, False))
+            """, (self.book_code, int(chapter_num), self.chapter_ref, False))
             # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))
             print(f"     Non-Standard Chapter Created: {self.chapter_ref}")
 
