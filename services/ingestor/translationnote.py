@@ -92,39 +92,59 @@ class TranslationNote:
         """,
     }
 
-    def standardise_dash(self, ref):
+    def standardise_ref(self, ref):
         new_ref = ref
+        # Removes all non standard dashes with normal one
         dash_formats = ["–", "—", "−", "–"] # Different dashes used
         for dash in dash_formats:
             if dash in ref:
                 new_ref = ref.replace(dash, "-")
 
+        # If Chapter-verse divide is full stop replace with a colon
+        if ":" not in new_ref:
+            new_ref = new_ref.replace(".", ":", 1)
+
         return new_ref
     
-    def detect_reference_format(self, ref: str):
+    def detect_reference_format(self, ref):
+        options = (None, "chapter", "verse")
+
         patterns = {
             # ❌ Catch invalid (chapter or verse is zero)
-            "invalid_zero": r"^[A-Z]{2,4} (\d+:0|\d+:0-\d+|\d+:0-\d+:\d+|0:\d+)", # e.g. GEN 1:0
+            "invalid_verse":                        [r"^[A-Z]{2,4} \d+:0", (options[1])],              # e.g. PSA 9:0
 
-            # ✅ Valid formats:
-            "multi_chapter_range": r"^[A-Z]{2,4} \d+:\d+-\d+:\d+$",     # GEN 1:1-2:1
-            "chapter_range": r"^[A-Z]{2,4} \d+-\d+$",                   # GEN 1-2
-            "verse_range": r"^[A-Z]{2,4} \d+:\d+-\d+$",                 # GEN 1:1-2
-            "single_verse": r"^[A-Z]{2,4} \d+:\d+$",                    # GEN 1:1
-            "chapter_only": r"^[A-Z]{2,4} \d+$",                        # GEN 1
+            "invalid_verse_range":                  [r"^[A-Z]{2,4} \d+:0-\d+", (options[0])],          # e.g. GEN 1:0-3
+            "invalid_verse_range_across_chapters":  [r"^[A-Z]{2,4} \d+:0-\d+:\d+", (options[0])],      # e.g. GEN 1:0-2:1
+            "invalid_chapter":                      [r"^[A-Z]{2,4} 0:\d+", (options[0])],              # e.g. GEN 0:5
+
+            # Multi Fragment Formats
+            "verses_across_chapters_1":     [r"^[A-Z]{2,4} \d+:1-\d+:\d+$", (options[1], options[1], options[2])],      # GEN 1:1-2:13
+            "verses_across_chapters_other": [r"^[A-Z]{2,4} \d+:\d+-\d+:\d+$", (options[2], options[1], options[2])],    # 2KI 6:31-7:20
+
+            # Corrective Formats
+            "single_verse_alpha":           [r"^[A-Z]{2,4} \d+:\d+[a-z]$", (options[2])],                               # 1KI 7:8a
+
+            # Double Fragmented Formats
+            "chapter_range":                [r"^[A-Z]{2,4} \d+-\d+$", (options[1], options[1])],                        # JOS 3-4
+            "verse_range":                  [r"^[A-Z]{2,4} \d+:\d+-\d+$", (options[2], options[2])],                    # ISA 28:11-12
+
+            # Simple Formats
+            "single_verse":                 [r"^[A-Z]{2,4} \d+:\d+$", (options[2])],                                    # GEN 1:5
+            "single_chapter":               [r"^[A-Z]{2,4} \d+$", (options[1])],                                        # GEN 1
         }
 
-        for name, pattern in patterns.items():
+        for name, info in patterns.items():
+            pattern, format = info
             if re.match(pattern, ref):
-                return name
+                return format, name
 
-        return "unknown_format"
+        return None, None
     
     def execute_and_get_id(self, query, params):
         self.cur.execute(query, params)
         return self.cur.fetchone()[0]
 
-    def __init__(self, book_map_id:int, translation_id:int, note_xml:Tag, db_conn, parent_note:int=None, param_note_type:str=None):
+    def __init__(self, book_map_id:int, book_code:str, translation_id:int, note_xml:Tag, db_conn, parent_note:int=None, param_note_type:str=None):
         self.book_map_id = book_map_id
         self.translation_id = translation_id
         self.note_xml = note_xml
@@ -138,13 +158,14 @@ class TranslationNote:
         if self.note_type == None:
             return # if note not valid
         
-        self.source_ref = self.get_source_ref()
+        self.source_book_code = book_code
+        self.source_ref, self.source_type = self.get_source_ref()
         
         if self.note_type == "f":
             self.create_footnote()
         elif self.note_type == "x":
             for ref in self.note_xml.find_all("ref"):
-                self.create_cross_references(ref, self.note_xml)
+                self.create_destination_ref(ref, self.note_xml)
 
         self.conn.commit()
 
@@ -165,28 +186,109 @@ class TranslationNote:
         return note_type
 
     def get_source_ref(self):
-        self.note_xml.find("char", style="fr")
-        self.note_xml.find("char", style="xo")
+        # Get text from note xml to indicate chapter and verse
+        note_ref = self.note_xml.find("char", style="fr")
+        if note_ref == None:
+            note_ref = self.note_xml.find("char", style="xo")
+        # Clean up into correct format and then
+        cleaned_ref = f"{self.source_book_code} {self.standardise_ref(note_ref)}"
 
+        source_ref = None
+        source_type = None
+
+        format, format_name = self.detect_reference_format(cleaned_ref)
+
+        # Source format isn't as extensive as destination format so we want to limit it's expression
+        #   To only set up ref like its a single or double format (tho only verse-range accepted), so force ref into that format
+        #   Double format will only ever extend another 1 verse, and it migth turn into multi if that's into the next chapter (supress these)
+
+        fragment_format = format[0]
+        if fragment_format == None:
+            return None
+        
+        source_type = fragment_format
+
+        if len(format) == 1: # Single Format
+            source_ref = cleaned_ref
+
+        elif len(format) == 2: # Double Fragment Format
+            if format_name == "verse_range":
+                source_ref = cleaned_ref
+            else: 
+                source_ref = cleaned_ref.split("-")[0] # e.g. JOS 3-4 => JOS 3, we don't accept spanning chapters for source
+
+        elif len(format) == 3: # Multi Fragment Format
+            partial_ref = cleaned_ref.split("-")[0] #  e.g. 2KI 6:31-7:20 => 2KI 6:31 OR GEN 1:1-2:13 => GEN 1
+            if source_type == "chapter":
+                source_ref = partial_ref.split(":")[0]
+
+            elif source_type == "verse":
+                source_ref = partial_ref
+        
+        return source_ref, source_type
+    
+    def create_destination_ref(self, ref:Tag, xml):
+        # to_ref = 
+        destination_ref, destination_type = (None, None)
+
+        cleaned_ref = self.standardise_ref(ref.get("loc"))
+
+        format, format_name = self.detect_reference_format(cleaned_ref)
+
+        if len(format) == 1: # Single Format
+            fragment_format = format[0]
+            if fragment_format == None:
+                return None
+
+        elif len(format) == 2: # Double Fragment Format
+            start_chapter = int()
+            end_chapter = int()
+            for chapter in range(start_chapter, end_chapter+1):
+                if chapter == start_chapter:
+                    fragment_format = format[0]
+                else:
+                    fragment_format = format[1]
+
+        elif len(format) == 3: # Multi Fragment Format
+            start_chapter = int()
+            end_chapter = int()
+            for chapter in range(start_chapter, end_chapter+1):
+                if chapter == start_chapter:
+                    fragment_format = format[0]
+                elif chapter == end_chapter:
+                    fragment_format = format[2]
+                else:
+                    fragment_format = format[1]
+
+        self.create_cross_references(xml, destination_ref, destination_type)
 
     def create_footnote(self):
         text = self.note_xml.find("char", style="ft").get_text().strip()
+        footnote_id = None
 
-        self.execute_and_get_id(self.SQL.get("chapter → footnote"), (self.book_map_id, self.translation_id, chapter_ref, self.note_xml, text))
-        self.execute_and_get_id(self.SQL.get("verse → footnote"), (self.book_map_id, self.translation_id, verse_ref, self.note_xml, text))
+        if self.source_type == "verse":
+            footnote_id = self.execute_and_get_id(self.SQL.get("verse → footnote"), (self.book_map_id, self.translation_id, self.source_ref, self.note_xml, text))
+        elif self.source_type == "chapter":
+            footnote_id = self.execute_and_get_id(self.SQL.get("chapter → footnote"), (self.book_map_id, self.translation_id, self.source_ref, self.note_xml, text))
 
         for ref in self.note_xml.find_all("ref"):
-            self.create_cross_references(ref, self.note_xml)
+            cross_reference_id = self.create_destination_ref(ref, self.note_xml)
+            self.execute_and_get_id(self.SQL.get("footnote → crossreference"), (footnote_id, cross_reference_id))
 
-        self.execute_and_get_id(self.SQL.get("footnote → crossreference"), (foot_note, cross_ref))
+    def create_cross_references(self, xml, destination_ref, destination_type):
+        query = None
 
-    def create_cross_references(self, ref, xml):
-        to_ref = self.standardise_dash(ref.get("loc"))
+        if self.source_type == "verse" and destination_type == "chapter":
+            query = self.SQL.get("verse → chapter")
+        elif self.source_type == "verse" and destination_type == "verse":
+            query = self.SQL.get("verse → verse")
+        elif self.source_type == "chapter" and destination_type == "chapter":
+            query = self.SQL.get("chapter → chapter")
+        elif self.source_type == "chapter" and destination_type == "verse":
+            query = self.SQL.get("chapter → verse")
 
-        self.execute_and_get_id(self.SQL.get("chapter → chapter"), (self.book_map_id, self.translation_id, from_chapter_ref, to_chapter_ref, xml, self.parent_note))
-        self.execute_and_get_id(self.SQL.get("verse → chapter"), (self.book_map_id, self.translation_id, from_verse_ref, to_chapter_ref, xml, self.parent_note))
-        self.execute_and_get_id(self.SQL.get("verse → verse"), (self.book_map_id, self.translation_id, from_verse_ref, to_verse_ref, xml, self.parent_note))
-        self.execute_and_get_id(self.SQL.get("chapter → verse"), (self.book_map_id, self.translation_id, from_chapter_ref, to_verse_ref, xml, self.parent_note))
+        cross_reference_id = self.execute_and_get_id(query, (self.book_map_id, self.translation_id, self.source_ref, destination_ref, xml, self.parent_note))
+        return cross_reference_id
 
 # ✅ Test examples:
 tests = {
