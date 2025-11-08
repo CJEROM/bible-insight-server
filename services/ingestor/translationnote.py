@@ -270,18 +270,33 @@ class TranslationNote:
                         self.create_cross_reference(xml, destination_ref, destination_type)
 
         elif len(format_types) == 3: # Multi Fragment Format
-            start_chapter = int()
-            end_chapter = int()
+            start_range, end_range = ref_origin.split("-")
+            start_chapter = int(start_range.split(":")[0])
+            end_chapter = int(end_range.split(":")[0])
+
             for chapter in range(start_chapter, end_chapter+1):
                 if chapter == start_chapter:
-                    fragment_format = format_types[0]
+                    destination_type = format_types[0]
+                    if destination_type == "chapter":
+                        destination_ref = f"{ref_book_code} {chapter}"
+                    elif destination_type == "verse":
+                        destination_ref = f"{ref_book_code} {start_range}"
 
                     main_note = self.create_cross_reference(xml, destination_ref, destination_type)
                     self.parent_note = main_note
                 elif chapter == end_chapter:
-                    fragment_format = format_types[2]
+                    destination_type = format_types[2]
+                    if destination_type == "chapter":
+                        destination_ref = f"{ref_book_code} {chapter}"
+                    elif destination_type == "verse":
+                        destination_ref = f"{ref_book_code} {end_range}"
+
+                    self.create_cross_reference(xml, destination_ref, destination_type)
                 else:
-                    fragment_format = format_types[1]
+                    destination_type = format_types[1]
+                    destination_ref = f"{ref_book_code} {chapter}"
+
+                    self.create_cross_reference(xml, destination_ref, destination_type)
 
         self.parent_note = None
 
