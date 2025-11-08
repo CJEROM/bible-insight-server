@@ -93,7 +93,7 @@ class TranslationNote:
     }
 
     def standardise_ref(self, ref):
-        new_ref = ref
+        new_ref = ref.get_text().strip()
         # Removes all non standard dashes with normal one
         dash_formats = ["–", "—", "−", "–"] # Different dashes used
         for dash in dash_formats:
@@ -223,7 +223,7 @@ class TranslationNote:
         
         return source_ref, source_type
     
-    def create_destination_ref(self, ref:Tag, xml):
+    def create_destination_ref(self, ref, xml):
         destination_ref, destination_type = (None, None)
 
         cleaned_ref = self.standardise_ref(ref.get("loc"))
