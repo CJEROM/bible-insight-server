@@ -93,7 +93,12 @@ class TranslationNote:
     }
 
     def standardise_ref(self, ref):
-        new_ref = ref.get_text().strip()
+        new_ref = None
+        if isinstance(ref, Tag):
+            new_ref = ref.get_text().strip()
+        elif isinstance(ref, str):
+            new_ref = ref
+        
         # Removes all non standard dashes with normal one
         dash_formats = ["–", "—", "−", "–"] # Different dashes used
         for dash in dash_formats:
