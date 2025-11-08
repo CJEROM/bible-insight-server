@@ -228,26 +228,40 @@ class TranslationNote:
         return source_ref, source_type
     
     def create_destination_ref(self, ref:Tag, xml):
-        # to_ref = 
         destination_ref, destination_type = (None, None)
 
         cleaned_ref = self.standardise_ref(ref.get("loc"))
+        ref_book_code, ref_origin = cleaned_ref.split(" ")
 
         format, format_name = self.detect_reference_format(cleaned_ref)
 
+        main_note = None # parent note that gets returned for linking to footnote, if cross references created through it
+
+        # Logic for creating fragments for destination references
         if len(format) == 1: # Single Format
             fragment_format = format[0]
             if fragment_format == None:
                 return None
+            
+            destination_ref = cleaned_ref
+            destination_type = fragment_format
+            
+            main_note = self.create_cross_reference(xml, destination_ref, destination_type)
 
         elif len(format) == 2: # Double Fragment Format
-            start_chapter = int()
-            end_chapter = int()
+            start_range, end_range = ref_origin.split("-")
+            start_chapter = int(start_range.split(":")[0])
+            end_chapter = int(end_range.split(":")[0])
+
             for chapter in range(start_chapter, end_chapter+1):
                 if chapter == start_chapter:
                     fragment_format = format[0]
+                    main_note = self.create_cross_reference(xml, destination_ref, destination_type)
+                    self.parent_note = main_note
                 else:
                     fragment_format = format[1]
+
+            self.parent_note = None
 
         elif len(format) == 3: # Multi Fragment Format
             start_chapter = int()
@@ -255,17 +269,24 @@ class TranslationNote:
             for chapter in range(start_chapter, end_chapter+1):
                 if chapter == start_chapter:
                     fragment_format = format[0]
+
+                    main_note = self.create_cross_reference(xml, destination_ref, destination_type)
+                    self.parent_note = main_note
                 elif chapter == end_chapter:
                     fragment_format = format[2]
                 else:
                     fragment_format = format[1]
 
-        self.create_cross_references(xml, destination_ref, destination_type)
+            self.parent_note = None
+
+        # only first fragment is returned, since the others link to first fragment as parent
+        return main_note
 
     def create_footnote(self):
         text = self.note_xml.find("char", style="ft").get_text().strip()
         footnote_id = None
 
+        # Simpler logic since can only have foot note for a chapter "PSA 46" or verse "LUK 1:17", (verse can be non-standard "MIC 4:14a" or mixed "MAT 12:18-21")
         if self.source_type == "verse":
             footnote_id = self.execute_and_get_id(self.SQL.get("verse → footnote"), (self.book_map_id, self.translation_id, self.source_ref, self.note_xml, text))
         elif self.source_type == "chapter":
@@ -275,7 +296,7 @@ class TranslationNote:
             cross_reference_id = self.create_destination_ref(ref, self.note_xml)
             self.execute_and_get_id(self.SQL.get("footnote → crossreference"), (footnote_id, cross_reference_id))
 
-    def create_cross_references(self, xml, destination_ref, destination_type):
+    def create_cross_reference(self, xml, destination_ref, destination_type):
         query = None
 
         if self.source_type == "verse" and destination_type == "chapter":
