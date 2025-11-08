@@ -108,7 +108,7 @@ class Chapter:
         self.book_map_id = book_map_id
         self.chapter_ref = chapter_ref
         self.chapter_xml = BeautifulSoup(chapter_text, "xml")
-        self.book_code = None
+        self.book_code = chapter_ref.split(" ")[0]
 
         self.bible_structure = bible_structure
 
@@ -143,12 +143,12 @@ class Chapter:
         chapter_found = self.cur.fetchone()
 
         if chapter_found == None:
-            self.book_code, chapter_num = self.chapter_ref.split(" ")
+            book_code, chapter_num = self.chapter_ref.split(" ")
             self.cur.execute("""
                 INSERT INTO bible.chapters (book_code, chapter_num, chapter_ref, standard) 
                 VALUES (%s, %s, %s, %s)
                 RETURNING id;
-            """, (self.book_code, int(chapter_num), self.chapter_ref, False))
+            """, (book_code, int(chapter_num), self.chapter_ref, False))
             # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))
             print(f"     Non-Standard Chapter Created: {self.chapter_ref}")
 
