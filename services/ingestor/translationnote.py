@@ -112,7 +112,7 @@ class TranslationNote:
         return new_ref
     
     def detect_reference_format(self, ref):
-        options = (None, "chapter", "verse")
+        options = ("none", "chapter", "verse")
 
         patterns = {
             # ❌ Catch invalid (chapter or verse is zero)
@@ -143,7 +143,7 @@ class TranslationNote:
             if re.match(pattern, ref):
                 return format, name
 
-        return None, None
+        return (options[0]), None
     
     def execute_and_get_id(self, query, params):
         self.cur.execute(query, params)
@@ -235,7 +235,7 @@ class TranslationNote:
         ref_book_code, ref_origin = cleaned_ref.split(" ") # e.g GEN 1 => "GEN", "1"
 
         format_types, format_name = self.detect_reference_format(cleaned_ref)
-        if None in format_types: # if there is an invalid reference in format
+        if "none" in format_types: # if there is an invalid reference in format
             return None # don't make a cross reference
 
         main_note = None # parent note that gets returned for linking to footnote, if cross references created through it
@@ -329,6 +329,8 @@ class TranslationNote:
             query = self.SQL.get("chapter → chapter")
         elif self.source_type == "chapter" and destination_type == "verse":
             query = self.SQL.get("chapter → verse")
+        else:
+            return None # if not any of these combos then quit
 
         cross_reference_id = self.execute_and_get_id(query, (self.book_map_id, self.translation_id, self.source_ref, destination_ref, xml, self.parent_note))
         return cross_reference_id
