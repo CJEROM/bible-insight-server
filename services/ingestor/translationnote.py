@@ -100,12 +100,15 @@ class TranslationNote:
             new_ref = ref.get_text().strip()
         elif isinstance(ref, str):
             new_ref = ref
+
+        if new_ref == None:
+            return None
         
         # Removes all non standard dashes with normal one
         dash_formats = ["–", "—", "−", "–"] # Different dashes used
         for dash in dash_formats:
-            if dash in ref:
-                new_ref = ref.replace(dash, "-")
+            if dash in new_ref:
+                new_ref = new_ref.replace(dash, "-")
 
         # If Chapter-verse divide is full stop replace with a colon
         if ":" not in new_ref:
@@ -207,7 +210,7 @@ class TranslationNote:
 
         fragment_format = format[0]
         if fragment_format == None:
-            return None
+            return None, None
         
         source_type = fragment_format
 
