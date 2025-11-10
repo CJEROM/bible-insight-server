@@ -1,13 +1,13 @@
 CREATE EXTENSION pgcrypto;
-CREATE EXTENSION pg_stat_statements;
-CREATE EXTENSION timescaledb;
-CREATE EXTENSION timescaledb_toolkit;
-CREATE EXTENSION timescaledb_toolkit;
-CREATE EXTENSION pg_textsearch;
-CREATE EXTENSION pg_audit;
-CREATE EXTENSION pg_cron;
-CREATE EXTENSION pgrouting;
-CREATE EXTENSION unit;
+-- CREATE EXTENSION pg_stat_statements;
+-- CREATE EXTENSION timescaledb;
+-- CREATE EXTENSION timescaledb_toolkit;
+-- CREATE EXTENSION timescaledb_toolkit;
+-- CREATE EXTENSION pg_textsearch;
+-- CREATE EXTENSION pg_audit;
+-- CREATE EXTENSION pg_cron;
+-- CREATE EXTENSION pgrouting;
+-- CREATE EXTENSION unit;
 
 CREATE SCHEMA bible;
 CREATE SCHEMA nlp;
