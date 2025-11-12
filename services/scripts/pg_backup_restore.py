@@ -104,19 +104,19 @@ def restore_database(backup_file):
         "-d", "template1",
         "-c", f"CREATE DATABASE {POSTGRES_DB};"
     ]
-    # restore_command = [
-    #     "psql", "-h", POSTGRES_HOST, "-p", POSTGRES_PORT, "-U", POSTGRES_USERNAME,
-    #     "-d", POSTGRES_DB, "-f", backup_file
-    # ]
     restore_command = [
-        "pg_restore",
-        "-h", POSTGRES_HOST,
-        "-p", POSTGRES_PORT,
-        "-U", POSTGRES_USERNAME,
-        "-d", POSTGRES_DB,
-        "--clean", "--if-exists",
-        backup_file  # 👈 just the file name, no -f
+        "psql", "-h", POSTGRES_HOST, "-p", POSTGRES_PORT, "-U", POSTGRES_USERNAME,
+        "-d", POSTGRES_DB, "-f", backup_file
     ]
+    # restore_command = [
+    #     "pg_restore",
+    #     "-h", POSTGRES_HOST,
+    #     "-p", POSTGRES_PORT,
+    #     "-U", POSTGRES_USERNAME,
+    #     "-d", POSTGRES_DB,
+    #     "--clean", "--if-exists",
+    #     backup_file  # 👈 just the file name, no -f
+    # ]
 
     subprocess.run(drop_command, env=env, check=True)
     subprocess.run(create_command, env=env, check=True)
