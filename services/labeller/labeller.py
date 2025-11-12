@@ -187,10 +187,13 @@ class Labeller:
         print(word_list)
         nlp_words = self.load_nlp_words(language_iso)
         words_added = []
+        labelling_tasks = []
+        # Because word_list is a unique set ran only once per language
         for word in word_list:
             try:
                 is_nlp = word in nlp_words
 
+                # we assume it doesn't exist, since if it does it would have come from import file instead
                 self.cur.execute("""
                     INSERT INTO bible.word_list (text, nlp) 
                     VALUES (%s, %s)
@@ -198,34 +201,31 @@ class Labeller:
                 """, (word, is_nlp))
                 words_added.append(self.cur.fetchone())
 
-                if is_nlp: # if is nlp identified already, then pre label that inside the project so that we don't have to do it again
-                    self.label_studio_client.tasks.create(
-                        data={
-                            "text": word
-                        },
-                        predictions=[{
-                            "result": [
-                                {
-                                    "from_name": "entity",    # The name of the <Choices> tag
-                                    "to_name": "text",        # The name of the <Text> tag
-                                    "type": "choices",
-                                    "value": {
-                                        "choices": ["Entity Related"]   # Pre-selected choice
-                                    }
-                                }
-                            ]
-                        }],
-                        project=self.translation_project.id,
-                    )
-                else:
-                    self.label_studio_client.tasks.create(
-                        data={
-                            "text": word
-                        },
-                        project=self.translation_project.id,
-                    )
+                task = {"data": {"text": word}}
+
+                # Add prelabelled prediction if it's NLP-tagged
+                if is_nlp:
+                    task["predictions"] = [{
+                        "result": [
+                            {
+                                "from_name": "entity",
+                                "to_name": "text",
+                                "type": "choices",
+                                "value": {"choices": ["Entity Related"]}
+                            }
+                        ]
+                    }]
+
+                labelling_tasks.append(task)
             except Exception as e:
+                print(f"Error creating task for word {word}: {e}")
                 pass
+
+        # Bulk add all new words to project
+        self.label_studio_client.projects.import_tasks(
+            self.translation_project.id,
+            labelling_tasks
+        )
 
         print("")
         print(words_added)
