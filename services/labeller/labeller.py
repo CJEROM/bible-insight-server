@@ -161,6 +161,8 @@ class Labeller:
         db_books = self.get_book_files(language_iso)
         total_books = len(db_books)  # ✅ Needed for proper percentage
         all_tokens = set()
+
+        start_time = time.time()
         
         for i, (code, etag, object_name, bucket, translation_id) in enumerate(db_books, start=1):
             book_file_content = self.stream_file(object_name, bucket)
@@ -172,11 +174,19 @@ class Labeller:
             new_tokens = self.get_tokens_without_punctuation(book_text)
             all_tokens.update(new_tokens)
 
+            # Adding Elapsed time
+            duration = time.time() - start_time
+            hours = int(duration // 3600)
+            minutes = int((duration % 3600) // 60)
+            seconds = int(duration % 60)
+
+            formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
+
             # ✅ Proper loading bar (50 characters wide)
             progress = int((i / total_books) * 50)
             bar = '#' * progress + '-' * (50 - progress)
             percentage = int((i / total_books) * 100)
-            sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | ")
+            sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | Elapsed: {formatted_duration}")
             sys.stdout.flush()
 
         # results = self.get_word_frequencies(self.get_tokens_without_punctuation(language_text))
@@ -184,7 +194,6 @@ class Labeller:
 
     def export_word_list(self, language_iso=None):
         word_list = self.get_word_list(language_iso)
-        print(word_list)
         nlp_words = self.load_nlp_words(language_iso)
         words_added = []
         labelling_tasks = []
@@ -220,6 +229,8 @@ class Labeller:
             except Exception as e:
                 print(f"Error creating task for word {word}: {e}")
                 pass
+
+        print(labelling_tasks)
 
         # Bulk add all new words to project
         self.label_studio_client.projects.import_tasks(
