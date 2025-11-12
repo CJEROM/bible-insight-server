@@ -204,10 +204,10 @@ class Labeller:
 
                 # we assume it doesn't exist, since if it does it would have come from import file instead
                 self.cur.execute("""
-                    INSERT INTO bible.word_list (text, nlp) 
-                    VALUES (%s, %s)
+                    INSERT INTO bible.word_list (text, nlp, language_iso) 
+                    VALUES (%s, %s, %s)
                     RETURNING id;
-                """, (word, is_nlp))
+                """, (word, is_nlp, language_iso))
                 words_added.append(self.cur.fetchone())
 
                 task = {"data": {"text": word}}
