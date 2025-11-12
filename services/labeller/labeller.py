@@ -208,9 +208,10 @@ class Labeller:
                     VALUES (%s, %s, %s)
                     RETURNING id;
                 """, (word, is_nlp, language_iso))
-                words_added.append(self.cur.fetchone())
+                word_id = self.cur.fetchone()[0]
+                words_added.append(word_id)
 
-                task = {"data": {"text": word}}
+                task = {"data": {"text": word, "word_id": word_id}}
 
                 # Add prelabelled prediction if it's NLP-tagged
                 if is_nlp:
