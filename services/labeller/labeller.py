@@ -230,11 +230,23 @@ class Labeller:
                 print(f"Error creating task for word {word}: {e}")
                 pass
 
+        annotations_file = Path(__file__).parents[2] / "downloads" / f"{language_iso}-prelabelled_tasks.json"
+
+        with open(annotations_file, "w", encoding="utf-8") as f:
+            json.dump(labelling_tasks, f, ensure_ascii=False, indent=2)
+
+        with open(annotations_file, "r", encoding="utf-8") as f:
+            labelling_tasks = json.load(f)
+
         # Bulk add all new words to project
-        self.label_studio_client.projects.import_tasks(
-            self.translation_project.id,
-            json.dump(labelling_tasks)
-        )
+        try:
+            self.label_studio_client.projects.import_tasks(
+                self.translation_project.id,
+                request=json.loads(labelling_tasks)
+            )
+        except Exception as e:
+            print(f"Failed Label Studio Upload, due to: {e}\n")
+        print("Finsihed writing to files, ready for Label Studio Import")
 
         return len(words_added)
 
