@@ -230,17 +230,11 @@ class Labeller:
                 print(f"Error creating task for word {word}: {e}")
                 pass
 
-        print(labelling_tasks)
-
         # Bulk add all new words to project
         self.label_studio_client.projects.import_tasks(
             self.translation_project.id,
-            labelling_tasks
+            json.dump(labelling_tasks)
         )
-
-        print("")
-        print(words_added)
-        print("")
 
         return len(words_added)
 
