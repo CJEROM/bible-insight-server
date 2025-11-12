@@ -17,3 +17,4 @@ downloads
 
 .git-replacements.txt
 .env
+/backups
