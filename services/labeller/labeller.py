@@ -169,13 +169,14 @@ class Labeller:
             book_text = self.get_para_text(book_xml)
 
             # ✅ Extract tokens from this book and merge into set
-            all_tokens.update(self.get_tokens_without_punctuation(book_text))
+            new_tokens = self.get_tokens_without_punctuation(book_text)
+            all_tokens.update(new_tokens)
 
             # ✅ Proper loading bar (50 characters wide)
             progress = int((i / total_books) * 50)
             bar = '#' * progress + '-' * (50 - progress)
             percentage = int((i / total_books) * 100)
-            sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}%")
+            sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | ")
             sys.stdout.flush()
 
         # results = self.get_word_frequencies(self.get_tokens_without_punctuation(language_text))
@@ -183,6 +184,7 @@ class Labeller:
 
     def export_word_list(self, language_iso=None):
         word_list = self.get_word_list(language_iso)
+        print(word_list)
         nlp_words = self.load_nlp_words(language_iso)
         words_added = []
         for word in word_list:
@@ -224,6 +226,10 @@ class Labeller:
                     )
             except Exception as e:
                 pass
+
+        print("")
+        print(words_added)
+        print("")
 
         return len(words_added)
 
