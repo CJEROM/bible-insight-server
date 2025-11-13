@@ -98,7 +98,15 @@ class Labeller:
                 print(f"✅ Migrated [{exports}] Words to DB in {duration} seconds for the [{name}:{language_id}] language!\n")
         else:
             start_time = time.time()
-            exports = self.export_word_list()
+            self.label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
+
+            self.translation_project = self.label_studio_client.projects.create(
+                title=f"Translation: {self.translation_id} - Word List Labels",
+                description=f"For Labelling word list of Translation [{self.translation_id}]",
+                label_config=project_label_config
+            )
+            
+            exports = self.export_word_list("eng")
             duration = round(time.time() - start_time, 2)
             print(f"✅ Migrated [{exports}] Words to DB in {duration} seconds for translation [{self.translation_id}]!\n")
 
@@ -325,4 +333,4 @@ if __name__ == "__main__":
     #       as candidates for working on
     nlp_path = Path(__file__).parents[2] / "archive"
     # Labeller(nlp_file, 1)
-    Labeller(nlp_path)
+    Labeller(nlp_path, 22)
