@@ -415,11 +415,14 @@ CREATE TABLE IF NOT EXISTS bible.entityrelationships (
 
 -- Used to store unique list of words used for this bible translation to use as initial list to check against
 CREATE TABLE IF NOT EXISTS bible.word_list (
-    id          SERIAL PRIMARY KEY,
-    text        TEXT NOT NULL UNIQUE,   -- unique word
-    lemma_id    INTEGER,                    -- root/lemma (self-reference if needed)
-    nlp         BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (lemma_id) REFERENCES bible.word_list (id) ON DELETE SET NULL
+    id              SERIAL PRIMARY KEY,
+    text            TEXT NOT NULL UNIQUE,   -- unique word
+    lemma_id        INTEGER,                    -- root/lemma (self-reference if needed)
+    nlp             BOOLEAN DEFAULT FALSE,
+    type            TEXT,
+    language_iso    TEXT,
+    FOREIGN KEY (lemma_id) REFERENCES bible.word_list (id) ON DELETE SET NULL,
+    FOREIGN KEY (language_iso) REFERENCES bible.languages (iso)  ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS bible.word_tags (

@@ -55,7 +55,7 @@ INSERT INTO bible.dblinfo (dbl_id, agreement_id) VALUES
     ('66c22495370cdfc0', 246913), -- T4T | text | Translation for Translators
     ('6bab4d6c61b31b80', 252265), -- LXXup | text | Brenton English Septuagint (Updated Spelling and Formatting)
     ('32664dc3288a28df', 265137), -- WEBUS | text | World English Bible, American English Edition, without Strong's Numbers
-    ('c89622d31b60c444', 272278), -- TOJB2011 | text | The Orthodox Jewish Bible
+    -- ('c89622d31b60c444', 272278), -- TOJB2011 | text | The Orthodox Jewish Bible => redundant, due to introducing too much noise and not for our spec
     ('7142879509583d59', 240016), -- WEBBE | text | World English Bible British Edition
     ('01b29f4b342acc35', 260328), -- LSV | text | Literal Standard Version
     ('f72b840c855f362c', 240017), -- WMB | text | World Messianic Bible

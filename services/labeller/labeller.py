@@ -98,7 +98,15 @@ class Labeller:
                 print(f"✅ Migrated [{exports}] Words to DB in {duration} seconds for the [{name}:{language_id}] language!\n")
         else:
             start_time = time.time()
-            exports = self.export_word_list()
+            self.label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
+
+            self.translation_project = self.label_studio_client.projects.create(
+                title=f"Translation: {self.translation_id} - Word List Labels",
+                description=f"For Labelling word list of Translation [{self.translation_id}]",
+                label_config=project_label_config
+            )
+            
+            exports = self.export_word_list("eng")
             duration = round(time.time() - start_time, 2)
             print(f"✅ Migrated [{exports}] Words to DB in {duration} seconds for translation [{self.translation_id}]!\n")
 
@@ -161,6 +169,8 @@ class Labeller:
         db_books = self.get_book_files(language_iso)
         total_books = len(db_books)  # ✅ Needed for proper percentage
         all_tokens = set()
+
+        start_time = time.time()
         
         for i, (code, etag, object_name, bucket, translation_id) in enumerate(db_books, start=1):
             book_file_content = self.stream_file(object_name, bucket)
@@ -169,13 +179,22 @@ class Labeller:
             book_text = self.get_para_text(book_xml)
 
             # ✅ Extract tokens from this book and merge into set
-            all_tokens.update(self.get_tokens_without_punctuation(book_text))
+            new_tokens = self.get_tokens_without_punctuation(book_text)
+            all_tokens.update(new_tokens)
+
+            # Adding Elapsed time
+            duration = time.time() - start_time
+            hours = int(duration // 3600)
+            minutes = int((duration % 3600) // 60)
+            seconds = int(duration % 60)
+
+            formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
 
             # ✅ Proper loading bar (50 characters wide)
             progress = int((i / total_books) * 50)
             bar = '#' * progress + '-' * (50 - progress)
             percentage = int((i / total_books) * 100)
-            sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}%")
+            sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | Elapsed: {formatted_duration}")
             sys.stdout.flush()
 
         # results = self.get_word_frequencies(self.get_tokens_without_punctuation(language_text))
@@ -185,45 +204,67 @@ class Labeller:
         word_list = self.get_word_list(language_iso)
         nlp_words = self.load_nlp_words(language_iso)
         words_added = []
+        labelling_tasks = []
+        # Because word_list is a unique set ran only once per language
         for word in word_list:
             try:
                 is_nlp = word in nlp_words
 
-                self.cur.execute("""
-                    INSERT INTO bible.word_list (text, nlp) 
-                    VALUES (%s, %s)
-                    RETURNING id;
-                """, (word, is_nlp))
-                words_added.append(self.cur.fetchone())
+                word = str(word)
 
-                if is_nlp: # if is nlp identified already, then pre label that inside the project so that we don't have to do it again
-                    self.label_studio_client.tasks.create(
-                        data={
-                            "text": word
-                        },
-                        predictions=[{
-                            "result": [
-                                {
-                                    "from_name": "entity",    # The name of the <Choices> tag
-                                    "to_name": "text",        # The name of the <Text> tag
-                                    "type": "choices",
-                                    "value": {
-                                        "choices": ["Entity Related"]   # Pre-selected choice
-                                    }
-                                }
-                            ]
-                        }],
-                        project=self.translation_project.id,
-                    )
-                else:
-                    self.label_studio_client.tasks.create(
-                        data={
-                            "text": word
-                        },
-                        project=self.translation_project.id,
-                    )
+                self.cur.execute("""
+                    SELECT id FROM bible.word_list WHERE text = %s AND language_iso = %s;
+                """, (word,language_iso))
+
+                if self.cur.fetchone() != None:
+                    continue
+
+                # we assume it doesn't exist, since if it does it would have come from import file instead
+                self.cur.execute("""
+                    INSERT INTO bible.word_list (text, nlp, language_iso) 
+                    VALUES (%s, %s, %s)
+                    RETURNING id;
+                """, (word, is_nlp, language_iso))
+                word_id = self.cur.fetchone()[0]
+                words_added.append(word_id)
+
+                task = {"data": {"text": word, "word_id": word_id}}
+
+                # Add prelabelled prediction if it's NLP-tagged
+                if is_nlp:
+                    task["predictions"] = [{
+                        "result": [
+                            {
+                                "from_name": "entity",
+                                "to_name": "text",
+                                "type": "choices",
+                                "value": {"choices": ["Entity Related"]}
+                            }
+                        ]
+                    }]
+
+                labelling_tasks.append(task)
             except Exception as e:
+                print(f"Error creating task for word {word}: {e}")
                 pass
+
+        annotations_file = Path(__file__).parents[2] / "downloads" / f"{language_iso}-prelabelled_tasks.json"
+
+        with open(annotations_file, "w", encoding="utf-8") as f:
+            json.dump(labelling_tasks, f, ensure_ascii=False, indent=2)
+
+        with open(annotations_file, "r", encoding="utf-8") as f:
+            labelling_tasks = json.load(f)
+
+        # Bulk add all new words to project
+        try:
+            self.label_studio_client.projects.import_tasks(
+                self.translation_project.id,
+                request=json.loads(labelling_tasks)
+            )
+        except Exception as e:
+            print(f"Failed Label Studio Upload, due to: {e}\n")
+        print("Finsihed writing to files, ready for Label Studio Import")
 
         return len(words_added)
 
@@ -292,4 +333,4 @@ if __name__ == "__main__":
     #       as candidates for working on
     nlp_path = Path(__file__).parents[2] / "archive"
     # Labeller(nlp_file, 1)
-    Labeller(nlp_path)
+    Labeller(nlp_path, 22)
