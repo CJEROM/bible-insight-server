@@ -202,6 +202,15 @@ class Labeller:
             try:
                 is_nlp = word in nlp_words
 
+                word = str(word)
+
+                self.cur.execute("""
+                    SELECT id FROM bible.word_list WHERE text = %s AND language_iso = %s;
+                """, (word,language_iso))
+
+                if self.cur.fetchone() != None:
+                    continue
+
                 # we assume it doesn't exist, since if it does it would have come from import file instead
                 self.cur.execute("""
                     INSERT INTO bible.word_list (text, nlp, language_iso) 
@@ -211,7 +220,7 @@ class Labeller:
                 word_id = self.cur.fetchone()[0]
                 words_added.append(word_id)
 
-                task = {"data": {"text": str(word), "word_id": word_id}}
+                task = {"data": {"text": word, "word_id": word_id}}
 
                 # Add prelabelled prediction if it's NLP-tagged
                 if is_nlp:
