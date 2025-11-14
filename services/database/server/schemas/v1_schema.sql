@@ -202,11 +202,16 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     id                      SERIAL PRIMARY KEY,
     node_text               TEXT,
     node_type               TEXT,
+    code                    TEXT,
     sid                     TEXT,
     eid                     TEXT,
     vid                     TEXT,
     style                   TEXT,
     number                  INTEGER,
+    caller                  TEXT,
+    closed                  TEXT,
+    version                 TEXT,
+    encoding                TEXT,
     strong                  TEXT,
     loc                     TEXT,
     state                   TEXT,
@@ -222,14 +227,33 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
 
 CREATE TABLE IF NOT EXISTS lookup.node_attributes (
     id                      SERIAL PRIMARY KEY,
+    attribute               TEXT UNIQUE,
+    description             TEXT,
+    active                  BOOLEAN
 );
 
+-- For all the node types e.g. <para>
 CREATE TABLE IF NOT EXISTS lookup.node_types (
     id                      SERIAL PRIMARY KEY,
+    node                    TEXT UNIQUE,
+    description             TEXT,
+    active                  BOOLEAN  
 );
 
-CREATE TABLE IF NOT EXISTS bible.nodes (
+-- Maps the different attributes to node types
+CREATE TABLE IF NOT EXISTS lookup.node_map (
     id                      SERIAL PRIMARY KEY,
+    node_type               INTEGER,
+    node_attribute          INTEGER,
+    FOREIGN KEY (node_type) REFERENCES lookup.node_types (id)
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (id)
+);
+
+-- Derived links to nodes as intermediary to tokens
+CREATE TABLE IF NOT EXISTS bible.text_nodes (
+    id                      SERIAL PRIMARY KEY,
+    node_id                 INTEGER,
+    FOREIGN KEY (node_id) REFERENCES bible.nodes (id)
 );
 
 -- ================================================== bible.chapters ==================================================
