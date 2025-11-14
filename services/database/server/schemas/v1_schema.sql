@@ -482,7 +482,7 @@ CREATE TABLE IF NOT EXISTS bible.entity_relationships (
     relationship    TEXT,
 	FOREIGN KEY (from_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
     FOREIGN KEY (to_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
-	FOREIGN KEY (relationship) REFERENCES bible.relationship_lookup (relationship) ON DELETE CASCADE
+	FOREIGN KEY (relationship) REFERENCES lookup.relationship_types (relationship) ON DELETE CASCADE
 );
 
 -- ================================================== Text Based Information ==================================================
@@ -502,7 +502,7 @@ CREATE TABLE IF NOT EXISTS bible.quotes (
 
 CREATE TABLE IF NOT EXISTS bible.quote_attribution (
     id                  SERIAL PRIMARY KEY,
-    quote_id            TEXT,
+    quote_id            INTEGER,
     entity_id           INTEGER,
     attribution         INTEGER, -- whether Speaker or audience or writer
     type                TEXT,
@@ -604,8 +604,8 @@ CREATE TABLE IF NOT EXISTS users.userhighlights (
     start_anchor	INTEGER,
     end_anchor      INTEGER,
 	color			TEXT,
-    FOREIGN KEY (start_anchor) REFERENCES bible.userhighlightsanchors (id) ON DELETE CASCADE,
-	FOREIGN KEY (end_anchor) REFERENCES bible.userhighlightsanchors (id) ON DELETE CASCADE
+    FOREIGN KEY (start_anchor) REFERENCES users.userhighlightsanchors (id) ON DELETE CASCADE,
+	FOREIGN KEY (end_anchor) REFERENCES users.userhighlightsanchors (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS users.readhistory (
@@ -615,7 +615,7 @@ CREATE TABLE IF NOT EXISTS users.readhistory (
     scripture_reference     TEXT,
 	user_id					INTEGER,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
-	FOREIGN KEY (user_id) REFERENCES bible.users (id)
+	FOREIGN KEY (user_id) REFERENCES users.users (id)
 );
 
 -- ================================================== Imported Location Data (OpenBible.info) ==================================================
