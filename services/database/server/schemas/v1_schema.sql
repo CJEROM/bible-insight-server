@@ -444,39 +444,6 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     FOREIGN KEY (node_id) REFERENCES bible.text_nodes (node_id)
 );
 
--- ================================================== Text Based Information ==================================================
-
-CREATE TABLE IF NOT EXISTS bible.quotes (
-    id              SERIAL PRIMARY KEY,
-    text            TEXT,
-    quote_start     INTEGER,
-    quote_end       INTEGER,
-    parent_quote    INTEGER,
-    speaker         TEXT,
-    audience        TEXT,
-    FOREIGN KEY (quote_start) REFERENCES bible.tokens (id) ON DELETE CASCADE,
-    FOREIGN KEY (quote_end) REFERENCES bible.tokens (id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS bible.quote_attribution (
-    id                  SERIAL PRIMARY KEY,
-    quote_id            TEXT,
-    entity_id           INTEGER,
-    attribution         INTEGER, -- whether Speaker or audience or writer
-    type                TEXT,
-    FOREIGN KEY (entity_id) REFERENCES bible.entities (id) ON DELETE CASCADE,
-    FOREIGN KEY (quote_id) REFERENCES bible.quotes (id) ON DELETE CASCADE
-);
-
--- Look up table for quote attributions
-CREATE TABLE IF NOT EXISTS lookup.quote_attribution_types (
-    id                  SERIAL PRIMARY KEY,
-    attribution         TEXT,
-    type                INTEGER,
-    description         INTEGER
-);
-
 -- ================================================== Entities ==================================================
 
 CREATE TABLE IF NOT EXISTS bible.entities (
@@ -516,6 +483,39 @@ CREATE TABLE IF NOT EXISTS bible.entity_relationships (
 	FOREIGN KEY (from_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
     FOREIGN KEY (to_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
 	FOREIGN KEY (relationship) REFERENCES bible.relationship_lookup (relationship) ON DELETE CASCADE
+);
+
+-- ================================================== Text Based Information ==================================================
+
+CREATE TABLE IF NOT EXISTS bible.quotes (
+    id              SERIAL PRIMARY KEY,
+    text            TEXT,
+    quote_start     INTEGER,
+    quote_end       INTEGER,
+    parent_quote    INTEGER,
+    speaker         TEXT,
+    audience        TEXT,
+    FOREIGN KEY (quote_start) REFERENCES bible.tokens (id) ON DELETE CASCADE,
+    FOREIGN KEY (quote_end) REFERENCES bible.tokens (id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS bible.quote_attribution (
+    id                  SERIAL PRIMARY KEY,
+    quote_id            TEXT,
+    entity_id           INTEGER,
+    attribution         INTEGER, -- whether Speaker or audience or writer
+    type                TEXT,
+    FOREIGN KEY (entity_id) REFERENCES bible.entities (id) ON DELETE CASCADE,
+    FOREIGN KEY (quote_id) REFERENCES bible.quotes (id) ON DELETE CASCADE
+);
+
+-- Look up table for quote attributions
+CREATE TABLE IF NOT EXISTS lookup.quote_attribution_types (
+    id                  SERIAL PRIMARY KEY,
+    attribution         TEXT,
+    type                INTEGER,
+    description         INTEGER
 );
 
 -- ================================================== Spacy Look up Tables ==================================================
