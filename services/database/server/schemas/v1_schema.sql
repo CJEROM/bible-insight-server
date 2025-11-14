@@ -12,6 +12,7 @@ CREATE EXTENSION pgcrypto;
 CREATE SCHEMA bible;
 CREATE SCHEMA nlp;
 CREATE SCHEMA lookup;
+CREATE SCHEMA user;
 
 -- ================================================== Reference Data ==================================================
 
@@ -543,7 +544,12 @@ CREATE TABLE lookup.dep_types (
 
 -- ================================================== User Based Data ==================================================
 
-CREATE TABLE IF NOT EXISTS bible.usernotes (
+-- This could potentially be used for publically shared notes for example
+
+-- Audit type notes could potentially be compressed to save on storage + enhance security, or kept raw.
+-- Could perhaps differentiate between when shared and when created by local and server versions
+
+CREATE TABLE IF NOT EXISTS user.notes (
     id              SERIAL PRIMARY KEY,
     created_at      TIMESTAMP,
     modified_at     TIMESTAMP,
@@ -555,16 +561,40 @@ CREATE TABLE IF NOT EXISTS bible.usernotes (
 	FOREIGN KEY (user_id) REFERENCES bible.users (id) ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS bible.noterelationships (
+CREATE TABLE IF NOT EXISTS user.note_audits (
+    id              SERIAL PRIMARY KEY,
+    modified_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    title           TEXT,
+    content         TEXT,
+    tags            TEXT,
+	user_id			INTEGER,
+    note_id         INTEGER,
+	FOREIGN KEY (user_id) REFERENCES user.users (id) ON DELETE SET NULL,
+    FOREIGN KEY (note_id) REFERENCES user.notes (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS biuserble.note_relationships (
     id              SERIAL PRIMARY KEY,
     note_from    	INTEGER,
     note_to         INTEGER, 
 	type			TEXT,
-    FOREIGN KEY (note_from) REFERENCES bible.usernotes (id),
-	FOREIGN KEY (note_to) REFERENCES bible.usernotes (id)
+    FOREIGN KEY (note_from) REFERENCES user.notes (id),
+	FOREIGN KEY (note_to) REFERENCES user.notes (id)
 );
 
-CREATE TABLE IF NOT EXISTS bible.userhighlightsanchors (
+CREATE TABLE IF NOT EXISTS user.note_relationship_audits (
+    id                      SERIAL PRIMARY KEY,
+    note_from    	        INTEGER,
+    note_to                 INTEGER, 
+	type			        TEXT,
+    modified_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    note_relationship_id    INTEGER,
+    FOREIGN KEY (note_from) REFERENCES user.notes (id),
+	FOREIGN KEY (note_to) REFERENCES user.notes (id),
+    FOREIGN KEY (note_relationship_id) REFERENCES user.note_relationships (id)
+);
+
+CREATE TABLE IF NOT EXISTS user.userhighlightsanchors (
     id              SERIAL PRIMARY KEY,
     book_map_id     INTEGER,
     verse_occ_id    INTEGER, 
@@ -573,7 +603,7 @@ CREATE TABLE IF NOT EXISTS bible.userhighlightsanchors (
 	FOREIGN KEY (verse_occ_id) REFERENCES bible.verseoccurences (id)
 );
 
-CREATE TABLE IF NOT EXISTS bible.userhighlights (
+CREATE TABLE IF NOT EXISTS user.userhighlights (
     id              SERIAL PRIMARY KEY,
     start_anchor	INTEGER,
     end_anchor      INTEGER,
@@ -582,7 +612,7 @@ CREATE TABLE IF NOT EXISTS bible.userhighlights (
 	FOREIGN KEY (end_anchor) REFERENCES bible.userhighlightsanchors (id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS bible.readhistory (
+CREATE TABLE IF NOT EXISTS user.readhistory (
     history_id              SERIAL PRIMARY KEY,
     date_time               TEXT DEFAULT CURRENT_TIMESTAMP,
     book_map_id             INTEGER,
