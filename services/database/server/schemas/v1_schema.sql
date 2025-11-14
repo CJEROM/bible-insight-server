@@ -437,6 +437,7 @@ CREATE TABLE IF NOT EXISTS bible.word_list (
     FOREIGN KEY (language_iso) REFERENCES bible.languages (iso)  ON DELETE CASCADE
 );
 
+-- Meant to be used in labelling for specific tokens to show they are of specific interest to me for labelling or mapping extra information
 CREATE TABLE IF NOT EXISTS lookup.word_tags (
     id                  SERIAL PRIMARY KEY,
     name                TEXT UNIQUE NOT NULL, -- e.g. "Person", "Location", "Entity"
@@ -483,19 +484,19 @@ CREATE TABLE IF NOT EXISTS bible.entityoccurence (
 
 -- Will act as lookup not so much as source of truth, tho it can, and definetly something to work on
 -- e.g. CHILD_OF, PARENT_OF, SON_OF, DAUGHTER_OF
-CREATE TABLE IF NOT EXISTS lookup.relationship_types (
-    id              SERIAL PRIMARY KEY,
-	relationship    TEXT UNIQUE,
-    description     TEXT
-);
+-- CREATE TABLE IF NOT EXISTS lookup.entity_relationship_types (
+--     id              SERIAL PRIMARY KEY,
+-- 	relationship    TEXT UNIQUE,
+--     description     TEXT
+-- );
 
 -- Intended to work on showing relationship in different directions e.g. PARENT_OF, flipped will show CHILD_OF, and can also be SON_OF or DAUGHTER_OF
-CREATE TABLE IF NOT EXISTS lookup.relationship_map (
-    id              SERIAL PRIMARY KEY,
-	relationship    TEXT,
-    RTL             TEXT,
-    FOREIGN KEY (relationship) REFERENCES lookup.relationship_types (relationship) ON DELETE SET NULL
-);
+-- CREATE TABLE IF NOT EXISTS lookup.entity_relationship_map (
+--     id              SERIAL PRIMARY KEY,
+-- 	relationship    TEXT,
+--     RTL             TEXT,
+--     FOREIGN KEY (relationship) REFERENCES lookup.entity_relationship_types (relationship) ON DELETE SET NULL
+-- );
 
 CREATE TABLE IF NOT EXISTS bible.entity_relationships (
     id              SERIAL PRIMARY KEY,
@@ -504,7 +505,7 @@ CREATE TABLE IF NOT EXISTS bible.entity_relationships (
     relationship    TEXT,
 	FOREIGN KEY (from_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
     FOREIGN KEY (to_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
-	FOREIGN KEY (relationship) REFERENCES lookup.relationship_types (relationship) ON DELETE CASCADE
+	-- FOREIGN KEY (relationship) REFERENCES lookup.entity_relationship_types (relationship) ON DELETE CASCADE
 );
 
 -- ================================================== Text Based Information ==================================================

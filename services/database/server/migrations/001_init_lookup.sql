@@ -1,3 +1,5 @@
+-- ================================================== Spacy Look up Tables ==================================================
+
 INSERT INTO lookup.nlp_pos_types (pos_tag, description) 
 VALUES
     ('ADJ',  'Adjective – modifies a noun (e.g. beautiful, large)'),
@@ -124,3 +126,39 @@ VALUES
     ('relcl',  'Relative clause'),
     ('root',   'Root of sentence'),
     ('xcomp',  'Open clausal complement');
+
+-- ================================================== Node Look up Tables ==================================================
+
+INSERT INTO lookup.node_attributes (attribute, description, active) 
+VALUES
+    ();
+
+INSERT INTO lookup.node_types (node, description, active) 
+VALUES
+    ();
+
+INSERT INTO lookup.node_map (node_type, node_attribute) 
+VALUES
+    ();
+
+-- ================================================== Quote Look up Tables ==================================================
+
+INSERT INTO lookup.quote_attribution_types (attribution, type, description) 
+VALUES
+    ();
+
+-- ================================================== Entity Look up Tables ==================================================
+
+-- INSERT INTO lookup.entity_relationship_types (relationship_types, description) 
+-- VALUES
+--     ();
+
+-- INSERT INTO lookup.entity_relationship_map (relationship, rtl) 
+-- VALUES
+--     ();
+
+-- ================================================== Other Look up Tables ==================================================
+
+-- INSERT INTO lookup.word_tags (name, description) 
+-- VALUES
+--     ();
