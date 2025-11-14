@@ -267,11 +267,16 @@ CREATE TABLE IF NOT EXISTS bible.chapters (
     FOREIGN KEY (book_code) REFERENCES bible.books (code) ON DELETE CASCADE
 );
 
+-- Either an audio file or text file from book
 CREATE TABLE IF NOT EXISTS bible.chapteroccurences (
     id                      SERIAL PRIMARY KEY,
     chapter_ref             TEXT,
     file_id            		INTEGER,
     book_map_id             INTEGER,
+    start_node              INTEGER,
+    end_node                INTEGER,
+    FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref),
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id),
     FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE
@@ -281,7 +286,7 @@ CREATE TABLE IF NOT EXISTS bible.chapteroccurences (
 
 -- Consider Relative link into Chapter bible.occurences, for easier reference
 
-CREATE TABLE IF NOT EXISTS bible.paragraphs (
+CREATE TABLE IF NOT EXISTS bible.paragraphs ( -- DEPRECATED
     id              SERIAL PRIMARY KEY,
     chapter_occ_id  INTEGER,
     style_id        INTEGER,
@@ -312,16 +317,16 @@ CREATE TABLE IF NOT EXISTS bible.verse_correction (
 );
 
 CREATE TABLE IF NOT EXISTS bible.verseoccurences (
-    id              SERIAL PRIMARY KEY,
-    chapter_occ_id  INTEGER,
-    verse_ref       TEXT,
-    text	       	TEXT,
-    xml             TEXT,
-    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
-    FOREIGN KEY (chapter_occ_id) REFERENCES bible.chapteroccurences (id) ON DELETE CASCADE
+    id                      SERIAL PRIMARY KEY,
+    verse_ref               TEXT,
+    start_node              INTEGER,
+    end_node                INTEGER,
+    FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS bible.versesToParagraphs (
+CREATE TABLE IF NOT EXISTS bible.versesToParagraphs ( -- DEPRACATED
     id              SERIAL PRIMARY KEY,
     verse_ref       TEXT,
     paragraph_id    INTEGER,
@@ -341,13 +346,12 @@ CREATE TABLE IF NOT EXISTS bible.excludedverses (
 
 CREATE TABLE IF NOT EXISTS bible.translationfootnotes (
     id                  SERIAL PRIMARY KEY,
-	book_map_id			INTEGER,
-    translation_id      INTEGER,
     verse_ref           TEXT,
     chapter_ref         TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
-    xml                 XML,
-	text			    TEXT,
-	FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
+    start_node              INTEGER,
+    end_node                INTEGER,
+    FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE
@@ -355,20 +359,19 @@ CREATE TABLE IF NOT EXISTS bible.translationfootnotes (
 
 CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
     id                  SERIAL PRIMARY KEY,
-	book_map_id			INTEGER,
-    translation_id      INTEGER,
     from_verse_ref      TEXT,
     from_chapter_ref    TEXT,
     to_verse_ref        TEXT,
     to_chapter_ref      TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
     parent_ref          INTEGER, -- For when fragmenting ref note
-    xml                 XML,
-	FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
+    start_node              INTEGER,
+    end_node                INTEGER,
+    FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (from_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (from_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
     FOREIGN KEY (to_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (to_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
-    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (parent_ref) REFERENCES bible.translationrefnotes (id) ON DELETE CASCADE -- Link to self 
 );
 
@@ -392,41 +395,14 @@ CREATE TABLE IF NOT EXISTS bible.strongs (
 
 CREATE TABLE IF NOT EXISTS bible.strongsoccurence (
     id              SERIAL PRIMARY KEY,
-    verse_ref       TEXT,
-    translation_id  INTEGER,
     text            TEXT,
     xml             TEXT,
     strong_code     TEXT,
-    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
-    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
+    start_node              INTEGER,
+    end_node                INTEGER,
+    FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (strong_code) REFERENCES bible.strongs (code) ON DELETE CASCADE
-);
-
--- ================================================== Text Based Information ==================================================
-
-CREATE TABLE IF NOT EXISTS bible.occurences (
-	id                  SERIAL PRIMARY KEY,
-	text				TEXT,
-	type				TEXT, -- [quote, enitity, location]
-	verse_occ_id	    INTEGER,
-	start_char			INTEGER, -- Relative to Verse (for search)
-	end_char			INTEGER, -- Relative to Verse (for search)
-	paragraph_id		INTEGER,
-	FOREIGN KEY (verse_occ_id) REFERENCES bible.verseoccurences (id) ON DELETE CASCADE,
-	FOREIGN KEY (paragraph_id) REFERENCES bible.paragraphs (id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS bible.quotes (
-    id              SERIAL PRIMARY KEY,
-    text            TEXT,
-    quote_start     INTEGER,
-    quote_end       INTEGER,
-    parent_quote    INTEGER,
-    speaker         TEXT,
-    audience        TEXT,
-    FOREIGN KEY (quote_start) REFERENCES bible.occurences (id) ON DELETE CASCADE,
-    FOREIGN KEY (quote_end) REFERENCES bible.occurences (id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id) ON DELETE CASCADE
 );
 
 -- ================================================== Token & Word Occurences ==================================================
@@ -469,6 +445,21 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref),
     FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id),
     FOREIGN KEY (node_id) REFERENCES bible.nodes (id)
+);
+
+-- ================================================== Text Based Information ==================================================
+
+CREATE TABLE IF NOT EXISTS bible.quotes (
+    id              SERIAL PRIMARY KEY,
+    text            TEXT,
+    quote_start     INTEGER,
+    quote_end       INTEGER,
+    parent_quote    INTEGER,
+    speaker         TEXT,
+    audience        TEXT,
+    FOREIGN KEY (quote_start) REFERENCES bible.occurences (id) ON DELETE CASCADE,
+    FOREIGN KEY (quote_end) REFERENCES bible.occurences (id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id) ON DELETE CASCADE
 );
 
 -- ================================================== Entities ==================================================
