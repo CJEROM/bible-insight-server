@@ -145,7 +145,10 @@ VALUES
 
 INSERT INTO lookup.quote_attribution_types (attribution, type, description) 
 VALUES
-    ();
+    ("speaker", NULL, "The person saying this"),
+    ("audience", NULL, "This is being spoken to"),
+    ("narrative", NULL, "This is narrative and therefore not got a certain speaker, just a character it represents"),
+    ("quoting", NULL, "If this is quoting someone else's speach (scripture cross reference)");
 
 -- ================================================== Entity Look up Tables ==================================================
 
