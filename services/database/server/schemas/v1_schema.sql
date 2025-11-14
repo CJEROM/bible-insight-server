@@ -11,6 +11,7 @@ CREATE EXTENSION pgcrypto;
 
 CREATE SCHEMA bible;
 CREATE SCHEMA nlp;
+CREATE SCHEMA lookup;
 
 -- ================================================== Reference Data ==================================================
 
@@ -193,6 +194,42 @@ CREATE TABLE IF NOT EXISTS bible.bookgroupnames (
     name            TEXT,
     FOREIGN KEY (book_group_id) REFERENCES bible.bookgroups (id) ON DELETE CASCADE,
     FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
+);
+
+-- ================================================== bible.chapters ==================================================
+
+CREATE TABLE IF NOT EXISTS bible.nodes (
+    id                      SERIAL PRIMARY KEY,
+    node_text               TEXT,
+    node_type               TEXT,
+    sid                     TEXT,
+    eid                     TEXT,
+    vid                     TEXT,
+    style                   TEXT,
+    number                  INTEGER,
+    strong                  TEXT,
+    loc                     TEXT,
+    state                   TEXT,
+    parent_node_id          INTEGER,
+    index_in_parent         INTEGER,
+    book_map_id             INTEGER,
+    canonical_path          TEXT,
+    FOREIGN KEY (parent_node_id) REFERENCES bible.nodes (code) ON DELETE CASCADE,
+    FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (code) ON DELETE CASCADE,
+    FOREIGN KEY (book_code) REFERENCES bible.books (code) ON DELETE CASCADE,
+    FOREIGN KEY (book_code) REFERENCES bible.books (code) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS lookup.node_attributes (
+    id                      SERIAL PRIMARY KEY,
+);
+
+CREATE TABLE IF NOT EXISTS lookup.node_types (
+    id                      SERIAL PRIMARY KEY,
+);
+
+CREATE TABLE IF NOT EXISTS bible.nodes (
+    id                      SERIAL PRIMARY KEY,
 );
 
 -- ================================================== bible.chapters ==================================================
@@ -449,19 +486,19 @@ CREATE TABLE IF NOT EXISTS bible.entityrelationships (
 
 -- ================================================== Spacy Look up Tables ==================================================
 
-CREATE TABLE public.pos_lookup (
+CREATE TABLE lookup.pos_types (
     id SERIAL PRIMARY KEY,
     pos_tag VARCHAR(10) NOT NULL UNIQUE,  -- e.g. 'NOUN', 'VERB'
     description TEXT NOT NULL             -- e.g. 'Noun, a person, place, or thing'
 );
 
-CREATE TABLE public.tag_lookup (
+CREATE TABLE lookup.tag_types (
     id SERIAL PRIMARY KEY,
     tag VARCHAR(10) NOT NULL UNIQUE,
     description TEXT NOT NULL
 );
 
-CREATE TABLE public.dep_lookup (
+CREATE TABLE lookup.dep_types (
     id SERIAL PRIMARY KEY,
     dep VARCHAR(20) NOT NULL UNIQUE,
     description TEXT NOT NULL

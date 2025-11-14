@@ -1,4 +1,4 @@
-INSERT INTO public.pos_lookup (pos_tag, description) 
+INSERT INTO lookup.pos_types (pos_tag, description) 
 VALUES
     ('ADJ',  'Adjective – modifies a noun (e.g. beautiful, large)'),
     ('ADP',  'Adposition – prepositions and postpositions (e.g. in, on, under)'),
@@ -20,7 +20,7 @@ VALUES
     ('X',    'Other – foreign words, errors, or unknown tokens'),
     ('SPACE','Space – whitespace characters');
 
-INSERT INTO public.tag_lookup (tag, description) 
+INSERT INTO lookup.tag_types (tag, description) 
 VALUES
     -- Nouns
     ('NN',  'Noun, singular or mass'),
@@ -76,7 +76,7 @@ VALUES
     ('UH', 'Interjection'),
     ('.',  'Punctuation');
 
-INSERT INTO public.dep_lookup (dep, description) 
+INSERT INTO lookup.dep_types (dep, description) 
 VALUES
     ('acl',    'Clausal modifier of noun'),
     ('acomp',  'Adjectival complement'),
