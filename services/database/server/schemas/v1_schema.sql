@@ -440,8 +440,6 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     is_alpha            BOOLEAN,
     is_punct            BOOLEAN,
     like_num            BOOLEAN,
-    FOREIGN KEY (paragraph_id) REFERENCES bible.paragraphs (id),
-    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref),
     FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id),
     FOREIGN KEY (node_id) REFERENCES bible.text_nodes (node_id)
 );
