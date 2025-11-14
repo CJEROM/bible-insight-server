@@ -411,7 +411,7 @@ CREATE TABLE IF NOT EXISTS bible.entityrelationships (
 -- FROM table_name
 -- WHERE conditions;
 
--- ================================================== [] ==================================================
+-- ================================================== Token & Word Occurences ==================================================
 
 -- Used to store unique list of words used for this bible translation to use as initial list to check against
 CREATE TABLE IF NOT EXISTS bible.word_list (
@@ -425,18 +425,10 @@ CREATE TABLE IF NOT EXISTS bible.word_list (
     FOREIGN KEY (language_iso) REFERENCES bible.languages (iso)  ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS bible.word_tags (
+CREATE TABLE IF NOT EXISTS bible.word_tag_lookup (
     id      SERIAL PRIMARY KEY,
-    name    TEXT UNIQUE NOT NULL -- e.g. "Person", "Location", "Entity"
-);
-
-CREATE TABLE IF NOT EXISTS bible.word_frequencies (
-    id              SERIAL PRIMARY KEY,
-    word_id         INTEGER NOT NULL,
-    translation_id  INTEGER NOT NULL,
-    -- tag             TEXT,  -- OPTIONAL: could use a lookup table (Person, Location, etc.)
-    FOREIGN KEY (word_id) REFERENCES bible.word_list (id) ON DELETE CASCADE,
-    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE
+    name    TEXT UNIQUE NOT NULL, -- e.g. "Person", "Location", "Entity"
+    description
 );
 
 -- Only storing important bible.tokens
@@ -444,8 +436,9 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     id                  SERIAL PRIMARY KEY,
     text                TEXT,
     llema_id            INTEGER,
-    paragraph_id        INTEGER,
-    verse_ref           TEXT,
+    node_id             INTEGER,
+    start_offset        INTEGER,
+    end_offset          INTEGER,
     pos                 TEXT,
     tag                 TEXT,
     dep                 TEXT,
@@ -456,7 +449,8 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     like_num            BOOLEAN,
     FOREIGN KEY (paragraph_id) REFERENCES bible.paragraphs (id),
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref),
-    FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id)
+    FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id),
+    FOREIGN KEY (node_id) REFERENCES bible.nodes (id)
 );
 
 -- ================================================== Spacy Look up Tables ==================================================
