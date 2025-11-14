@@ -403,6 +403,26 @@ CREATE TABLE IF NOT EXISTS bible.strongsoccurence (
     FOREIGN KEY (strong_code) REFERENCES bible.strongs (code) ON DELETE CASCADE
 );
 
+-- ================================================== Spacy Look up Tables ==================================================
+
+CREATE TABLE lookup.nlp_pos_types (
+    id SERIAL PRIMARY KEY,
+    pos_tag VARCHAR(10) NOT NULL UNIQUE,  -- e.g. 'NOUN', 'VERB'
+    description TEXT NOT NULL             -- e.g. 'Noun, a person, place, or thing'
+);
+
+CREATE TABLE lookup.nlp_tag_types (
+    id SERIAL PRIMARY KEY,
+    tag VARCHAR(10) NOT NULL UNIQUE,
+    description TEXT NOT NULL
+);
+
+CREATE TABLE lookup.nlp_dep_types (
+    id SERIAL PRIMARY KEY,
+    dep VARCHAR(20) NOT NULL UNIQUE,
+    description TEXT NOT NULL
+);
+
 -- ================================================== Token & Word Occurences ==================================================
 
 -- Used to store unique list of words used for this bible translation to use as initial list to check against
@@ -518,26 +538,6 @@ CREATE TABLE IF NOT EXISTS lookup.quote_attribution_types (
     attribution         TEXT,
     type                INTEGER,
     description         INTEGER
-);
-
--- ================================================== Spacy Look up Tables ==================================================
-
-CREATE TABLE lookup.nlp_pos_types (
-    id SERIAL PRIMARY KEY,
-    pos_tag VARCHAR(10) NOT NULL UNIQUE,  -- e.g. 'NOUN', 'VERB'
-    description TEXT NOT NULL             -- e.g. 'Noun, a person, place, or thing'
-);
-
-CREATE TABLE lookup.nlp_tag_types (
-    id SERIAL PRIMARY KEY,
-    tag VARCHAR(10) NOT NULL UNIQUE,
-    description TEXT NOT NULL
-);
-
-CREATE TABLE lookup.nlp_dep_types (
-    id SERIAL PRIMARY KEY,
-    dep VARCHAR(20) NOT NULL UNIQUE,
-    description TEXT NOT NULL
 );
 
 -- ================================================== User Based Data ==================================================
