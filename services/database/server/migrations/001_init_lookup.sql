@@ -157,9 +157,13 @@ VALUES
     ("book","tag representing a book", TRUE),
     ("text","not a tag but represents text in the parsed xml structure", TRUE);
 
+-- MAKES MAPPING OF WHAT ATTRIBUTES ARE USED WITH WHICH TAG
 INSERT INTO lookup.node_map (node_type, node_attribute) 
 VALUES
+    --xml
     ("","");
+
+-- MAYBE MAKE COMBO TABLE THAT TELLS ME WHAT COMBINATION OF ATTRIBUTES CAN BE ENCOUNTERED FOR TAG AS WELL, OR PERHAPS DECOUPLE FROM UNIQUE CONTSTRAINTS, OR ADD ANOTHER COLLUM FOR ESTABLISHING COMBINATIONS THEY CAN BE FOUND IN
 
 -- ================================================== Quote Look up Tables ==================================================
 
