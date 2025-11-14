@@ -276,7 +276,7 @@ CREATE TABLE IF NOT EXISTS bible.chapteroccurences (
     start_node              INTEGER,
     end_node                INTEGER,
     FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
-    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE
+    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref),
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id),
     FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE
@@ -457,9 +457,27 @@ CREATE TABLE IF NOT EXISTS bible.quotes (
     parent_quote    INTEGER,
     speaker         TEXT,
     audience        TEXT,
-    FOREIGN KEY (quote_start) REFERENCES bible.occurences (id) ON DELETE CASCADE,
-    FOREIGN KEY (quote_end) REFERENCES bible.occurences (id) ON DELETE CASCADE,
+    FOREIGN KEY (quote_start) REFERENCES bible.tokens (id) ON DELETE CASCADE,
+    FOREIGN KEY (quote_end) REFERENCES bible.tokens (id) ON DELETE CASCADE,
     FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS bible.quote_attribution (
+    id                  SERIAL PRIMARY KEY,
+    quote_id            TEXT,
+    entity_id           INTEGER,
+    attribution         INTEGER, -- whether Speaker or audience or writer
+    type                TEXT,
+    FOREIGN KEY (entity_id) REFERENCES bible.entities (id) ON DELETE CASCADE,
+    FOREIGN KEY (quote_id) REFERENCES bible.quotes (id) ON DELETE CASCADE
+);
+
+-- Look up table for quote
+CREATE TABLE IF NOT EXISTS lookup.quote_attribution_types (
+    id                  SERIAL PRIMARY KEY,
+    attribution         TEXT,
+    type                INTEGER,
+    description         INTEGER,
 );
 
 -- ================================================== Entities ==================================================
