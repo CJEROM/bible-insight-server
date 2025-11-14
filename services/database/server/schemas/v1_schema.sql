@@ -220,10 +220,8 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     index_in_parent         INTEGER,
     book_map_id             INTEGER,
     canonical_path          TEXT,
-    FOREIGN KEY (parent_node_id) REFERENCES bible.nodes (code) ON DELETE CASCADE,
-    FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (code) ON DELETE CASCADE,
-    FOREIGN KEY (book_code) REFERENCES bible.books (code) ON DELETE CASCADE,
-    FOREIGN KEY (book_code) REFERENCES bible.books (code) ON DELETE CASCADE
+    FOREIGN KEY (parent_node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS lookup.node_attributes (
@@ -246,7 +244,7 @@ CREATE TABLE IF NOT EXISTS lookup.node_map (
     id                      SERIAL PRIMARY KEY,
     node_type               INTEGER,
     node_attribute          INTEGER,
-    FOREIGN KEY (node_type) REFERENCES lookup.node_types (id)
+    FOREIGN KEY (node_type) REFERENCES lookup.node_types (id),
     FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (id)
 );
 
@@ -420,10 +418,10 @@ CREATE TABLE IF NOT EXISTS bible.word_list (
     FOREIGN KEY (language_iso) REFERENCES bible.languages (iso)  ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS bible.word_tag_lookup (
-    id      SERIAL PRIMARY KEY,
-    name    TEXT UNIQUE NOT NULL, -- e.g. "Person", "Location", "Entity"
-    description
+CREATE TABLE IF NOT EXISTS lookup.word_tags (
+    id                  SERIAL PRIMARY KEY,
+    name                TEXT UNIQUE NOT NULL, -- e.g. "Person", "Location", "Entity"
+    description         TEXT
 );
 
 -- Only storing important bible.tokens
@@ -478,7 +476,7 @@ CREATE TABLE IF NOT EXISTS lookup.quote_attribution_types (
     id                  SERIAL PRIMARY KEY,
     attribution         TEXT,
     type                INTEGER,
-    description         INTEGER,
+    description         INTEGER
 );
 
 -- ================================================== Entities ==================================================
@@ -591,7 +589,7 @@ CREATE TABLE IF NOT EXISTS users.note_relationship_audits (
     note_relationship_id    INTEGER,
     FOREIGN KEY (note_from) REFERENCES users.notes (id),
 	FOREIGN KEY (note_to) REFERENCES users.notes (id),
-    FOREIGN KEY (note_relationship_id) REFERENCES user.note_relationships (id)
+    FOREIGN KEY (note_relationship_id) REFERENCES users.note_relationships (id)
 );
 
 CREATE TABLE IF NOT EXISTS users.userhighlightsanchors (
