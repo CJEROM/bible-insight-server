@@ -221,7 +221,8 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     book_map_id             INTEGER,
     canonical_path          TEXT,
     FOREIGN KEY (parent_node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
-    FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE
+    FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
+    FOREIGN KEY (node_type) REFERENCES bible.node_types (node) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS lookup.node_attributes (
@@ -236,7 +237,7 @@ CREATE TABLE IF NOT EXISTS lookup.node_types (
     id                      SERIAL PRIMARY KEY,
     node                    TEXT UNIQUE,
     description             TEXT,
-    active                  BOOLEAN  
+    active                  BOOLEAN
 );
 
 -- Maps the different attributes to node types
@@ -251,7 +252,7 @@ CREATE TABLE IF NOT EXISTS lookup.node_map (
 -- Derived links to nodes as intermediary to tokens
 CREATE TABLE IF NOT EXISTS bible.text_nodes (
     id                      SERIAL PRIMARY KEY,
-    node_id                 INTEGER,
+    node_id                 INTEGER UNIQUE,
     FOREIGN KEY (node_id) REFERENCES bible.nodes (id)
 );
 
@@ -270,10 +271,10 @@ CREATE TABLE IF NOT EXISTS bible.chapters (
 CREATE TABLE IF NOT EXISTS bible.chapteroccurences (
     id                      SERIAL PRIMARY KEY,
     chapter_ref             TEXT,
-    file_id            		INTEGER,
-    book_map_id             INTEGER,
-    start_node              INTEGER,
-    end_node                INTEGER,
+    file_id            		INTEGER, -- audio_file
+    book_map_id             INTEGER, -- usx_file
+    start_node              INTEGER, -- usx_file
+    end_node                INTEGER, -- usx_file
     FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref),
@@ -344,25 +345,24 @@ CREATE TABLE IF NOT EXISTS bible.excludedverses (
 -- ================================================== Cross References & Footnotes ==================================================
 
 CREATE TABLE IF NOT EXISTS bible.translationfootnotes (
-    id                  SERIAL PRIMARY KEY,
-    verse_ref           TEXT,
-    chapter_ref         TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
+    id                      SERIAL PRIMARY KEY,
+    verse_ref               TEXT,
+    chapter_ref             TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
     start_node              INTEGER,
     end_node                INTEGER,
     FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
-    FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
-    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE
+    FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
-    id                  SERIAL PRIMARY KEY,
-    from_verse_ref      TEXT,
-    from_chapter_ref    TEXT,
-    to_verse_ref        TEXT,
-    to_chapter_ref      TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
-    parent_ref          INTEGER, -- For when fragmenting ref note
+    id                      SERIAL PRIMARY KEY,
+    from_verse_ref          TEXT,
+    from_chapter_ref        TEXT,
+    to_verse_ref            TEXT,
+    to_chapter_ref          TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
+    parent_ref              INTEGER, -- For when fragmenting ref note
     start_node              INTEGER,
     end_node                INTEGER,
     FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
@@ -393,10 +393,10 @@ CREATE TABLE IF NOT EXISTS bible.strongs (
 );
 
 CREATE TABLE IF NOT EXISTS bible.strongsoccurence (
-    id              SERIAL PRIMARY KEY,
-    text            TEXT,
-    xml             TEXT,
-    strong_code     TEXT,
+    id                      SERIAL PRIMARY KEY,
+    text                    TEXT,
+    xml                     TEXT,
+    strong_code             TEXT,
     start_node              INTEGER,
     end_node                INTEGER,
     FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
@@ -428,14 +428,14 @@ CREATE TABLE IF NOT EXISTS lookup.word_tags (
 CREATE TABLE IF NOT EXISTS bible.tokens (
     id                  SERIAL PRIMARY KEY,
     text                TEXT,
-    llema_id            INTEGER,
     node_id             INTEGER,
     start_offset        INTEGER,
-    end_offset          INTEGER,
-    pos                 TEXT,
+    end_offset          INTEGER, 
+    pos                 TEXT, -- Info that is populate later
     tag                 TEXT,
     dep                 TEXT,
     head_token_id       INTEGER,
+    llema_id            INTEGER,
     trailing_space      BOOLEAN,
     is_alpha            BOOLEAN,
     is_punct            BOOLEAN,
@@ -443,7 +443,7 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     FOREIGN KEY (paragraph_id) REFERENCES bible.paragraphs (id),
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref),
     FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id),
-    FOREIGN KEY (node_id) REFERENCES bible.nodes (id)
+    FOREIGN KEY (node_id) REFERENCES bible.text_nodes (node_id)
 );
 
 -- ================================================== Text Based Information ==================================================
