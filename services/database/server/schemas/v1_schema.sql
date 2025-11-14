@@ -199,6 +199,30 @@ CREATE TABLE IF NOT EXISTS bible.bookgroupnames (
 
 -- ================================================== bible.chapters ==================================================
 
+CREATE TABLE IF NOT EXISTS lookup.node_attributes (
+    id                      SERIAL PRIMARY KEY,
+    attribute               TEXT UNIQUE,
+    description             TEXT,
+    active                  BOOLEAN
+);
+
+-- For all the node types e.g. <para>
+CREATE TABLE IF NOT EXISTS lookup.node_types (
+    id                      SERIAL PRIMARY KEY,
+    node                    TEXT UNIQUE,
+    description             TEXT,
+    active                  BOOLEAN
+);
+
+-- Maps the different attributes to node types
+CREATE TABLE IF NOT EXISTS lookup.node_map (
+    id                      SERIAL PRIMARY KEY,
+    node_type               INTEGER,
+    node_attribute          INTEGER,
+    FOREIGN KEY (node_type) REFERENCES lookup.node_types (id),
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (id)
+);
+
 CREATE TABLE IF NOT EXISTS bible.nodes (
     id                      SERIAL PRIMARY KEY,
     node_text               TEXT,
@@ -222,31 +246,7 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     canonical_path          TEXT,
     FOREIGN KEY (parent_node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
-    FOREIGN KEY (node_type) REFERENCES bible.node_types (node) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS lookup.node_attributes (
-    id                      SERIAL PRIMARY KEY,
-    attribute               TEXT UNIQUE,
-    description             TEXT,
-    active                  BOOLEAN
-);
-
--- For all the node types e.g. <para>
-CREATE TABLE IF NOT EXISTS lookup.node_types (
-    id                      SERIAL PRIMARY KEY,
-    node                    TEXT UNIQUE,
-    description             TEXT,
-    active                  BOOLEAN
-);
-
--- Maps the different attributes to node types
-CREATE TABLE IF NOT EXISTS lookup.node_map (
-    id                      SERIAL PRIMARY KEY,
-    node_type               INTEGER,
-    node_attribute          INTEGER,
-    FOREIGN KEY (node_type) REFERENCES lookup.node_types (id),
-    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (id)
+    FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE
 );
 
 -- Derived links to nodes as intermediary to tokens
