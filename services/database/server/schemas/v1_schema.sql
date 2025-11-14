@@ -591,11 +591,10 @@ CREATE TABLE IF NOT EXISTS users.note_relationship_audits (
 
 CREATE TABLE IF NOT EXISTS users.userhighlightsanchors (
     id              SERIAL PRIMARY KEY,
-    book_map_id     INTEGER,
-    verse_occ_id    INTEGER, 
+    node_id         INTEGER, 
 	start_char		INTEGER,
 	end_char		INTEGER,
-	FOREIGN KEY (verse_occ_id) REFERENCES bible.verseoccurences (id)
+	FOREIGN KEY (node_id) REFERENCES bible.nodes (id)
 );
 
 CREATE TABLE IF NOT EXISTS users.userhighlights (
