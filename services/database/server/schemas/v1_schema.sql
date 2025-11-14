@@ -440,7 +440,10 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     is_punct            BOOLEAN,
     like_num            BOOLEAN,
     FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id),
-    FOREIGN KEY (node_id) REFERENCES bible.text_nodes (node_id)
+    FOREIGN KEY (node_id) REFERENCES bible.text_nodes (node_id),
+    FOREIGN KEY (pos) REFERENCES lookup.nlp_pos_types (pos_tag),
+    FOREIGN KEY (tag) REFERENCES lookup.nlp_tag_types (tag),
+    FOREIGN KEY (dep) REFERENCES lookup.nlp_dep_types (dep)
 );
 
 -- ================================================== Entities ==================================================
@@ -519,19 +522,19 @@ CREATE TABLE IF NOT EXISTS lookup.quote_attribution_types (
 
 -- ================================================== Spacy Look up Tables ==================================================
 
-CREATE TABLE lookup.pos_types (
+CREATE TABLE lookup.nlp_pos_types (
     id SERIAL PRIMARY KEY,
     pos_tag VARCHAR(10) NOT NULL UNIQUE,  -- e.g. 'NOUN', 'VERB'
     description TEXT NOT NULL             -- e.g. 'Noun, a person, place, or thing'
 );
 
-CREATE TABLE lookup.tag_types (
+CREATE TABLE lookup.nlp_tag_types (
     id SERIAL PRIMARY KEY,
     tag VARCHAR(10) NOT NULL UNIQUE,
     description TEXT NOT NULL
 );
 
-CREATE TABLE lookup.dep_types (
+CREATE TABLE lookup.nlp_dep_types (
     id SERIAL PRIMARY KEY,
     dep VARCHAR(20) NOT NULL UNIQUE,
     description TEXT NOT NULL
