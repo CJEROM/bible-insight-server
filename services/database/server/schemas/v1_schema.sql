@@ -368,49 +368,6 @@ CREATE TABLE IF NOT EXISTS bible.quotes (
     FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id) ON DELETE CASCADE
 );
 
--- ================================================== Entities ==================================================
-
-CREATE TABLE IF NOT EXISTS bible.entities (
-    id              SERIAL PRIMARY KEY
-);
-
--- This will also count as Entity Names to some degree since we are counting each occurence and mentions of them, but this could have start and end
-CREATE TABLE IF NOT EXISTS bible.entityoccurence (
-    id              SERIAL PRIMARY KEY,
-	entity_id		INTEGER,
-	occurence_id	INTEGER,
-	FOREIGN KEY (entity_id) REFERENCES bible.entities (id) ON DELETE CASCADE,
-	FOREIGN KEY (occurence_id) REFERENCES bible.occurences (id) ON DELETE CASCADE
-);
-
--- Will act as lookup not so much as source of truth, tho it can, and definetly something to work on
-CREATE TABLE IF NOT EXISTS bible.relationship_lookup (
-    id              SERIAL PRIMARY KEY,
-	relationship    TEXT UNIQUE
-);
-
-CREATE TABLE IF NOT EXISTS bible.relationship_map (
-    id              SERIAL PRIMARY KEY,
-	relationship    TEXT,
-    FOREIGN KEY (relationship) REFERENCES bible.relationship_lookup (relationship) ON DELETE SET NULL
-);
-
-CREATE TABLE IF NOT EXISTS bible.entityrelationships (
-    id              SERIAL PRIMARY KEY,
-	from_entity		INTEGER,
-	to_entity	    INTEGER,
-    relationship    TEXT,
-	FOREIGN KEY (from_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
-    FOREIGN KEY (to_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
-	FOREIGN KEY (relationship) REFERENCES bible.relationship_lookup (relationship) ON DELETE CASCADE
-);
-
--- 
--- CREATE VIEW bible.entity_aliases AS
--- SELECT DISTINCT
--- FROM table_name
--- WHERE conditions;
-
 -- ================================================== Token & Word Occurences ==================================================
 
 -- Used to store unique list of words used for this bible translation to use as initial list to check against
@@ -451,6 +408,43 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref),
     FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id),
     FOREIGN KEY (node_id) REFERENCES bible.nodes (id)
+);
+
+-- ================================================== Entities ==================================================
+
+CREATE TABLE IF NOT EXISTS bible.entities (
+    id              SERIAL PRIMARY KEY
+);
+
+-- This will also count as Entity Names to some degree since we are counting each occurence and mentions of them, but this could have start and end
+CREATE TABLE IF NOT EXISTS bible.entityoccurence (
+    id              SERIAL PRIMARY KEY,
+	entity_id		INTEGER,
+	occurence_id	INTEGER,
+	FOREIGN KEY (entity_id) REFERENCES bible.entities (id) ON DELETE CASCADE,
+	FOREIGN KEY (occurence_id) REFERENCES bible.occurences (id) ON DELETE CASCADE
+);
+
+-- Will act as lookup not so much as source of truth, tho it can, and definetly something to work on
+CREATE TABLE IF NOT EXISTS bible.relationship_lookup (
+    id              SERIAL PRIMARY KEY,
+	relationship    TEXT UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS bible.relationship_map (
+    id              SERIAL PRIMARY KEY,
+	relationship    TEXT,
+    FOREIGN KEY (relationship) REFERENCES bible.relationship_lookup (relationship) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS bible.entityrelationships (
+    id              SERIAL PRIMARY KEY,
+	from_entity		INTEGER,
+	to_entity	    INTEGER,
+    relationship    TEXT,
+	FOREIGN KEY (from_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
+    FOREIGN KEY (to_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
+	FOREIGN KEY (relationship) REFERENCES bible.relationship_lookup (relationship) ON DELETE CASCADE
 );
 
 -- ================================================== Spacy Look up Tables ==================================================
