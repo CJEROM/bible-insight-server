@@ -131,15 +131,35 @@ VALUES
 
 INSERT INTO lookup.node_attributes (attribute, description, active) 
 VALUES
-    ();
+    ("code","book code for this book usx file", TRUE),
+    ("sid","Marks start of verse or chapter with reference", TRUE),
+    ("eid","Marks end of verse or chapter with reference", TRUE),
+    ("vid","Marks continuation of verse in a paragraph with reference", TRUE),
+    ("style","styling info", TRUE),
+    ("number","Chapter or Verse number", TRUE),
+    ("caller","", TRUE),
+    ("closed","", TRUE),
+    ("version","usx or xml version used", TRUE),
+    ("strong","Strong's number of Hebrew or Greek for particular word", TRUE),
+    ("loc","reference to chapter or verse (could include spread)", TRUE),
+    ("encoding","text encoding for the file", TRUE);
 
 INSERT INTO lookup.node_types (node, description, active) 
 VALUES
-    ();
+    ("xml","tag representing xml format", TRUE),
+    ("usx","tag representing usx format, encapsulating all its content", TRUE),
+    ("para","tag representing a paragraph (each new para is a new line, so doesn't match logical paragraph structure e.g. in poetry)", TRUE),
+    ("chapter","tag representing a chapter", TRUE),
+    ("verse","tag representing a verse", TRUE),
+    ("char","tag representing a note, extra info or strongs", TRUE),
+    ("ref","tag representing a reference to other parts of scripture", TRUE),
+    ("note","tag representing a footnote or crossreference", TRUE),
+    ("book","tag representing a book", TRUE),
+    ("text","not a tag but represents text in the parsed xml structure", TRUE);
 
 INSERT INTO lookup.node_map (node_type, node_attribute) 
 VALUES
-    ();
+    ("","");
 
 -- ================================================== Quote Look up Tables ==================================================
 
