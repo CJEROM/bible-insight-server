@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup, Tag, NavigableString
 import psycopg2
+import sys
+import time
 
 from pathlib import Path
 import os
@@ -82,7 +84,11 @@ class Nodes:
         self.book_soup = BeautifulSoup(book_xml, "xml")
         self.book_map_id = book_map_id
 
-        for node in self.book_soup.descendants:
+        nodes_to_create = len(self.book_soup.descendants)
+
+        self.start_time = time.time()
+
+        for i, node in enumerate(self.book_soup.descendants):
             node_id = None # Initialise node_id for the note we are going to create in DB
 
             if isinstance(node, Tag):
@@ -141,6 +147,19 @@ class Nodes:
                 node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
 
             # Do something with node_id's?
+
+            duration = time.time() - self.start_time
+            hours = int(duration // 3600)
+            minutes = int((duration % 3600) // 60)
+            seconds = int(duration % 60)
+
+            formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
+
+            progress = int((i / nodes_to_create) * 50)
+            bar = '#' * progress + '-' * (50 - progress)
+            percentage = int((i / nodes_to_create) * 100)
+            sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | Elapsed: {formatted_duration}")
+            sys.stdout.flush()
 
         pass
     
