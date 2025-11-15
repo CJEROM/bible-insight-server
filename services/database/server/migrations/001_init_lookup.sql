@@ -194,7 +194,27 @@ VALUES
     -- text
     ('text','text');
 
--- MAYBE MAKE COMBO TABLE THAT TELLS ME WHAT COMBINATION OF ATTRIBUTES CAN BE ENCOUNTERED FOR TAG AS WELL, OR PERHAPS DECOUPLE FROM UNIQUE CONTSTRAINTS, OR ADD ANOTHER COLLUM FOR ESTABLISHING COMBINATIONS THEY CAN BE FOUND IN
+-- INSERT INTO lookup.node_options (relationship_types, description) 
+-- VALUES
+--     ('', ''),;
+
+INSERT INTO lookup.node_tree (node_parent, node_child) 
+VALUES
+    (NULL, 'xml'),
+    (NULL, 'usx'),
+    ('usx', 'book'),
+    ('usx', 'para'),;
+    ('usx', 'chapter'),
+    ('para', 'verse'),
+    ('para', 'char'),
+    ('para', 'note'),
+    ('para', 'text'),
+    ('char', 'text'),
+    ('note', 'char'),
+    ('book', 'text'),
+    ('note', 'text'),
+    ('char', 'ref'),
+    ('ref', 'text');
 
 -- ================================================== Quote Look up Tables ==================================================
 
@@ -209,14 +229,14 @@ VALUES
 
 -- INSERT INTO lookup.entity_relationship_types (relationship_types, description) 
 -- VALUES
---     ();
+--     ('', ''),;
 
 -- INSERT INTO lookup.entity_relationship_map (relationship, rtl) 
 -- VALUES
---     ();
+--     ('', ''),;
 
 -- ================================================== Other Look up Tables ==================================================
 
 -- INSERT INTO lookup.word_tags (name, description) 
 -- VALUES
---     ();
+--     ('', ''),;
