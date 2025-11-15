@@ -73,6 +73,14 @@ class Nodes:
             VALUES ('text', %s)
             RETURNING id;
         """,
+        "update_node": """
+            UPDATE bible.nodes
+            SET parent_node_id = %s,
+                index_in_parent = %s,
+                book_map_id = %s,
+                canonical_path = %s
+            WHERE id = %s;
+        """,
     }
 
     def __init__(self, book_map_id, db_conn, book_xml):
@@ -96,6 +104,11 @@ class Nodes:
         nodes_to_create = len(list(self.book_soup.descendants))
 
         start_time = time.time()
+
+        # Used to keep track of what chapter, paragraph and verse we are in, and their node_id
+        chapter_node_id = None
+        paragraph_node_id = None
+        verse_node_id = None
 
         for i, node in enumerate(self.book_soup.descendants):
             node_id = None # Initialise node_id for the note we are going to create in DB
@@ -124,10 +137,19 @@ class Nodes:
                         eid = node.get("eid")
 
                         node_id = self.execute_and_get_id(query, (style, number, sid, eid))
+
+                        # Update what chapter we are in
+                        if sid != None:
+                            chapter_node_id = node_id
+                        elif eid != None:
+                            chapter_node_id = None
                     case "para":
                         style = node.get("style")
                         vid = node.get("vid")
                         node_id = self.execute_and_get_id(query, (style, vid))
+
+                        # Update what para we are in
+                        paragraph_node_id = node_id
                     case "verse":
                         style = node.get("style")
                         number = node.get("number")
@@ -135,6 +157,12 @@ class Nodes:
                         eid = node.get("eid")
 
                         node_id = self.execute_and_get_id(query, (style, number, sid, eid))
+
+                        # Update what verse we are in
+                        if sid != None:
+                            verse_node_id = node_id
+                        elif eid != None:
+                            verse_node_id = None
                     case "note":
                         style = node.get("style")
                         caller = node.get("caller")
@@ -155,14 +183,19 @@ class Nodes:
                 node_text = str(node)
                 node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
 
-                # Logic to differentiate whether this is verse text or not
+                # Logic to differentiate whether this is versetext or not
+
+                # if it is insert into bible.text_nodes table to show its relevant
 
                 # Then throw in tokens pipeline, linked to node, but extend to verse for example to hold. or paragraph as well
 
             # Do something with node_id's?
-            # Can update the node with extra details in separate query thats like fundamental additions to do with node, e.g. 
-            #       index_in_parents, parent_id, book_map_id, canonical_path
+            parent_node_id = None
+            index_in_parent = None
+            canonical_path = None
+            self.cur.execute(self.SQL.get("update_node"), (parent_node_id, index_in_parent, self.book_map_id, canonical_path, node_id))
 
+            # Loading bar with elapsed time
             duration = time.time() - start_time
             hours = int(duration // 3600)
             minutes = int((duration % 3600) // 60)
@@ -178,8 +211,8 @@ class Nodes:
 
 if __name__ == "__main__":
     test_book_xml = None
-    test_book_path = Path(__file__).parents[2] / "downloads" / "1CH - WMBBE.usx"
-    test_book_path = Path(__file__).parents[2] / "downloads" / "PSA - WMBBE.usx"
+    # test_book_path = Path(__file__).parents[2] / "downloads" / "1CH - WMBBE.usx"
+    # test_book_path = Path(__file__).parents[2] / "downloads" / "PSA - WMBBE.usx"
     test_book_path = Path(__file__).parents[2] / "downloads" / "3JN - FBV.usx"
     with open(test_book_path, "r", encoding="utf-8") as f:
         test_book_xml = f.read()
