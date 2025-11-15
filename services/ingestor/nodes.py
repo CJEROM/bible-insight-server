@@ -159,7 +159,7 @@ class Nodes:
             # Can update the node with extra details in separate query thats like fundamental additions to do with node, e.g. 
             #       index_in_parents, parent_id, book_map_id, canonical_path
 
-            duration = time.time() - self.start_time
+            duration = time.time() - start_time
             hours = int(duration // 3600)
             minutes = int((duration % 3600) // 60)
             seconds = int(duration % 60)
