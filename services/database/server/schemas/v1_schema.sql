@@ -223,24 +223,26 @@ CREATE TABLE IF NOT EXISTS lookup.node_map (
     FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (attribute)
 );
 
--- Shows in what combinations a node can come up
-CREATE TABLE IF NOT EXISTS lookup.node_options (
-    id                      SERIAL PRIMARY KEY,
-    node_type               TEXT,
-    node_attribute          TEXT,
-    option                  INTEGER,
-    FOREIGN KEY (node_type, node_attribute) REFERENCES lookup.node_map (node_type, node_attribute),
-    FOREIGN KEY (node_type) REFERENCES lookup.node_types (node),
-    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (attribute)
-)
-
 -- Shows what possibilities could happen with a node_type and the parent node to recreate the tree structure
 CREATE TABLE IF NOT EXISTS lookup.node_tree (
     id                      SERIAL PRIMARY KEY,
     node_parent             TEXT,
     node_child              TEXT,
     FOREIGN KEY (node_parent) REFERENCES lookup.node_types (node),
-    FOREIGN KEY (node_child) REFERENCES lookup.node_types (node),
+    FOREIGN KEY (node_child) REFERENCES lookup.node_types (node)
+)
+
+-- Shows in what combinations a node can come up
+CREATE TABLE IF NOT EXISTS lookup.node_options (
+    id                      SERIAL PRIMARY KEY,
+    node_type               TEXT,
+    node_attribute          TEXT,
+    option                  INTEGER,
+    node_tree_id            INTEGER
+    FOREIGN KEY (node_type, node_attribute) REFERENCES lookup.node_map (node_type, node_attribute),
+    FOREIGN KEY (node_type) REFERENCES lookup.node_types (node),
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (attribute),#
+    FOREIGN KEY (node_tree_id) REFERENCES lookup.node_tree (id)
 )
 
 -- Built for speed, so very denormalised and flat which is what it needs to be
