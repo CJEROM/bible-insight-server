@@ -278,7 +278,7 @@ CREATE TABLE IF Not EXISTS bible.nodes_attributes (
     node_id                 INTEGER,
     node_attribute          TEXT,
     value                   TEXT,
-    FOREIGN KEY (node_id) REFERENCES lookup.nodes (id),
+    FOREIGN KEY (node_id) REFERENCES bible.nodes (id),
     FOREIGN KEY (node_attribute) REFERENCES lookup.node_attribute_types (attribute)
 );
 
