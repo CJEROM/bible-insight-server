@@ -110,16 +110,19 @@ class Nodes:
         paragraph_node_id = None
         verse_node_id = None
 
-        node_id_map = {}   # maps bs4 node → SQL node_id
-        child_index = {}        # Track sibling index (to preserve order)
+        node_id_map = {}    # maps bs4 node → SQL node_id
+        child_index = {}    # parent → next child index
+        path_map = {}       # bs4 node → canonical path
 
 
         for i, node in enumerate(self.book_soup.descendants):
             node_id = None # Initialise node_id for the note we are going to create in DB
+            node_type = None
 
             if isinstance(node, Tag):
                 query = self.SQL.get(node.name)
-                match node.name:
+                node_type = node.name
+                match node_type:
                     case "xml":
                         version = node.get("version")
                         encoding = node.get("encoding")
@@ -185,11 +188,12 @@ class Nodes:
 
             if isinstance(node, NavigableString):  
                 node_text = str(node)
+                node_type = "text"
                 # BeautifulSoup preserves whitespace aggresivley, which bloats nodes created, so filter them out (empty text and new lines)
                 #   Done to preserve mapping to fast_xml_parser in React Native for mobile so parsed xml will map
                 #   we preserve spaces explicitly if they are present however (due to strongs especially)
-                if node_text != "" and node_text != "\n":
-                    node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
+                # if node_text != "" and node_text != "\n":
+                node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
 
                 # Logic to differentiate whether this is versetext or not
 
@@ -222,7 +226,36 @@ class Nodes:
             else:
                 index_in_parent = None
 
+            # 1. Build component
+            match node_type:
+                case "book":
+                    comp = f"/{code}"                     # /GEN
+                case "chapter":
+                    comp = f"/{number}"                   # /1
+                case "verse":
+                    comp = f"/verse[{number}]"            # /verse[12]
+                case "para":
+                    comp = f"/para[{index_in_parent}]"    # /para[2]
+                case "text":
+                    comp = f"/text[{index_in_parent}]"
+                case "xml":
+                    comp = f""
+                case "usx":
+                    comp = f""
+                case "note":
+                    comp = f""
+                case "char":
+                    comp = f""
+                case "ref":
+                    comp = f""
+
+            parent_path = path_map.get(id(node), "") # if not exists, gives empty string
+
+            canonical_path = parent_path + comp
+            path_map[id(node)] = canonical_path
+
             canonical_path = None
+
             self.cur.execute(self.SQL.get("update_node"), (parent_node_id, index_in_parent, self.book_map_id, canonical_path, node_id))
 
             # Loading bar with elapsed time
