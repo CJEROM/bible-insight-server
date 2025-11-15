@@ -91,7 +91,7 @@ class Nodes:
         # Initialise variables 
         self.book_soup = BeautifulSoup(book_xml, "xml")
         self.book_map_id = book_map_id
-
+        
         self.walk_parsed_xml()
             
         self.conn.commit()
@@ -109,6 +109,10 @@ class Nodes:
         chapter_node_id = None
         paragraph_node_id = None
         verse_node_id = None
+
+        node_id_map = {}   # maps bs4 node → SQL node_id
+        child_index = {}        # Track sibling index (to preserve order)
+
 
         for i, node in enumerate(self.book_soup.descendants):
             node_id = None # Initialise node_id for the note we are going to create in DB
@@ -183,6 +187,7 @@ class Nodes:
                 node_text = str(node)
                 # BeautifulSoup preserves whitespace aggresivley, which bloats nodes created, so filter them out (empty text and new lines)
                 #   Done to preserve mapping to fast_xml_parser in React Native for mobile so parsed xml will map
+                #   we preserve spaces explicitly if they are present however (due to strongs especially)
                 if node_text != "" and node_text != "\n":
                     node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
 
@@ -192,9 +197,31 @@ class Nodes:
 
                 # Then throw in tokens pipeline, linked to node, but extend to verse for example to hold. or paragraph as well
 
+            # If nothing was created, skip
+            if node_id is None:
+                continue
+
             # Do something with node_id's?
+            node_id_map[id(node)] = node_id # add to node_map
+
+            # With mapped id, find parent and get associated node_id
+            parent_obj = node.parent
             parent_node_id = None
             index_in_parent = None
+
+            # if has a parent (only xml and usx will not)
+            if parent_obj:
+                # get node_id map for parsed xml
+                parent_node_id = node_id_map.get(id(parent_obj))
+
+                # also increment and set count for child index under that parent
+                if id(parent_obj) not in child_index:
+                    child_index[id(parent_obj)] = 0
+                index_in_parent = child_index[id(parent_obj)]
+                child_index[id(parent_obj)] += 1
+            else:
+                index_in_parent = None
+
             canonical_path = None
             self.cur.execute(self.SQL.get("update_node"), (parent_node_id, index_in_parent, self.book_map_id, canonical_path, node_id))
 
