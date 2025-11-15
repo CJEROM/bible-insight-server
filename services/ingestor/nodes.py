@@ -84,9 +84,18 @@ class Nodes:
         self.book_soup = BeautifulSoup(book_xml, "xml")
         self.book_map_id = book_map_id
 
-        nodes_to_create = len(self.book_soup.descendants)
+        self.walk_parsed_xml()
+            
+        self.conn.commit()
+    
+    def execute_and_get_id(self, query, params):
+        self.cur.execute(query, params)
+        return self.cur.fetchone()[0]
+    
+    def walk_parsed_xml(self):
+        nodes_to_create = len(list(self.book_soup.descendants))
 
-        self.start_time = time.time()
+        start_time = time.time()
 
         for i, node in enumerate(self.book_soup.descendants):
             node_id = None # Initialise node_id for the note we are going to create in DB
@@ -147,6 +156,8 @@ class Nodes:
                 node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
 
             # Do something with node_id's?
+            # Can update the node with extra details in separate query thats like fundamental additions to do with node, e.g. 
+            #       index_in_parents, parent_id, book_map_id, canonical_path
 
             duration = time.time() - self.start_time
             hours = int(duration // 3600)
@@ -158,17 +169,8 @@ class Nodes:
             progress = int((i / nodes_to_create) * 50)
             bar = '#' * progress + '-' * (50 - progress)
             percentage = int((i / nodes_to_create) * 100)
-            sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | Elapsed: {formatted_duration}")
+            sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | Elapsed: {formatted_duration} | ")
             sys.stdout.flush()
-
-        pass
-    
-    def execute_and_get_id(self, query, params):
-        self.cur.execute(query, params)
-        return self.cur.fetchone()[0]
-    
-    def walk_parsed_xml(self):
-        pass
 
 if __name__ == "__main__":
     test_book_xml = None
