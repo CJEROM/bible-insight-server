@@ -129,7 +129,7 @@ VALUES
 
 -- ================================================== Node Look up Tables ==================================================
 
-INSERT INTO lookup.node_attributes (attribute, description, active) 
+INSERT INTO lookup.node_attribute_types (attribute, description, active) 
 VALUES
     ('code','book code for this book usx file', TRUE),
     ('sid','Marks start of verse or chapter with reference', TRUE),

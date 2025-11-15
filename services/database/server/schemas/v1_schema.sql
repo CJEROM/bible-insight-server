@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS bible.bookgroupnames (
 
 -- ================================================== bible.chapters ==================================================
 
-CREATE TABLE IF NOT EXISTS lookup.node_attributes (
+CREATE TABLE IF NOT EXISTS lookup.node_attribute_types (
     id                      SERIAL PRIMARY KEY,
     attribute               TEXT UNIQUE,
     description             TEXT,
@@ -220,7 +220,7 @@ CREATE TABLE IF NOT EXISTS lookup.node_map (
     node_attribute          TEXT,
     UNIQUE(node_type, node_attribute), -- Unique combinations of what attributes and nodes go together
     FOREIGN KEY (node_type) REFERENCES lookup.node_types (node),
-    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (attribute)
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attribute_types (attribute)
 );
 
 -- Shows what possibilities could happen with a node_type and the parent node to recreate the tree structure
@@ -241,7 +241,7 @@ CREATE TABLE IF NOT EXISTS lookup.node_options (
     node_tree_id            INTEGER,
     FOREIGN KEY (node_type, node_attribute) REFERENCES lookup.node_map (node_type, node_attribute),
     FOREIGN KEY (node_type) REFERENCES lookup.node_types (node),
-    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (attribute),
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attribute_types (attribute),
     FOREIGN KEY (node_tree_id) REFERENCES lookup.node_tree (id)
 );
 
@@ -273,11 +273,13 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
 );
 
 -- Current nodes table is following stable USX, for new attributes, assign in nodes_extended, to add flexibility
-CREATE TABLE IF Not EXISTS bible.nodes_extended (
+CREATE TABLE IF Not EXISTS bible.nodes_attributes (
     id                      SERIAL PRIMARY KEY,
+    node_id                 INTEGER,
     node_attribute          TEXT,
     value                   TEXT,
-    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (attribute)
+    FOREIGN KEY (node_id) REFERENCES lookup.nodes (id),
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attribute_types (attribute)
 );
 
 -- Derived links to nodes as intermediary to tokens
