@@ -155,6 +155,10 @@ class Nodes:
                 node_text = str(node)
                 node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
 
+                # Logic to differentiate whether this is verse text or not
+
+                # Then throw in tokens pipeline, linked to node, but extend to verse for example to hold. or paragraph as well
+
             # Do something with node_id's?
             # Can update the node with extra details in separate query thats like fundamental additions to do with node, e.g. 
             #       index_in_parents, parent_id, book_map_id, canonical_path
@@ -174,7 +178,9 @@ class Nodes:
 
 if __name__ == "__main__":
     test_book_xml = None
-    test_book_path = Path(__file__).parents[2] / "downloads" / "1CH.usx"
+    test_book_path = Path(__file__).parents[2] / "downloads" / "1CH - WMBBE.usx"
+    test_book_path = Path(__file__).parents[2] / "downloads" / "PSA - WMBBE.usx"
+    test_book_path = Path(__file__).parents[2] / "downloads" / "3JN - FBV.usx"
     with open(test_book_path, "r", encoding="utf-8") as f:
         test_book_xml = f.read()
 
