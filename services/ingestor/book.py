@@ -5,6 +5,7 @@ import re
 import psycopg2
 
 from chapter import Chapter
+from nodes import Nodes
 
 # Changing since will only be relevant for text anyway
 class Book:
@@ -14,6 +15,8 @@ class Book:
         self.book_map_id = book_map_id
         self.file_id = file_id
         self.book_xml = BeautifulSoup(book_string, "xml")
+
+        Nodes(book_map_id, db_conn, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
 
         # Adds a database connection
         self.conn = db_conn
