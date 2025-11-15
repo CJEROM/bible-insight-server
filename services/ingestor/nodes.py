@@ -137,7 +137,10 @@ class Nodes:
                         node_id = self.execute_and_get_id(query, (loc,))
 
             if isinstance(node, NavigableString):  
-                node_id = self.execute_and_get_id(self.SQL.get("text"), (None,None))
+                node_text = str(node)
+                node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
+
+            # Do something with node_id's?
 
         pass
     
