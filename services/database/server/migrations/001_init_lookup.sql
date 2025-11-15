@@ -131,68 +131,68 @@ VALUES
 
 INSERT INTO lookup.node_attributes (attribute, description, active) 
 VALUES
-    ("code","book code for this book usx file", TRUE),
-    ("sid","Marks start of verse or chapter with reference", TRUE),
-    ("eid","Marks end of verse or chapter with reference", TRUE),
-    ("vid","Marks continuation of verse in a paragraph with reference", TRUE),
-    ("style","styling info", TRUE),
-    ("number","Chapter or Verse number", TRUE),
-    ("caller","", TRUE),
-    ("closed","", TRUE),
-    ("version","usx or xml version used", TRUE),
-    ("strong","Strong's number of Hebrew or Greek for particular word", TRUE),
-    ("loc","reference to chapter or verse (could include spread)", TRUE),
-    ("encoding","text encoding type for the file", TRUE)
-    ("text", "the actual text", TRUE); -- maps to node_text column
+    ('code','book code for this book usx file', TRUE),
+    ('sid','Marks start of verse or chapter with reference', TRUE),
+    ('eid','Marks end of verse or chapter with reference', TRUE),
+    ('vid','Marks continuation of verse in a paragraph with reference', TRUE),
+    ('style','styling info', TRUE),
+    ('number','Chapter or Verse number', TRUE),
+    ('caller', NULL, TRUE),
+    ('closed', NULL, TRUE),
+    ('version','usx or xml version used', TRUE),
+    ('strong','Strong number of Hebrew or Greek for particular word', TRUE),
+    ('loc','reference to chapter or verse (could include spread)', TRUE),
+    ('encoding','text encoding type for the file', TRUE),
+    ('text', 'the actual text', TRUE); -- maps to node_text column
 
 INSERT INTO lookup.node_types (node, description, active) 
 VALUES
-    ("xml","tag representing xml format", TRUE),
-    ("usx","tag representing usx format, encapsulating all its content", TRUE),
-    ("para","tag representing a paragraph (each new para is a new line, so doesn't match logical paragraph structure e.g. in poetry)", TRUE),
-    ("chapter","tag representing a chapter", TRUE),
-    ("verse","tag representing a verse", TRUE),
-    ("char","tag representing a note, extra info or strongs", TRUE),
-    ("ref","tag representing a reference to other parts of scripture", TRUE),
-    ("note","tag representing a footnote or crossreference", TRUE),
-    ("book","tag representing a book", TRUE),
-    ("text","not a tag but represents text in the parsed xml structure", TRUE);
+    ('xml','tag representing xml format', TRUE),
+    ('usx','tag representing usx format, encapsulating all its content', TRUE),
+    ('para','tag representing a paragraph (each new para is a new line, so does not match logical paragraph structure e.g. in poetry)', TRUE),
+    ('chapter','tag representing a chapter', TRUE),
+    ('verse','tag representing a verse', TRUE),
+    ('char','tag representing a note, extra info or strongs', TRUE),
+    ('ref','tag representing a reference to other parts of scripture', TRUE),
+    ('note','tag representing a footnote or crossreference', TRUE),
+    ('book','tag representing a book', TRUE),
+    ('text','not a tag but represents text in the parsed xml structure', TRUE);
 
 -- maps each node type to the attributes it uses
 INSERT INTO lookup.node_map (node_type, node_attribute) 
 VALUES
     -- xml
-    ("xml","version"),
-    ("xml","encoding"),
+    ('xml','version'),
+    ('xml','encoding'),
     -- usx
-    ("usx","version"),
+    ('usx','version'),
     -- para
-    ("para","style"),
-    ("para","vid"),
+    ('para','style'),
+    ('para','vid'),
     -- chapter
-    ("chapter","number"),
-    ("chapter","style"),
-    ("chapter","sid"),
-    ("chapter","eid"),
+    ('chapter','number'),
+    ('chapter','style'),
+    ('chapter','sid'),
+    ('chapter','eid'),
     -- verse
-    ("verse","number"),
-    ("verse","style"),
-    ("verse","sid"),
-    ("verse","eid"),
+    ('verse','number'),
+    ('verse','style'),
+    ('verse','sid'),
+    ('verse','eid'),
     -- char
-    ("char","style"),
-    ("char","closed"),
-    ("char","strong"),
+    ('char','style'),
+    ('char','closed'),
+    ('char','strong'),
     -- ref
-    ("ref","loc"),
+    ('ref','loc'),
     -- note
-    ("note","caller"),
-    ("note","style"),
+    ('note','caller'),
+    ('note','style'),
     -- book
-    ("book","code"),
-    ("book","style"),
+    ('book','code'),
+    ('book','style'),
     -- text
-    ("text","text");
+    ('text','text');
 
 -- MAYBE MAKE COMBO TABLE THAT TELLS ME WHAT COMBINATION OF ATTRIBUTES CAN BE ENCOUNTERED FOR TAG AS WELL, OR PERHAPS DECOUPLE FROM UNIQUE CONTSTRAINTS, OR ADD ANOTHER COLLUM FOR ESTABLISHING COMBINATIONS THEY CAN BE FOUND IN
 
@@ -200,10 +200,10 @@ VALUES
 
 INSERT INTO lookup.quote_attribution_types (attribution, type, description) 
 VALUES
-    ("speaker", NULL, "The person saying this"),
-    ("audience", NULL, "This is being spoken to"),
-    ("narrative", NULL, "This is narrative and therefore not got a certain speaker, just a character it represents"),
-    ("quoting", NULL, "If this is quoting someone else's speach (scripture cross reference)");
+    ('speaker', NULL, 'The person saying this'),
+    ('audience', NULL, 'This is being spoken to'),
+    ('narrative', NULL, 'This is narrative and therefore not got a certain speaker, just a character it represents'),
+    ('quoting', NULL, 'If this is quoting someone else speaking (scripture cross reference)');
 
 -- ================================================== Entity Look up Tables ==================================================
 

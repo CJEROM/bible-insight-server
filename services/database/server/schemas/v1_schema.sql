@@ -216,10 +216,10 @@ CREATE TABLE IF NOT EXISTS lookup.node_types (
 -- Maps the different attributes to node types
 CREATE TABLE IF NOT EXISTS lookup.node_map (
     id                      SERIAL PRIMARY KEY,
-    node_type               INTEGER,
-    node_attribute          INTEGER,
-    FOREIGN KEY (node_type) REFERENCES lookup.node_types (id),
-    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (id)
+    node_type               TEXT,
+    node_attribute          TEXT,
+    FOREIGN KEY (node_type) REFERENCES lookup.node_types (node),
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (attribute)
 );
 
 CREATE TABLE IF NOT EXISTS bible.nodes (
@@ -504,7 +504,7 @@ CREATE TABLE IF NOT EXISTS bible.entity_relationships (
 	to_entity	    INTEGER,
     relationship    TEXT,
 	FOREIGN KEY (from_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
-    FOREIGN KEY (to_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
+    FOREIGN KEY (to_entity) REFERENCES bible.entities (id) ON DELETE CASCADE
 	-- FOREIGN KEY (relationship) REFERENCES lookup.entity_relationship_types (relationship) ON DELETE CASCADE
 );
 
@@ -537,8 +537,8 @@ CREATE TABLE IF NOT EXISTS bible.quote_attribution (
 CREATE TABLE IF NOT EXISTS lookup.quote_attribution_types (
     id                  SERIAL PRIMARY KEY,
     attribution         TEXT,
-    type                INTEGER,
-    description         INTEGER
+    type                TEXT,
+    description         TEXT
 );
 
 -- ================================================== User Based Data ==================================================
