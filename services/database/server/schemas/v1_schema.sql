@@ -259,7 +259,7 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     caller                  TEXT,
     closed                  TEXT,
     version                 TEXT,
-    encoding                TEXT,
+    -- encoding                TEXT,
     strong                  TEXT,
     loc                     TEXT,
     state                   TEXT,

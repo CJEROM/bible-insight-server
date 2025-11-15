@@ -142,12 +142,12 @@ VALUES
     ('version','usx or xml version used', TRUE),
     ('strong','Strong number of Hebrew or Greek for particular word', TRUE),
     ('loc','reference to chapter or verse (could include spread)', TRUE),
-    ('encoding','text encoding type for the file', TRUE),
+    ('encoding','text encoding type for the file', FALSE),
     ('text', 'the actual text', TRUE); -- maps to node_text column
 
 INSERT INTO lookup.node_types (node, description, active) 
 VALUES
-    ('xml','tag representing xml format', TRUE),
+    ('xml','tag representing xml format', FALSE), -- IGNORED - due to Mobile & Server Sync
     ('usx','tag representing usx format, encapsulating all its content', TRUE),
     ('para','tag representing a paragraph (each new para is a new line, so does not match logical paragraph structure e.g. in poetry)', TRUE),
     ('chapter','tag representing a chapter', TRUE),
