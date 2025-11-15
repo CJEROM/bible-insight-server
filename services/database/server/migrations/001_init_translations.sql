@@ -1,4 +1,4 @@
-INSERT INTO bible.readhistory (scripture_reference) VALUES 
+INSERT INTO users.readhistory (scripture_reference) VALUES 
     ('GEN 1:1');
 
 INSERT INTO bible.languages (iso, name, nameLocal, scriptDirection) VALUES 

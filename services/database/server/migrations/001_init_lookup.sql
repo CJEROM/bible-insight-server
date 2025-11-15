@@ -203,7 +203,7 @@ VALUES
     (NULL, 'xml'),
     (NULL, 'usx'),
     ('usx', 'book'),
-    ('usx', 'para'),;
+    ('usx', 'para'),
     ('usx', 'chapter'),
     ('para', 'verse'),
     ('para', 'char'),

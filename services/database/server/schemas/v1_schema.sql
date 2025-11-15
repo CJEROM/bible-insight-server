@@ -230,7 +230,7 @@ CREATE TABLE IF NOT EXISTS lookup.node_tree (
     node_child              TEXT,
     FOREIGN KEY (node_parent) REFERENCES lookup.node_types (node),
     FOREIGN KEY (node_child) REFERENCES lookup.node_types (node)
-)
+);
 
 -- Shows in what combinations a node can come up
 CREATE TABLE IF NOT EXISTS lookup.node_options (
@@ -238,12 +238,12 @@ CREATE TABLE IF NOT EXISTS lookup.node_options (
     node_type               TEXT,
     node_attribute          TEXT,
     option                  INTEGER,
-    node_tree_id            INTEGER
+    node_tree_id            INTEGER,
     FOREIGN KEY (node_type, node_attribute) REFERENCES lookup.node_map (node_type, node_attribute),
     FOREIGN KEY (node_type) REFERENCES lookup.node_types (node),
-    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (attribute),#
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (attribute),
     FOREIGN KEY (node_tree_id) REFERENCES lookup.node_tree (id)
-)
+);
 
 -- Built for speed, so very denormalised and flat which is what it needs to be
 CREATE TABLE IF NOT EXISTS bible.nodes (
@@ -277,8 +277,8 @@ CREATE TABLE IF Not EXISTS bible.nodes_extended (
     id                      SERIAL PRIMARY KEY,
     node_attribute          TEXT,
     value                   TEXT,
-    FOREIGN KEY (node_attribute) REFERENCES bible.node_attributes (attribute)
-)
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attributes (attribute)
+);
 
 -- Derived links to nodes as intermediary to tokens
 CREATE TABLE IF NOT EXISTS bible.text_nodes (
