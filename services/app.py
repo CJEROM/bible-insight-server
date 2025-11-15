@@ -69,18 +69,18 @@ def start_api_server():
 if __name__ == "__main__":
     try:
         restart_docker("postgres")
-        restart_docker("minio")
-        restart_docker("label-studio")
+        # restart_docker("minio")
+        # restart_docker("label-studio")
         # restart_docker("authentik")
         # restart_docker("memgraph")
-        initialise_script("init_database.py", 3)
-        initialise_script("init_minio.py", 0)
-        initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
-        # start_api_server() 
-        run_script(".\ingestor\ingestor.py")
-        create_database_backup()
-        run_script(".\labeller\labeller.py")
-        print("FINISHED Script")
+        initialise_script("init_database.py", 5)
+        # initialise_script("init_minio.py", 0)
+        # initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
+        # # start_api_server() 
+        # run_script(".\ingestor\ingestor.py")
+        # create_database_backup()
+        # run_script(".\labeller\labeller.py")
+        # print("FINISHED Script")
     except:
         pass
     
