@@ -10,7 +10,11 @@ def restart_docker(container):
     scripts_dir = base / "devops/docker" / container
 
     # Destroy existing instance + connected volumes
-    subprocess.run(["docker", "compose", "down", "-v"], cwd=scripts_dir)
+    subprocess.run(
+        ["docker", "compose", "down", "-v"], 
+        cwd=scripts_dir,
+        check=True # Allows it to catch errors
+    )
 
     # Delete any folders inside this containers folder
     for root, dirs, files in os.walk(scripts_dir, topdown=False):
@@ -67,8 +71,13 @@ def start_api_server():
     print(response.status_code, response.text)
 
 if __name__ == "__main__":
+    # Check database instance working properly (issue with image on mac)
     try:
         restart_docker("postgres")
+    except Exception as e:
+        restart_docker("postgres-mac")
+
+    try:
         # restart_docker("minio")
         # restart_docker("label-studio")
         # restart_docker("authentik")
@@ -81,6 +90,6 @@ if __name__ == "__main__":
         # create_database_backup()
         # run_script(".\labeller\labeller.py")
         # print("FINISHED Script")
-    except:
+    except Exception as e:
         pass
     
