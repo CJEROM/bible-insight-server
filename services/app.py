@@ -12,8 +12,7 @@ def restart_docker(container):
     # Destroy existing instance + connected volumes
     subprocess.run(
         ["docker", "compose", "down", "-v"], 
-        cwd=scripts_dir,
-        check=True # Allows it to catch errors
+        cwd=scripts_dir
     )
 
     # Delete any folders inside this containers folder
@@ -24,7 +23,11 @@ def restart_docker(container):
             shutil.rmtree(dir_path)  # removes the entire directory and its contents
 
     # Restart Docker instance
-    subprocess.run(["docker", "compose", "up", "-d"], cwd=scripts_dir)
+    subprocess.run(
+        ["docker", "compose", "up", "-d"], 
+        cwd=scripts_dir,
+        check=True # Allows it to catch errors
+    )
 
 def initialise_script(file_name, delay):
     base = Path(__file__).parent
