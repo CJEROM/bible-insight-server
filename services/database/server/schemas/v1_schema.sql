@@ -243,6 +243,7 @@ CREATE TABLE IF NOT EXISTS lookup.node_tree (
     FOREIGN KEY (node_child) REFERENCES lookup.node_types (node),
 )
 
+-- Built for speed, so very denormalised and flat which is what it needs to be
 CREATE TABLE IF NOT EXISTS bible.nodes (
     id                      SERIAL PRIMARY KEY,
     node_text               TEXT,
@@ -268,6 +269,14 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
     FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE
 );
+
+-- Current nodes table is following stable USX, for new attributes, assign in nodes_extended, to add flexibility
+CREATE TABLE IF Not EXISTS bible.nodes_extended (
+    id                      SERIAL PRIMARY KEY,
+    node_attribute          TEXT,
+    value                   TEXT,
+    FOREIGN KEY (node_attribute) REFERENCES bible.node_attributes (attribute)
+)
 
 -- Derived links to nodes as intermediary to tokens
 CREATE TABLE IF NOT EXISTS bible.text_nodes (
