@@ -142,7 +142,8 @@ VALUES
     ("version","usx or xml version used", TRUE),
     ("strong","Strong's number of Hebrew or Greek for particular word", TRUE),
     ("loc","reference to chapter or verse (could include spread)", TRUE),
-    ("encoding","text encoding for the file", TRUE);
+    ("encoding","text encoding type for the file", TRUE)
+    ("text", "the actual text", TRUE); -- maps to node_text column
 
 INSERT INTO lookup.node_types (node, description, active) 
 VALUES
@@ -157,11 +158,41 @@ VALUES
     ("book","tag representing a book", TRUE),
     ("text","not a tag but represents text in the parsed xml structure", TRUE);
 
--- MAKES MAPPING OF WHAT ATTRIBUTES ARE USED WITH WHICH TAG
+-- maps each node type to the attributes it uses
 INSERT INTO lookup.node_map (node_type, node_attribute) 
 VALUES
-    --xml
-    ("","");
+    -- xml
+    ("xml","version"),
+    ("xml","encoding"),
+    -- usx
+    ("usx","version"),
+    -- para
+    ("para","style"),
+    ("para","vid"),
+    -- chapter
+    ("chapter","number"),
+    ("chapter","style"),
+    ("chapter","sid"),
+    ("chapter","eid"),
+    -- verse
+    ("verse","number"),
+    ("verse","style"),
+    ("verse","sid"),
+    ("verse","eid"),
+    -- char
+    ("char","style"),
+    ("char","closed"),
+    ("char","strong"),
+    -- ref
+    ("ref","loc"),
+    -- note
+    ("note","caller"),
+    ("note","style"),
+    -- book
+    ("book","code"),
+    ("book","style"),
+    -- text
+    ("text","text");
 
 -- MAYBE MAKE COMBO TABLE THAT TELLS ME WHAT COMBINATION OF ATTRIBUTES CAN BE ENCOUNTERED FOR TAG AS WELL, OR PERHAPS DECOUPLE FROM UNIQUE CONTSTRAINTS, OR ADD ANOTHER COLLUM FOR ESTABLISHING COMBINATIONS THEY CAN BE FOUND IN
 
