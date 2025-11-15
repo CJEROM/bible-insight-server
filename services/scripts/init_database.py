@@ -48,7 +48,7 @@ def init_database():
     migrations = [
         "001_init_translations.sql",
         "001_init_bible.sql",
-        "001_init_spacy_lookup.sql"
+        "001_init_lookup.sql"
     ]
 
     for init_script in migrations:
