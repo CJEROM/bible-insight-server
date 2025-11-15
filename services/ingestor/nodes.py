@@ -181,7 +181,10 @@ class Nodes:
 
             if isinstance(node, NavigableString):  
                 node_text = str(node)
-                node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
+                # BeautifulSoup preserves whitespace aggresivley, which bloats nodes created, so filter them out (empty text and new lines)
+                #   Done to preserve mapping to fast_xml_parser in React Native for mobile so parsed xml will map
+                if node_text != "" and node_text != "\n":
+                    node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
 
                 # Logic to differentiate whether this is versetext or not
 
