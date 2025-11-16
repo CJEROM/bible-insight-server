@@ -156,13 +156,13 @@ class Chapter:
         self.cur.execute("""
             SELECT id FROM bible.nodes WHERE book_map_id = %s AND (sid = %s OR eid = %s) AND node_type = 'chapter';
         """, (self.book_map_id, self.chapter_ref, self.chapter_ref))
-        start_node, end_node = self.cur.fetchall()
+        self.start_node, self.end_node = self.cur.fetchall()
 
         self.cur.execute("""
             INSERT INTO bible.chapteroccurences (chapter_ref, book_map_id, start_node, end_node) 
             VALUES (%s, %s, %s, %s)
             RETURNING id;
-        """, (self.chapter_ref, self.book_map_id, start_node, end_node))
+        """, (self.chapter_ref, self.book_map_id, self.start_node, self.end_node))
         self.chapter_occurence_id = self.cur.fetchone()[0]
 
         self.conn.commit()
@@ -195,9 +195,13 @@ class Chapter:
         additions = 0
         # Have to be created here since not all paragraphs fit inside a chapter
         all_paragraphs = self.chapter_xml.find_all("para")
+        self.cur.execute("""
+            SELECT id FROM bible.nodes WHERE book_map_id = %s AND node_type = 'para' AND id BETWEEN %s AND %s;
+        """, (self.book_map_id, self.chapter_ref, self.chapter_ref, self.start_node, self.end_node))
+        para_node_ids = self.cur.fetchall()
 
-        for para in all_paragraphs:
-            Paragraph(self.translation_id, self.chapter_occurence_id, para, self.conn)
+        for i, (para) in enumerate(all_paragraphs):
+            Paragraph(self.translation_id, para_node_ids[i], para, self.conn)
             additions += 1
         
         if additions > 0:
