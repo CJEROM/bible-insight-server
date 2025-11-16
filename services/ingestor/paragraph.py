@@ -35,20 +35,6 @@ class Paragraph:
             versetext = style[1]
 
         return style_id, versetext
-
-    def getParaText(self):
-        verse_text_content = ""
-
-        if self.versetext:
-            # Creates a copy instead of reference, so when we remove note tags, it doesn't remove them from original xml
-            temp_para_xml = BeautifulSoup(str(self.para_xml), "xml")
-            # Remove <note> tags completely
-            for tag in temp_para_xml.find_all("note"):
-                tag.extract()
-
-            verse_text_content = temp_para_xml.get_text().strip()
-            
-        return verse_text_content
         
     def createParagraph(self):
         self.cur.execute("""
