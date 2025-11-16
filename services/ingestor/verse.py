@@ -70,9 +70,22 @@ class Verse:
 
     def createVerseOccurence(self):
         self.cur.execute("""
-            INSERT INTO bible.verseoccurences (chapter_occ_id, verse_ref, text, xml) 
+            SELECT start_node, end_node FROM bible.nodes WHERE id = %s;
+        """, (self.chapter_occurence_id,))
+        chapter_start_node, chapter_end_node = self.cur.fetchall()
+
+        self.cur.execute("""
+            SELECT id FROM bible.nodes 
+            WHERE (sid = %s OR eid = %s) 
+                AND node_type = 'verse' 
+                AND id BETWEEN %s AND %s;
+        """, (self.verse_ref, self.verse_ref, chapter_start_node, chapter_end_node))
+        start_node, end_note = self.cur.fetchall()
+
+        self.cur.execute("""
+            INSERT INTO bible.verseoccurences (chapter_id, verse_ref, start_node, end_node) 
             VALUES (%s, %s, %s, %s)
-        """, (self.chapter_occurence_id, self.verse_ref, self.text, str(self.xml)))
+        """, (self.chapter_occurence_id, self.verse_ref, start_node, end_note))
 
     def getVerseAndNoteXML(self):
         # Regex to get everything between opening and closing paragraph tag
