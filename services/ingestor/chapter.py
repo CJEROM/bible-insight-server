@@ -121,6 +121,19 @@ SELECT *
 FROM parent_chain
 WHERE id = $2;""" # The ancesttor im looking for
 
+"""WITH RECURSIVE pc AS (
+    SELECT id, parent_node_id, node_type
+    FROM nodes
+    WHERE id = $1
+    UNION ALL
+    SELECT n.id, n.parent_node_id, n.node_type
+    FROM nodes n
+    JOIN pc ON n.id = pc.parent_node_id
+)
+SELECT EXISTS (
+    SELECT 1 FROM pc WHERE node_type = 'VERSE'
+);"""
+
 # WHERE node_type = 'PARA'; # Alternative if looking for particular type of parent
 
 class Chapter:
