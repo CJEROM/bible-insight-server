@@ -154,8 +154,8 @@ class Chapter:
         self.createChapter()
         # Create a Chapter Occurence
         self.cur.execute("""
-            SELECT id FROM bible.nodes WHERE book_map_id = %s AND (sid = %s OR eid = %s);
-        """, (self.book_map_id, ))
+            SELECT id FROM bible.nodes WHERE book_map_id = %s AND (sid = %s OR eid = %s) AND node_type = 'chapter';
+        """, (self.book_map_id, self.chapter_ref, self.chapter_ref))
         start_node, end_node = self.cur.fetchall()
 
         self.cur.execute("""
