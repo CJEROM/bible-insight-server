@@ -162,7 +162,7 @@ class Chapter:
             INSERT INTO bible.chapteroccurences (chapter_ref, book_map_id, start_node, end_node) 
             VALUES (%s, %s, %s, %s)
             RETURNING id;
-        """, (self.chapter_ref, self.book_map_id))
+        """, (self.chapter_ref, self.book_map_id, start_node, end_node))
         self.chapter_occurence_id = self.cur.fetchone()[0]
 
         self.conn.commit()
