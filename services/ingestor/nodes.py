@@ -160,6 +160,9 @@ class Nodes:
                         closed = node.get("closed")
                         strong = node.get("strong")
 
+                        if strong != None:
+                            self.createStrongs(strong)
+
                         node_id = self.execute_and_get_id(query, (style, closed, strong))
                     case "ref":
                         loc = node.get("loc")
@@ -230,6 +233,33 @@ class Nodes:
             percentage = int((i / nodes_to_create) * 100)
             sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | Elapsed: {formatted_duration} | ")
             sys.stdout.flush()
+    
+    # May remove if I choose to initialise it in a different way e.g. init script
+    def createStrongs(self, strong_code):
+        # Write any new unique strongs that haven't been added to database yet
+        self.cur.execute("""
+            SELECT id FROM bible.strongs WHERE code=%s
+        """, (strong_code,))
+        strong_id = self.cur.fetchone()
+
+        if strong_id == None:
+            # check what language the code belongs to 
+            language_id = None
+            if strong_code[0:1] == "G": # Greek
+                self.cur.execute("""
+                    SELECT id FROM bible.languages WHERE name LIKE 'Greek%'
+                """)
+                language_id = self.cur.fetchone()[0]
+            elif strong_code[0:1] == "H": # Hebrew
+                self.cur.execute("""
+                    SELECT id FROM bible.languages WHERE name LIKE 'Hebrew%'
+                """)
+                language_id = self.cur.fetchone()[0]
+
+            self.cur.execute("""
+                INSERT INTO bible.strongs (code, language_id) 
+                VALUES (%s, %s)
+            """, (strong_code, language_id))
 
 if __name__ == "__main__":
     test_book_xml = None
