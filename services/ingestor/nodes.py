@@ -105,11 +105,6 @@ class Nodes:
 
         start_time = time.time()
 
-        # Used to keep track of what chapter, paragraph and verse we are in, and their node_id
-        chapter_node_id = None
-        paragraph_node_id = None
-        verse_node_id = None
-
         node_id_map = {}    # maps bs4 node → SQL node_id
         child_index = {}    # parent → next child index
         path_map = {}       # bs4 node → canonical path
@@ -144,19 +139,10 @@ class Nodes:
                         eid = node.get("eid")
 
                         node_id = self.execute_and_get_id(query, (style, number, sid, eid))
-
-                        # Update what chapter we are in
-                        if sid != None:
-                            chapter_node_id = node_id
-                        elif eid != None:
-                            chapter_node_id = None
                     case "para":
                         style = node.get("style")
                         vid = node.get("vid")
                         node_id = self.execute_and_get_id(query, (style, vid))
-
-                        # Update what para we are in
-                        paragraph_node_id = node_id
                     case "verse":
                         style = node.get("style")
                         number = node.get("number")
@@ -164,12 +150,6 @@ class Nodes:
                         eid = node.get("eid")
 
                         node_id = self.execute_and_get_id(query, (style, number, sid, eid))
-
-                        # Update what verse we are in
-                        if sid != None:
-                            verse_node_id = node_id
-                        elif eid != None:
-                            verse_node_id = None
                     case "note":
                         style = node.get("style")
                         caller = node.get("caller")
