@@ -2,9 +2,9 @@ import psycopg2
 from bs4 import BeautifulSoup
 
 class Paragraph:
-    def __init__(self, translation_id, chapter_occurence_id, para_xml, db_conn):
+    def __init__(self, translation_id, paragraph_node_id, para_xml, db_conn):
         self.translation_id = translation_id
-        self.chapter_occurence_id = chapter_occurence_id
+        self.paragraph_node_id = paragraph_node_id
         self.para_xml = para_xml
 
         # Adds a database connection
@@ -16,7 +16,6 @@ class Paragraph:
 
         self.createParagraph()
         self.createStrongs()
-        self.linkVerses()
 
         self.conn.commit()
 
@@ -36,17 +35,6 @@ class Paragraph:
             versetext = style[1]
 
         return style_id, versetext
-    
-    def linkVerses(self):
-        all_verses = self.para_xml.find_all("verse")
-
-        # Add all verses mappings (due to unique constraint wont add duplicates)
-        for verse in all_verses:
-            verse_ref = verse.get("sid") if verse.get("sid") != None else verse.get("eid")
-            self.cur.execute("""
-                INSERT INTO bible.versestoparagraphs (verse_ref, paragraph_id) 
-                VALUES (%s, %s)
-            """, (verse_ref, self.paragraph_id))
 
     def getParaText(self):
         verse_text_content = ""
@@ -63,12 +51,17 @@ class Paragraph:
         return verse_text_content
         
     def createParagraph(self):
-
         self.cur.execute("""
-            INSERT INTO bible.paragraphs (chapter_occ_id, style_id, parent_para, xml, versetext) 
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO bible.paragraphs (node_id, style_id, parent_para, is_versetext) 
+            VALUES (%s, %s, %s, %s)
             RETURNING id;
-        """, (self.chapter_occurence_id, self.style_id, None, str(self.para_xml), self.getParaText()))
+        """, (self.paragraph_node_id, self.style_id, None, str(self.para_xml), self.versetext))
+
+        # self.cur.execute("""
+        #     INSERT INTO bible.paragraphs (chapter_occ_id, style_id, parent_para, xml, versetext) 
+        #     VALUES (%s, %s, %s, %s, %s)
+        #     RETURNING id;
+        # """, (self.chapter_occurence_id, self.style_id, None, str(self.para_xml), self.getParaText()))
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.paragraphs",))
         self.paragraph_id = self.cur.fetchone()[0]
 
