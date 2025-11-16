@@ -227,31 +227,10 @@ class Nodes:
                 index_in_parent = None
 
             # 1. Build component
-            match node_type:
-                case "book":
-                    comp = f"/{code}"                     # /GEN
-                case "chapter":
-                    comp = f"/{number}"                   # /1
-                case "verse":
-                    comp = f"/verse[{number}]"            # /verse[12]
-                case "para":
-                    comp = f"/para[{index_in_parent}]"    # /para[2]
-                case "text":
-                    comp = f"/text[{index_in_parent}]"
-                case "xml":
-                    comp = f""
-                case "usx":
-                    comp = f""
-                case "note":
-                    comp = f""
-                case "char":
-                    comp = f""
-                case "ref":
-                    comp = f""
-
             parent_path = path_map.get(id(node), "") # if not exists, gives empty string
 
-            canonical_path = parent_path + comp
+            new_path = f"/{node_type}:{index_in_parent}" 
+            canonical_path = parent_path + new_path
             path_map[id(node)] = canonical_path
 
             canonical_path = None
