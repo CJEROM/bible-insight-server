@@ -151,14 +151,18 @@ class Chapter:
         self.conn = db_conn
         self.cur = self.conn.cursor()
         
-        # Create a Chapter Occurence
         self.createChapter()
+        # Create a Chapter Occurence
         self.cur.execute("""
-            INSERT INTO bible.chapteroccurences (chapter_ref, book_map_id) 
-            VALUES (%s, %s)
+            SELECT id FROM bible.nodes WHERE book_map_id = %s AND (sid = %s OR eid = %s);
+        """, (self.book_map_id, ))
+        start_node, end_node = self.cur.fetchall()
+
+        self.cur.execute("""
+            INSERT INTO bible.chapteroccurences (chapter_ref, book_map_id, start_node, end_node) 
+            VALUES (%s, %s, %s, %s)
             RETURNING id;
         """, (self.chapter_ref, self.book_map_id))
-        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))
         self.chapter_occurence_id = self.cur.fetchone()[0]
 
         self.conn.commit()
