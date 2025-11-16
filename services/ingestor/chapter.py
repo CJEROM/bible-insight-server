@@ -101,6 +101,28 @@ language_code_map = {
     "Yoruba": "yo"
 }
 
+# Queries to use to access particular nodes
+"""SELECT id FROM bible.nodes WHERE book_map_id = %s AND sid = %s OR eid = %s""" # Verse or Chapter
+
+"""WITH RECURSIVE parent_chain AS (
+    -- start from the node you're checking
+    SELECT id, parent_node_id
+    FROM nodes
+    WHERE id = $1     -- starting node
+
+    UNION ALL
+
+    -- walk upward
+    SELECT n.id, n.parent_node_id
+    FROM nodes n
+    INNER JOIN parent_chain pc ON n.id = pc.parent_node_id
+)
+SELECT *
+FROM parent_chain
+WHERE id = $2;""" # The ancesttor im looking for
+
+# WHERE node_type = 'PARA'; # Alternative if looking for particular type of parent
+
 class Chapter:
     def __init__(self, language_id, translation_id, book_map_id, chapter_ref, chapter_text, db_conn, bible_structure):
         self.language_id = language_id
