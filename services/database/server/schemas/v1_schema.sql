@@ -196,6 +196,16 @@ CREATE TABLE IF NOT EXISTS bible.bookgroupnames (
     FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
 );
 
+-- ================================================== Strongs Components ==================================================
+
+CREATE TABLE IF NOT EXISTS bible.strongs (
+    id              SERIAL PRIMARY KEY,
+    code            TEXT UNIQUE,
+    language_id     INTEGER,
+	-- Consider either storing bible.strongs Definition or api call to get it?
+    FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
+);
+
 -- ================================================== bible.chapters ==================================================
 
 CREATE TABLE IF NOT EXISTS lookup.node_attribute_types (
@@ -269,7 +279,8 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     canonical_path          TEXT,
     FOREIGN KEY (parent_node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
-    FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE
+    FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE,
+    FOREIGN KEY (strong) REFERENCES bible.strongs (code) ON DELETE SET NULL
 );
 
 -- Current nodes table is following stable USX, for new attributes, assign in nodes_extended, to add flexibility
@@ -406,28 +417,6 @@ CREATE TABLE IF NOT EXISTS bible.translation_note_mapping (
     cross_ref       INTEGER,
     FOREIGN KEY (foot_note) REFERENCES bible.translationfootnotes (id),
     FOREIGN KEY (cross_ref) REFERENCES bible.translationrefnotes (id)
-);
-
--- ================================================== Strongs Components ==================================================
-
-CREATE TABLE IF NOT EXISTS bible.strongs (
-    id              SERIAL PRIMARY KEY,
-    code            TEXT UNIQUE,
-    language_id     INTEGER,
-	-- Consider either storing bible.strongs Definition or api call to get it?
-    FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS bible.strongsoccurence (
-    id                      SERIAL PRIMARY KEY,
-    text                    TEXT,
-    xml                     TEXT,
-    strong_code             TEXT,
-    start_node              INTEGER,
-    end_node                INTEGER,
-    FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
-    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
-    FOREIGN KEY (strong_code) REFERENCES bible.strongs (code) ON DELETE CASCADE
 );
 
 -- ================================================== Spacy Look up Tables ==================================================
