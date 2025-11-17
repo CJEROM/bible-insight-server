@@ -70,9 +70,9 @@ class Verse:
 
     def createVerseOccurence(self):
         self.cur.execute("""
-            SELECT start_node, end_node FROM bible.nodes WHERE id = %s;
+            SELECT start_node, end_node FROM bible.chapteroccurences WHERE id = %s;
         """, (self.chapter_occurence_id,))
-        chapter_start_node, chapter_end_node = self.cur.fetchall()
+        chapter_start_node, chapter_end_node = self.cur.fetchone()
 
         self.cur.execute("""
             SELECT id FROM bible.nodes 
