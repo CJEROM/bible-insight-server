@@ -397,7 +397,6 @@ CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
     from_chapter_ref        TEXT,
     to_verse_ref            TEXT,
     to_chapter_ref          TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
-    parent_ref              INTEGER, -- For when fragmenting ref note
     node_id                 INTEGER,
     FOREIGN KEY (node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (from_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
@@ -405,14 +404,6 @@ CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
     FOREIGN KEY (to_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (to_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
     FOREIGN KEY (parent_ref) REFERENCES bible.translationrefnotes (id) ON DELETE CASCADE -- Link to self 
-);
-
-CREATE TABLE IF NOT EXISTS bible.translation_note_mapping (
-    id              SERIAL PRIMARY KEY,
-    foot_note       INTEGER,
-    cross_ref       INTEGER,
-    FOREIGN KEY (foot_note) REFERENCES bible.translationfootnotes (id),
-    FOREIGN KEY (cross_ref) REFERENCES bible.translationrefnotes (id)
 );
 
 -- ================================================== Spacy Look up Tables ==================================================
