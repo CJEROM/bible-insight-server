@@ -236,9 +236,13 @@ class Chapter:
         return new_ref
 
     def createTranslationNotes(self):
+        self.cur.execute("""
+            SELECT id FROM bible.nodes WHERE book_map_id = %s AND node_type = 'note' AND id BETWEEN %s AND %s;
+        """, (self.book_map_id, self.start_node, self.end_node))
+        translation_note_node_ids = self.cur.fetchall()
         # Go through chapter and grab all cross references and footnotes, and write to database
-        for this_note in self.chapter_xml.find_all("note"):
-            TranslationNote(self.book_map_id, self.book_code, self.translation_id, this_note, self.conn)
+        for i, this_note in enumerate(self.chapter_xml.find_all("note")):
+            TranslationNote(self.book_map_id, self.book_code, self.translation_id, this_note, translation_note_node_ids[i], self.conn)
 
 
     # ================================================================================================================= TOKENIZATION LOGIC =================================================================================================================
