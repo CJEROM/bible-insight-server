@@ -365,9 +365,9 @@ class MinioUSXUpload:
                 short_name = book_info.find("short").text
                 long_name = book_info.find("long").text
 
-                # Skip any that are not Hebrews book
-                # if found_book[0] != "HEB":
-                #     continue
+                # Skip any that are not 3 John book (used when testing = shortest book in the bible)
+                if found_book[0] != "3JN":
+                    continue
 
                 # ✅ Proper loading bar (50 characters wide)
                 progress = int((i / total_books) * 50)
