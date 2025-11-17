@@ -457,7 +457,7 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     is_punct            BOOLEAN,
     like_num            BOOLEAN,
     FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id),
-    FOREIGN KEY (node_id) REFERENCES bible.text_nodes (node_id),
+    FOREIGN KEY (node_id) REFERENCES bible.nodes (node_id),
     FOREIGN KEY (pos) REFERENCES lookup.nlp_pos_types (pos_tag),
     FOREIGN KEY (tag) REFERENCES lookup.nlp_tag_types (tag),
     FOREIGN KEY (dep) REFERENCES lookup.nlp_dep_types (dep)
