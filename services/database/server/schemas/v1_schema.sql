@@ -277,6 +277,7 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     index_in_parent         INTEGER,
     book_map_id             INTEGER,
     canonical_path          TEXT,
+    is_tokenisable          BOOLEAN,
     FOREIGN KEY (parent_node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
     FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE,
@@ -291,13 +292,6 @@ CREATE TABLE IF Not EXISTS bible.nodes_attributes (
     value                   TEXT,
     FOREIGN KEY (node_id) REFERENCES bible.nodes (id),
     FOREIGN KEY (node_attribute) REFERENCES lookup.node_attribute_types (attribute)
-);
-
--- Derived links to nodes as intermediary to tokens
-CREATE TABLE IF NOT EXISTS bible.text_nodes (
-    id                      SERIAL PRIMARY KEY,
-    node_id                 INTEGER UNIQUE,
-    FOREIGN KEY (node_id) REFERENCES bible.nodes (id)
 );
 
 -- ================================================== bible.chapters ==================================================
