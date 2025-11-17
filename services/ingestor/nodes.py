@@ -221,18 +221,18 @@ class Nodes:
             self.cur.execute(self.SQL.get("update_node"), (parent_node_id, index_in_parent, self.book_map_id, canonical_path, node_id))
 
             # Loading bar with elapsed time
-            duration = time.time() - start_time
-            hours = int(duration // 3600)
-            minutes = int((duration % 3600) // 60)
-            seconds = int(duration % 60)
+            # duration = time.time() - start_time
+            # hours = int(duration // 3600)
+            # minutes = int((duration % 3600) // 60)
+            # seconds = int(duration % 60)
 
-            formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
+            # formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
 
-            progress = int((i / nodes_to_create) * 50)
-            bar = '#' * progress + '-' * (50 - progress)
-            percentage = int((i / nodes_to_create) * 100)
-            sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | Elapsed: {formatted_duration} | ")
-            sys.stdout.flush()
+            # progress = int((i / nodes_to_create) * 50)
+            # bar = '#' * progress + '-' * (50 - progress)
+            # percentage = int((i / nodes_to_create) * 100)
+            # sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | Elapsed: {formatted_duration} | ")
+            # sys.stdout.flush()
     
     # May remove if I choose to initialise it in a different way e.g. init script
     def createStrongs(self, strong_code):
