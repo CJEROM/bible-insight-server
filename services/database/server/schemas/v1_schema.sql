@@ -451,16 +451,20 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     tag                 TEXT,
     dep                 TEXT,
     head_token_id       INTEGER,
-    llema_id            INTEGER,
+    lemma_id            INTEGER,
     trailing_space      BOOLEAN,
     is_alpha            BOOLEAN,
     is_punct            BOOLEAN,
     like_num            BOOLEAN,
+    language_id         INTEGER,
+    translation_id      INTEGER,
     FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id),
-    FOREIGN KEY (node_id) REFERENCES bible.nodes (node_id),
+    FOREIGN KEY (node_id) REFERENCES bible.nodes (id),
     FOREIGN KEY (pos) REFERENCES lookup.nlp_pos_types (pos_tag),
     FOREIGN KEY (tag) REFERENCES lookup.nlp_tag_types (tag),
-    FOREIGN KEY (dep) REFERENCES lookup.nlp_dep_types (dep)
+    FOREIGN KEY (dep) REFERENCES lookup.nlp_dep_types (dep),
+    FOREIGN KEY (language_id) REFERENCES lookup.languages (id),
+    FOREIGN KEY (translation_id) REFERENCES lookup.translations (id)
 );
 
 -- ================================================== Entities ==================================================
