@@ -197,7 +197,7 @@ class Chapter:
         all_paragraphs = self.chapter_xml.find_all("para")
         self.cur.execute("""
             SELECT id FROM bible.nodes WHERE book_map_id = %s AND node_type = 'para' AND id BETWEEN %s AND %s;
-        """, (self.book_map_id, self.chapter_ref, self.chapter_ref, self.start_node, self.end_node))
+        """, (self.book_map_id, self.start_node, self.end_node))
         para_node_ids = self.cur.fetchall()
 
         for i, (para) in enumerate(all_paragraphs):
