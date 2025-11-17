@@ -385,10 +385,8 @@ CREATE TABLE IF NOT EXISTS bible.translationfootnotes (
     id                      SERIAL PRIMARY KEY,
     verse_ref               TEXT,
     chapter_ref             TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
-    start_node              INTEGER,
-    end_node                INTEGER,
-    FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
-    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    node_id                 INTEGER,
+    FOREIGN KEY (node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE
 );
@@ -400,10 +398,8 @@ CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
     to_verse_ref            TEXT,
     to_chapter_ref          TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
     parent_ref              INTEGER, -- For when fragmenting ref note
-    start_node              INTEGER,
-    end_node                INTEGER,
-    FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
-    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    node_id                 INTEGER,
+    FOREIGN KEY (node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (from_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (from_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
     FOREIGN KEY (to_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
