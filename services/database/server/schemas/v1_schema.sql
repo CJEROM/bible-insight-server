@@ -402,8 +402,7 @@ CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
     FOREIGN KEY (from_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (from_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
     FOREIGN KEY (to_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
-    FOREIGN KEY (to_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
-    FOREIGN KEY (parent_ref) REFERENCES bible.translationrefnotes (id) ON DELETE CASCADE -- Link to self 
+    FOREIGN KEY (to_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE
 );
 
 -- ================================================== Spacy Look up Tables ==================================================
