@@ -15,7 +15,6 @@ class Paragraph:
         self.style_id, self.versetext = self.getParagraphStyle()
 
         self.createParagraph()
-        self.createStrongs()
 
         self.conn.commit()
 
@@ -41,15 +40,5 @@ class Paragraph:
             INSERT INTO bible.paragraphs (node_id, style_id, parent_para, is_versetext) 
             VALUES (%s, %s, %s, %s)
             RETURNING id;
-        """, (self.paragraph_node_id, self.style_id, None, str(self.para_xml), self.versetext))
+        """, (self.paragraph_node_id, self.style_id, None, self.versetext))
         self.paragraph_id = self.cur.fetchone()[0]
-
-    def getVerseForStrongs(self, strong_xml):
-        verse_ref = None
-
-        verse_tag = strong_xml.find_next("verse")
-        
-        if verse_tag != None:
-            verse_ref = verse_tag.get("eid") if verse_tag.get("eid") else verse_tag.get("sid")
-        
-        return verse_ref
