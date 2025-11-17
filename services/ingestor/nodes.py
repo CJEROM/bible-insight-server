@@ -1,7 +1,5 @@
 from bs4 import BeautifulSoup, Tag, NavigableString
 import psycopg2
-import sys
-import time
 
 from pathlib import Path
 import os
@@ -101,16 +99,11 @@ class Nodes:
         return self.cur.fetchone()[0]
     
     def walk_parsed_xml(self):
-        nodes_to_create = len(list(self.book_soup.descendants))
-
-        start_time = time.time()
-
         node_id_map = {}    # maps bs4 node → SQL node_id
         child_index = {}    # parent → next child index
         path_map = {}       # bs4 node → canonical path
 
-
-        for i, node in enumerate(self.book_soup.descendants):
+        for node in self.book_soup.descendants:
             node_id = None # Initialise node_id for the note we are going to create in DB
             node_type = None
 
@@ -172,17 +165,7 @@ class Nodes:
             if isinstance(node, NavigableString):  
                 node_text = str(node)
                 node_type = "text"
-                # BeautifulSoup preserves whitespace aggresivley, which bloats nodes created, so filter them out (empty text and new lines)
-                #   Done to preserve mapping to fast_xml_parser in React Native for mobile so parsed xml will map
-                #   we preserve spaces explicitly if they are present however (due to strongs especially)
-                # if node_text != "" and node_text != "\n":
                 node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
-
-                # Logic to differentiate whether this is versetext or not
-
-                # if it is insert into bible.text_nodes table to show its relevant
-
-                # Then throw in tokens pipeline, linked to node, but extend to verse for example to hold. or paragraph as well
 
             # If nothing was created, skip
             if node_id is None:
@@ -219,20 +202,6 @@ class Nodes:
             canonical_path = None
 
             self.cur.execute(self.SQL.get("update_node"), (parent_node_id, index_in_parent, self.book_map_id, canonical_path, node_id))
-
-            # Loading bar with elapsed time
-            # duration = time.time() - start_time
-            # hours = int(duration // 3600)
-            # minutes = int((duration % 3600) // 60)
-            # seconds = int(duration % 60)
-
-            # formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
-
-            # progress = int((i / nodes_to_create) * 50)
-            # bar = '#' * progress + '-' * (50 - progress)
-            # percentage = int((i / nodes_to_create) * 100)
-            # sys.stdout.write(f"\rProcessing books: |{bar}| {percentage}% | Elapsed: {formatted_duration} | ")
-            # sys.stdout.flush()
     
     # May remove if I choose to initialise it in a different way e.g. init script
     def createStrongs(self, strong_code):
