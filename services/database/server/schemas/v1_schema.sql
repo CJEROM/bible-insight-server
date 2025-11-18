@@ -419,6 +419,21 @@ CREATE TABLE lookup.nlp_dep_types (
     description TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS nlp.spacy_modules (
+    id                  SERIAL PRIMARY KEY,
+    language_iso        INTEGER,               -- The code I use for language (iso)
+    spacy_code          TEXT,                  -- The code spacy uses for a language
+    spacy_model         TEXT,                  -- en_core_web_sm
+    supports_pos        BOOLEAN DEFAULT FALSE, -- Model capabilities supported?
+    supports_ner        BOOLEAN DEFAULT FALSE,
+    supports_dep        BOOLEAN DEFAULT FALSE,
+    supports_vectors    BOOLEAN DEFAULT FALSE,
+    supports_lemma      BOOLEAN DEFAULT FALSE,
+    version             TEXT,
+    notes               TEXT,
+    FOREIGN KEY (language_id) REFERENCES bible.languages (iso)
+);
+
 -- ================================================== Token & Word Occurences ==================================================
 
 -- Used to store unique list of words used for this bible translation to use as initial list to check against
