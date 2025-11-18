@@ -36,6 +36,73 @@ class Tokenisation:
                 btf.id
             FROM bible.booktofile btf 
             WHERE btf.translation_id = %s;
+        """,
+        "init_tokenisable_nodes": """
+            WITH RECURSIVE ancestors AS (
+                -- Step 1: TEXT nodes for this translation
+                SELECT
+                    n.id AS text_node_id,
+                    n.parent_node_id,
+                    n.canonical_path
+                FROM bible.nodes n
+                WHERE n.node_type = 'TEXT'
+                AND n.canonical_path LIKE '%para%'
+                AND n.canonical_path NOT LIKE '%note%'
+                AND n.book_map_id IN (
+                        SELECT id FROM bible.booktofile
+                        WHERE translation_id = %s   -- <-- your target translation
+                )
+
+                UNION ALL
+
+                -- Step 2: Walk up parents
+                SELECT
+                    a.text_node_id,
+                    p.parent_node_id,
+                    p.canonical_path
+                FROM ancestors a
+                JOIN bible.nodes p ON p.id = a.parent_node_id
+                WHERE a.parent_node_id IS NOT NULL
+                    AND p.book_map_id IN (
+                        SELECT id FROM bible.booktofile WHERE translation_id = %s
+                    )
+            ),
+
+            -- Step 3: Pick the FIRST ancestor that is a para node
+            para_ancestor AS (
+                SELECT DISTINCT ON (text_node_id)
+                    text_node_id,
+                    parent_node_id AS para_node_id
+                FROM ancestors
+                WHERE canonical_path LIKE '%para%'
+                ORDER BY text_node_id, parent_node_id ASC
+            ),
+
+            -- Step 4: Join to bible.paragraphs to see if this para is verse-text
+            joined AS (
+                SELECT 
+                    pa.text_node_id,
+                    pg.is_versetext
+                FROM para_ancestor pa
+                JOIN bible.paragraphs pg
+                    ON pg.node_id = pa.para_node_id
+            )
+
+            -- Step 5: Perform update
+            UPDATE bible.nodes n
+            SET is_tokenisable = joined.is_versetext
+            FROM joined
+            WHERE n.id = joined.text_node_id;
+        """,
+        "get_tokenisable": """
+            SELECT
+                n.id AS text_node_id
+            FROM bible.nodes n
+            WHERE n.is_tokenisable = 'true'
+            AND n.book_map_id IN (
+                    SELECT id FROM bible.booktofile
+                    WHERE translation_id = %s   -- <-- your target translation
+            )
         """
     }
 
@@ -64,14 +131,32 @@ class Tokenisation:
         #         "ner"                   # named entity recognition
         #     ]
         # )
+        
+        print(self.get_tokenisable_nodes())
+
+        # Then run a part that will run in a lopp like semi-supervised learning for tokeniser 
+        #     to figure out if it has done it correctly by just doing distinct query and looking for weird cases
+
+        # 
 
         self.conn.commit()
         self.conn.close()
     
-    def getBooks(self):
+    def get_books(self):
         self.cur.execute(self.SQL.get("get_book_map_ids", self.translation_id))
         book_ids = self.cur.fetchall()
         return book_ids
 
+    def get_tokenisable_nodes(self):
+        # First figure out whether the text_nodes are tokenisable (should put a query together for it)
+        # Then update them as such in the database
+        self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id, self.translation_id))
+
+        # Then get all tokenisable nodes
+        self.cur.execute(self.SQL.get("get_tokenisable_nodes"), (self.translation_id,))
+        tokenisable_nodes = self.cur.fetchall()
+        return tokenisable_nodes
+
 if __name__ == "__main__":
+    Tokenisation(1)
     pass
