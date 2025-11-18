@@ -199,8 +199,6 @@ class Nodes:
             canonical_path = parent_path + new_path
             path_map[id(node)] = canonical_path
 
-            canonical_path = None
-
             self.cur.execute(self.SQL.get("update_node"), (parent_node_id, index_in_parent, self.book_map_id, canonical_path, node_id))
     
     # May remove if I choose to initialise it in a different way e.g. init script
