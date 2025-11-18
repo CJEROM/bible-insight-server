@@ -12,6 +12,7 @@ CREATE EXTENSION pgcrypto;
 CREATE SCHEMA bible;
 CREATE SCHEMA lookup;
 CREATE SCHEMA users;
+CREATE SCHEMA nlp;
 
 -- ================================================== Reference Data ==================================================
 
@@ -421,7 +422,7 @@ CREATE TABLE lookup.nlp_dep_types (
 
 CREATE TABLE IF NOT EXISTS nlp.spacy_modules (
     id                  SERIAL PRIMARY KEY,
-    language_iso        INTEGER,               -- The code I use for language (iso)
+    language_iso        TEXT,               -- The code I use for language (iso)
     spacy_code          TEXT,                  -- The code spacy uses for a language
     spacy_model         TEXT,                  -- en_core_web_sm
     supports_pos        BOOLEAN DEFAULT FALSE, -- Model capabilities supported?
@@ -431,7 +432,7 @@ CREATE TABLE IF NOT EXISTS nlp.spacy_modules (
     supports_lemma      BOOLEAN DEFAULT FALSE,
     version             TEXT,
     notes               TEXT,
-    FOREIGN KEY (language_id) REFERENCES bible.languages (iso)
+    FOREIGN KEY (language_iso) REFERENCES bible.languages (iso)
 );
 
 -- ================================================== Token & Word Occurences ==================================================
@@ -478,8 +479,8 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     FOREIGN KEY (pos) REFERENCES lookup.nlp_pos_types (pos_tag),
     FOREIGN KEY (tag) REFERENCES lookup.nlp_tag_types (tag),
     FOREIGN KEY (dep) REFERENCES lookup.nlp_dep_types (dep),
-    FOREIGN KEY (language_id) REFERENCES lookup.languages (id),
-    FOREIGN KEY (translation_id) REFERENCES lookup.translations (id)
+    FOREIGN KEY (language_id) REFERENCES bible.languages (id),
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id)
 );
 
 -- ================================================== Entities ==================================================
