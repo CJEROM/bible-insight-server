@@ -30,9 +30,17 @@ NLP_MAPPING = {
 # Will create tokens for one translation at a time, to preprocess it all, then carry on with the rest before moving onto others.
 
 class Tokenisation:
-    def __init__(self, translation_id, language):
+    SQL = {
+        "get_book_map_ids": """
+            SELECT 
+                btf.id
+            FROM bible.booktofile btf 
+            WHERE btf.translation_id = %s;
+        """
+    }
+
+    def __init__(self, translation_id):
         self.translation_id = translation_id
-        self.language_id, self.language_iso = language
 
         # Adds a database connection
         self.conn = psycopg2.connect(
@@ -42,10 +50,28 @@ class Tokenisation:
             user=POSTGRES_USERNAME,
             password=POSTGRES_PASSWORD
         )
+        self.cur = self.conn.cursor()
 
-        self.nlp = None
+        self.nlp = spacy.blank("en")
+        # self.nlp = spacy.load(
+        #     "en_core_web_sm", 
+        #     disable=[
+        #         "tok2vec",              # word verctors / embeddings for downstream components
+        #         "tagger",               # part-of-speach tagger
+        #         "parser",               # dependency parser
+        #         "attribute_ruler",      # replacement rules after tagger / parser
+        #         "lemmatizer",           # computes lemmas (dictionary form of the word)
+        #         "ner"                   # named entity recognition
+        #     ]
+        # )
 
-        spacy_module = NLP_MAPPING.get(self.language_iso)
+        self.conn.commit()
+        self.conn.close()
+    
+    def getBooks(self):
+        self.cur.execute(self.SQL.get("get_book_map_ids", self.translation_id))
+        book_ids = self.cur.fetchall()
+        return book_ids
 
 if __name__ == "__main__":
     pass
