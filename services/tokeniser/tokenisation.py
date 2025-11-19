@@ -111,6 +111,45 @@ class Tokenisation:
             FROM bible.translations t
                 JOIN bible.translationinfo ti ON t.dbl_id = ti.dbl_id
             WHERE t.id = %s;
+        """,
+        "get_chapter_tokens": """
+            WITH chapter_bounds AS (
+                SELECT start_node, end_node
+                FROM bible.chapteroccurences
+                WHERE id = %s
+            )
+            SELECT t.*
+            FROM chapter_bounds cb
+            JOIN bible.nodes n 
+                ON n.id BETWEEN cb.start_node AND cb.end_node
+                AND n.is_tokenisable = TRUE
+            JOIN bible.tokens t 
+                ON t.node_id = n.id
+            ORDER BY n.id, t.start_offset;
+        """,
+        "get_verse_tokens": """
+            WITH verse_bounds AS (
+                SELECT start_node, end_node
+                FROM bible.verseoccurences
+                WHERE id = %s
+            )
+            SELECT t.*
+            FROM verse_bounds vb
+            JOIN bible.nodes n 
+                ON n.id BETWEEN vb.start_node AND vb.end_node
+                AND n.is_tokenisable = TRUE
+            JOIN bible.tokens t 
+                ON t.node_id = n.id
+            ORDER BY n.id, t.start_offset;
+        """,
+        "get_translation_books": """
+            SELECT id FROM bible.booktofile WHERE translation_id = %s
+        """,
+        "get_book_chapters": """
+            SELECT id FROM bible.chapteroccurences WHERE book_map_id = %s
+        """,
+        "get_chapter_verses": """
+            SELECT id FROM bible.verseoccurences WHERE chapter_id = %s
         """
     }
 
@@ -130,26 +169,11 @@ class Tokenisation:
 
         self.cur.execute(self.SQL.get("get_language"), (self.translation_id,))
         self.language_id = self.cur.fetchone()[0]
-
-        self.nlp = spacy.blank("en")
-        # self.nlp = spacy.load(
-        #     "en_core_web_sm", 
-        #     disable=[
-        #         "tok2vec",              # word verctors / embeddings for downstream components
-        #         "tagger",               # part-of-speach tagger
-        #         "parser",               # dependency parser
-        #         "attribute_ruler",      # replacement rules after tagger / parser
-        #         "lemmatizer",           # computes lemmas (dictionary form of the word)
-        #         "ner"                   # named entity recognition
-        #     ]
-        # )
         
         self.create_tokens()
 
         # Then run a part that will run in a lopp like semi-supervised learning for tokeniser 
         #     to figure out if it has done it correctly by just doing distinct query and looking for weird cases
-
-        # 
 
         self.conn.commit()
         self.conn.close()
@@ -165,11 +189,12 @@ class Tokenisation:
         return tokenisable_nodes
     
     def create_tokens(self):
+        nlp = spacy.blank("en")
         joined_text = ""
         tokens = set()
         for node_id, text in self.get_tokenisable_nodes():
             joined_text+=text
-            node_doc = self.nlp(text)
+            node_doc = nlp(text)
 
             for token in node_doc:
                 self.cur.execute(
@@ -195,7 +220,10 @@ class Tokenisation:
         # 1. Get all verse occurences for the translation
         # 2. For each verse occurence, get all tokens that belong to it
         # 3. Reconstruct the verse text from the tokens
-        pass
+        verse_occurence_id = 1
+        self.cur.execute(self.SQL.get("get_verse_tokens"), (verse_occurence_id,))
+        verse_tokens = self.cur.fetchall()
+        print(verse_tokens)
 
     def reconstruct_chapters(self):
         # Responsible for reconstructing chapters from verses, to allow for easier nlp
@@ -204,7 +232,10 @@ class Tokenisation:
         # 3. Reconstruct the chapter text from the tokens
         # 4. Apply nlp to the chapter text to get better tokenisation
         # 5. Update the tokens in the database with the new tokenisation
-        pass
+        chapter_occurence_id = 1
+        self.cur.execute(self.SQL.get("get_chapter_tokens"), (chapter_occurence_id,))
+        chapter_tokens = self.cur.fetchall()
+        print(chapter_tokens)
 
     def update_tokens(self):
         # Module responsible for updating tokens with nlp information e.g pos, tag, dep, head_token_id, lemma
