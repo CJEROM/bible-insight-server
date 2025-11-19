@@ -38,61 +38,60 @@ class Tokenisation:
             WHERE btf.translation_id = %s;
         """,
         "init_tokenisable_nodes": """
-            WITH RECURSIVE ancestors AS (
-                -- Step 1: TEXT nodes for this translation
+            WITH RECURSIVE text_nodes AS (
                 SELECT
-                    n.id AS text_node_id,
-                    n.parent_node_id,
-                    n.canonical_path
+                    n.id          AS text_node_id,
+                    n.parent_node_id
                 FROM bible.nodes n
-                WHERE n.node_type = 'TEXT'
-                AND n.canonical_path LIKE '%para%'
+                WHERE n.node_type = 'text'
+                AND n.canonical_path LIKE '%para%text%'
                 AND n.canonical_path NOT LIKE '%note%'
                 AND n.book_map_id IN (
-                        SELECT id FROM bible.booktofile
-                        WHERE translation_id = %s   -- <-- your target translation
+                    SELECT id
+                    FROM bible.booktofile
+                    WHERE translation_id = ?
                 )
+            ),
+            --SELECT * FROM text_nodes;
+            ancestor_chain AS (
+                -- seed: start at the text node's parent
+                SELECT
+                    t.text_node_id,
+                    t.parent_node_id      AS ancestor_id,
+                    1                     AS depth
+                FROM text_nodes t
 
                 UNION ALL
 
-                -- Step 2: Walk up parents
+                -- step: move one level up each time
                 SELECT
-                    a.text_node_id,
-                    p.parent_node_id,
-                    p.canonical_path
-                FROM ancestors a
-                JOIN bible.nodes p ON p.id = a.parent_node_id
-                WHERE a.parent_node_id IS NOT NULL
-                    AND p.book_map_id IN (
-                        SELECT id FROM bible.booktofile WHERE translation_id = %s
-                    )
+                    ac.text_node_id,
+                    n.parent_node_id      AS ancestor_id,
+                    ac.depth + 1          AS depth
+                FROM ancestor_chain ac
+                JOIN bible.nodes n
+                ON n.id = ac.ancestor_id
+                WHERE ac.ancestor_id IS NOT NULL
             ),
-
-            -- Step 3: Pick the FIRST ancestor that is a para node
-            para_ancestor AS (
-                SELECT DISTINCT ON (text_node_id)
-                    text_node_id,
-                    parent_node_id AS para_node_id
-                FROM ancestors
-                WHERE canonical_path LIKE '%para%'
-                ORDER BY text_node_id, parent_node_id ASC
-            ),
-
-            -- Step 4: Join to bible.paragraphs to see if this para is verse-text
-            joined AS (
-                SELECT 
-                    pa.text_node_id,
-                    pg.is_versetext
-                FROM para_ancestor pa
-                JOIN bible.paragraphs pg
-                    ON pg.node_id = pa.para_node_id
+            para_for_text AS (
+                SELECT DISTINCT ON (ac.text_node_id)
+                    ac.text_node_id,
+                    ac.ancestor_id AS para_node_id,
+                    ac.depth
+                FROM ancestor_chain ac
+                JOIN bible.nodes p
+                ON p.id = ac.ancestor_id
+                WHERE p.node_type = 'para'
+                ORDER BY ac.text_node_id, ac.depth  -- keep nearest para
             )
-
-            -- Step 5: Perform update
             UPDATE bible.nodes n
-            SET is_tokenisable = joined.is_versetext
-            FROM joined
-            WHERE n.id = joined.text_node_id;
+            SET is_tokenisable = TRUE
+            FROM para_for_text pt
+            JOIN bible.paragraphs bp
+            ON bp.node_id = pt.para_node_id
+            WHERE n.id = pt.text_node_id
+            AND bp.is_versetext = TRUE
+            AND n.is_tokenisable IS DISTINCT FROM TRUE;
         """,
         "get_tokenisable": """
             SELECT
@@ -150,7 +149,7 @@ class Tokenisation:
     def get_tokenisable_nodes(self):
         # First figure out whether the text_nodes are tokenisable (should put a query together for it)
         # Then update them as such in the database
-        self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id, self.translation_id))
+        self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
 
         # Then get all tokenisable nodes
         self.cur.execute(self.SQL.get("get_tokenisable_nodes"), (self.translation_id,))
