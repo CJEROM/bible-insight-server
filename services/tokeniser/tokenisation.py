@@ -95,7 +95,8 @@ class Tokenisation:
         """,
         "get_tokenisable_nodes": """
             SELECT
-                n.id AS text_node_id
+                n.id AS text_node_id,
+                n.node_text
             FROM bible.nodes n
             WHERE n.is_tokenisable = 'true'
             AND n.book_map_id IN (
@@ -132,7 +133,7 @@ class Tokenisation:
         #     ]
         # )
         
-        print(self.get_tokenisable_nodes())
+        self.create_tokens()
 
         # Then run a part that will run in a lopp like semi-supervised learning for tokeniser 
         #     to figure out if it has done it correctly by just doing distinct query and looking for weird cases
@@ -156,7 +157,30 @@ class Tokenisation:
         self.cur.execute(self.SQL.get("get_tokenisable_nodes"), (self.translation_id,))
         tokenisable_nodes = self.cur.fetchall()
         return tokenisable_nodes
+    
+    def create_tokens(self):
+        joined_text = ""
+        for index, text in self.get_tokenisable_nodes():
+            joined_text+=text
+        print(joined_text)
 
 if __name__ == "__main__":
+    # conn = psycopg2.connect(
+    #     host=POSTGRES_HOST,
+    #     port=POSTGRES_PORT,
+    #     dbname=POSTGRES_DB,
+    #     user=POSTGRES_USERNAME,
+    #     password=POSTGRES_PASSWORD
+    # )
+    # cur = conn.cursor()
+
+    # cur.execute("""
+    #     SELECT id FROM bible.translations;            
+    # """)
+    # all_translations = cur.fetchall()
+
+    # for translation in all_translations:
+    #     Tokenisation(translation)
+    
     Tokenisation(1)
     pass
