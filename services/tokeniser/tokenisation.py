@@ -190,9 +190,24 @@ class Tokenisation:
                 tokens.update(self.cur.fetchall())
         print(joined_text)
 
-    def book_nlp(self):
-        # Responsible for grabbing all tokens for a book file at a time, applying nlp to it, 
-        #       then re parsing into individual components to allow for storing other information (pos, tag, dep, head_token_id, lemma)
+    def reconstruct_verses(self):
+        # Responsible for reconstructing verses from tokens, to allow for easier nlp
+        # 1. Get all verse occurences for the translation
+        # 2. For each verse occurence, get all tokens that belong to it
+        # 3. Reconstruct the verse text from the tokens
+        pass
+
+    def reconstruct_chapters(self):
+        # Responsible for reconstructing chapters from verses, to allow for easier nlp
+        # 1. Get all chapter occurences for the translation
+        # 2. For each chapter occurence, get all tokens that belong to it
+        # 3. Reconstruct the chapter text from the tokens
+        # 4. Apply nlp to the chapter text to get better tokenisation
+        # 5. Update the tokens in the database with the new tokenisation
+        pass
+
+    def update_tokens(self):
+        # Module responsible for updating tokens with nlp information e.g pos, tag, dep, head_token_id, lemma
         pass
 
 if __name__ == "__main__":
