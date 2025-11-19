@@ -190,6 +190,11 @@ class Tokenisation:
                 tokens.update(self.cur.fetchall())
         print(joined_text)
 
+    def book_nlp(self):
+        # Responsible for grabbing all tokens for a book file at a time, applying nlp to it, 
+        #       then re parsing into individual components to allow for storing other information (pos, tag, dep, head_token_id, lemma)
+        pass
+
 if __name__ == "__main__":
     # conn = psycopg2.connect(
     #     host=POSTGRES_HOST,
