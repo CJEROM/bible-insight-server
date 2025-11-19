@@ -471,6 +471,7 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     trailing_space      BOOLEAN,
     is_alpha            BOOLEAN,
     is_punct            BOOLEAN,
+    is_space            BOOLEAN,
     like_num            BOOLEAN,
     language_id         INTEGER,
     translation_id      INTEGER,
