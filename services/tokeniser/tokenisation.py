@@ -44,12 +44,12 @@ class Tokenisation:
                     n.parent_node_id
                 FROM bible.nodes n
                 WHERE n.node_type = 'text'
-                AND n.canonical_path LIKE '%para%text%'
-                AND n.canonical_path NOT LIKE '%note%'
+                AND n.canonical_path LIKE '%%para%%text%%'
+                AND n.canonical_path NOT LIKE '%%note%%'
                 AND n.book_map_id IN (
                     SELECT id
                     FROM bible.booktofile
-                    WHERE translation_id = ?
+                    WHERE translation_id = %s
                 )
             ),
             --SELECT * FROM text_nodes;
@@ -93,7 +93,7 @@ class Tokenisation:
             AND bp.is_versetext = TRUE
             AND n.is_tokenisable IS DISTINCT FROM TRUE;
         """,
-        "get_tokenisable": """
+        "get_tokenisable_nodes": """
             SELECT
                 n.id AS text_node_id
             FROM bible.nodes n
@@ -102,6 +102,7 @@ class Tokenisation:
                     SELECT id FROM bible.booktofile
                     WHERE translation_id = %s   -- <-- your target translation
             )
+            ORDER BY n.id ASC
         """
     }
 
