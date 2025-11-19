@@ -31,12 +31,6 @@ NLP_MAPPING = {
 
 class Tokenisation:
     SQL = {
-        "get_book_map_ids": """
-            SELECT 
-                btf.id
-            FROM bible.booktofile btf 
-            WHERE btf.translation_id = %s;
-        """,
         "init_tokenisable_nodes": """
             WITH RECURSIVE text_nodes AS (
                 SELECT
@@ -104,11 +98,25 @@ class Tokenisation:
                     WHERE translation_id = %s   -- <-- your target translation
             )
             ORDER BY n.id ASC
+        """,
+        "create_tokens": """
+            INSERT INTO bible.tokens (text, node_id, start_offset, end_offset, trailing_space, is_alpha, is_punct, is_space, like_num, language_id, translation_id)
+            VALUES 
+                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        """,
+        "get_language": """
+            SELECT
+                ti.language_id
+            FROM bible.translations t
+                JOIN bible.translationinfo ti ON t.dbl_id = ti.dbl_id
+            WHERE t.id = %s;
         """
     }
 
     def __init__(self, translation_id):
         self.translation_id = translation_id
+        
 
         # Adds a database connection
         self.conn = psycopg2.connect(
@@ -119,6 +127,9 @@ class Tokenisation:
             password=POSTGRES_PASSWORD
         )
         self.cur = self.conn.cursor()
+
+        self.cur.execute(self.SQL.get("get_language"), (self.translation_id,))
+        self.language_id = self.cur.fetchone()[0]
 
         self.nlp = spacy.blank("en")
         # self.nlp = spacy.load(
@@ -143,11 +154,6 @@ class Tokenisation:
         self.conn.commit()
         self.conn.close()
     
-    def get_books(self):
-        self.cur.execute(self.SQL.get("get_book_map_ids", self.translation_id))
-        book_ids = self.cur.fetchall()
-        return book_ids
-
     def get_tokenisable_nodes(self):
         # First figure out whether the text_nodes are tokenisable (should put a query together for it)
         # Then update them as such in the database
@@ -160,8 +166,28 @@ class Tokenisation:
     
     def create_tokens(self):
         joined_text = ""
-        for index, text in self.get_tokenisable_nodes():
+        tokens = set()
+        for node_id, text in self.get_tokenisable_nodes():
             joined_text+=text
+            node_doc = self.nlp(text)
+
+            for token in node_doc:
+                self.cur.execute(
+                    self.SQL.get("create_tokens"), 
+                    (
+                        token.text, 
+                        node_id,
+                        token.idx,
+                        token.idx + len(token.text),
+                        len(token.whitespace_) > 0,
+                        token.is_alpha,
+                        token.is_punct,
+                        token.is_space,
+                        token.like_num,
+                        self.language_id,
+                        self.translation_id
+                    ))
+                tokens.update(self.cur.fetchall())
         print(joined_text)
 
 if __name__ == "__main__":
