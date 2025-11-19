@@ -193,7 +193,7 @@ class Nodes:
                 index_in_parent = None
 
             # 1. Build component
-            parent_path = path_map.get(id(node), "") # if not exists, gives empty string
+            parent_path = path_map.get(id(parent_obj), "") # if not exists, gives empty string
 
             new_path = f"/{node_type}:{index_in_parent}" 
             canonical_path = parent_path + new_path
