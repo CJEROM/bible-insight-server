@@ -174,6 +174,7 @@ class Tokenisation:
 
         # Then run a part that will run in a lopp like semi-supervised learning for tokeniser 
         #     to figure out if it has done it correctly by just doing distinct query and looking for weird cases
+        self.reconstruct_tokens(self.fetch_chapter_tokens(1))
 
         self.conn.commit()
         self.conn.close()
@@ -189,11 +190,14 @@ class Tokenisation:
         return tokenisable_nodes
     
     def create_tokens(self):
+        self.cur.execute(self.SQL.get("get_tokenisable_nodes"), (self.translation_id,))
+        tokenisable_nodes = self.cur.fetchall()
+
+        if len(tokenisable_nodes) > 0:
+            return
+
         nlp = spacy.blank("en")
-        joined_text = ""
-        tokens = set()
         for node_id, text in self.get_tokenisable_nodes():
-            joined_text+=text
             node_doc = nlp(text)
 
             for token in node_doc:
@@ -212,30 +216,41 @@ class Tokenisation:
                         self.language_id,
                         self.translation_id
                     ))
-                tokens.update(self.cur.fetchall())
-        print(joined_text)
 
-    def reconstruct_verses(self):
+    def fetch_verse_tokens(self, verse_occurence_id):
         # Responsible for reconstructing verses from tokens, to allow for easier nlp
         # 1. Get all verse occurences for the translation
         # 2. For each verse occurence, get all tokens that belong to it
         # 3. Reconstruct the verse text from the tokens
-        verse_occurence_id = 1
         self.cur.execute(self.SQL.get("get_verse_tokens"), (verse_occurence_id,))
         verse_tokens = self.cur.fetchall()
-        print(verse_tokens)
+        return verse_tokens
 
-    def reconstruct_chapters(self):
+    def fetch_chapter_tokens(self, chapter_occurence_id):
         # Responsible for reconstructing chapters from verses, to allow for easier nlp
         # 1. Get all chapter occurences for the translation
         # 2. For each chapter occurence, get all tokens that belong to it
         # 3. Reconstruct the chapter text from the tokens
         # 4. Apply nlp to the chapter text to get better tokenisation
         # 5. Update the tokens in the database with the new tokenisation
-        chapter_occurence_id = 1
         self.cur.execute(self.SQL.get("get_chapter_tokens"), (chapter_occurence_id,))
         chapter_tokens = self.cur.fetchall()
-        print(chapter_tokens)
+        return chapter_tokens
+
+    def reconstruct_tokens(self, tokens):
+        joined_text = ""
+        for token in tokens:
+            token_id = token[0]
+            token_text = token[1]
+            token_node_id = token[2]
+            start_offset = token[3]
+            end_offset = token[4]
+            trailing_space = token[10]
+
+            joined_text+=token_text
+            if trailing_space:
+                joined_text+=" "
+        print(joined_text)
 
     def update_tokens(self):
         # Module responsible for updating tokens with nlp information e.g pos, tag, dep, head_token_id, lemma
