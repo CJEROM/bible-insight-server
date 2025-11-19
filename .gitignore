@@ -19,3 +19,5 @@ downloads
 .env
 
 backups/
+
+.DS_Store
