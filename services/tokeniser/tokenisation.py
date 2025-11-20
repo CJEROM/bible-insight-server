@@ -166,6 +166,9 @@ class Tokenisation:
         """,
         "create_tag_lookup": """
             INSERT INTO lookup.nlp_tag_types (tag) VALUES (%s) ON CONFLICT DO NOTHING
+        """,
+        "update_token_trailing_space": """
+            UPDATE bible.tokens SET trailing_space = %s WHERE id = %s;
         """
     }
 
@@ -266,23 +269,45 @@ class Tokenisation:
         spaces = []
         offsets = []
 
+        cursor = 0
+        j = 0  # index for words/spaces/offsets
+
         for i, token in enumerate(tokens):
             token_id = token[0]
             token_text = token[1]
             trailing_space = token[10]
 
-            reconstructed_start_offset = len(joined_text)
+            # If newline: convert to trailing space on previous token
+            if token_text == "\n":
+                if j > 0:  # previous token exists in filtered list
+                    spaces[j-1] = True
+
+                    # update DB trailing_space for that token ID
+                    prev_token_db_id = token_mapping[j-1]
+                    self.cur.execute(
+                        self.SQL.get("update_token_trailing_space"),
+                        (True, prev_token_db_id)
+                    )
+                continue
+
+            # Calculate offsets in the reconstructed text
+            start = cursor
+            end = start + len(token_text)
+
+            # Only advance cursor after computing start/end
+            cursor = end + (1 if trailing_space else 0)
 
             joined_text+=token_text
             if trailing_space:
                 joined_text+=" "
 
-            reconstructed_end_offset = len(joined_text)
-
-            token_mapping[i] = token_id
+            # Fill arrays
+            token_mapping[j] = token_id
             words.append(token_text)
             spaces.append(trailing_space)
-            offsets.append((reconstructed_start_offset, reconstructed_end_offset))
+            offsets.append((start, end))
+
+            j += 1  # increment filtered index
 
         print(joined_text)
 
