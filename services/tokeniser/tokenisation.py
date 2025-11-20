@@ -1,4 +1,6 @@
 import spacy
+from spacy.tokens import Doc
+
 import psycopg2
 import os
 from pathlib import Path
@@ -150,6 +152,11 @@ class Tokenisation:
         """,
         "get_chapter_verses": """
             SELECT id FROM bible.verseoccurences WHERE chapter_id = %s
+        """,
+        "update_tokens": """
+            UPDATE bible.tokens
+            SET pos = %s, tag = %s, dep = %s, head_token_id = %s, lemma_id = %s
+            WHERE id = %s;
         """
     }
 
@@ -240,6 +247,8 @@ class Tokenisation:
     def reconstruct_tokens(self, tokens):
         joined_text = ""
 
+        # Get token mappings for chapter reconstruction
+
         token_mapping = {}
         words = []
         spaces = []
@@ -264,6 +273,40 @@ class Tokenisation:
             offsets.append((reconstructed_start_offset, reconstructed_end_offset))
 
         print(joined_text)
+
+        # Load spacy
+
+        spacy_lang = "en"
+        nlp = spacy.load(f"{spacy_lang}_core_web_sm")
+
+        # Disable tokenizer because YOU supply tokens
+        nlp.disable_pipes("tok2vec")
+
+        # --- 3. Construct a Doc with YOUR token boundaries ---
+        doc = Doc(nlp.vocab, words=words, spaces=spaces)
+
+        # --- 4. Apply the remaining pipes manually ---
+        for pipe_name in ["tagger", "parser", "attribute_ruler", "lemmatizer"]:
+            if pipe_name in nlp.pipe_names:
+                doc = nlp.get_pipe(pipe_name)(doc)
+
+        for i, token in enumerate(doc):
+            pos = token.pos_
+            tag = token.tag_
+            dep = token.dep_
+
+            head_idx = token.head.i
+            head_db_id = token_mapping[head_idx]
+
+            # You may want a lemma lookup table; for now store lemma text directly
+            lemma = token.lemma_
+            lemma_id = None
+
+            self.cur.execute(self.SQL.get("update_tokens"), (
+                pos, tag, dep, head_db_id, lemma_id, token_mapping[i]
+            ))
+
+        print(f"Updated {len(doc)} tokens.")
 
 if __name__ == "__main__":
     # conn = psycopg2.connect(
