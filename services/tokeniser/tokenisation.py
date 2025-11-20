@@ -102,9 +102,9 @@ class Tokenisation:
             ORDER BY n.id ASC
         """,
         "create_tokens": """
-            INSERT INTO bible.tokens (text, node_id, start_offset, end_offset, trailing_space, is_alpha, is_punct, is_space, like_num, language_id, translation_id)
+            INSERT INTO bible.tokens (text, node_id, start_offset, end_offset, trailing_space, is_alpha, is_punct, is_space, is_quote, is_left_punct, is_right_punct, like_num, language_id, translation_id)
             VALUES 
-                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """,
         "get_language": """
@@ -219,6 +219,9 @@ class Tokenisation:
                         token.is_alpha,
                         token.is_punct,
                         token.is_space,
+                        token.is_quote,
+                        token.is_left_punct,
+                        token.is_right_punct,
                         token.like_num,
                         self.language_id,
                         self.translation_id
