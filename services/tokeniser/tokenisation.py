@@ -239,22 +239,31 @@ class Tokenisation:
 
     def reconstruct_tokens(self, tokens):
         joined_text = ""
-        for token in tokens:
+
+        token_mapping = {}
+        words = []
+        spaces = []
+        offsets = []
+
+        for i, token in enumerate(tokens):
             token_id = token[0]
             token_text = token[1]
-            token_node_id = token[2]
-            start_offset = token[3]
-            end_offset = token[4]
             trailing_space = token[10]
+
+            reconstructed_start_offset = len(joined_text)
 
             joined_text+=token_text
             if trailing_space:
                 joined_text+=" "
-        print(joined_text)
 
-    def update_tokens(self):
-        # Module responsible for updating tokens with nlp information e.g pos, tag, dep, head_token_id, lemma
-        pass
+            reconstructed_end_offset = len(joined_text)
+
+            token_mapping[i] = token_id
+            words.append(token_text)
+            spaces.append(trailing_space)
+            offsets.append((reconstructed_start_offset, reconstructed_end_offset))
+
+        print(joined_text)
 
 if __name__ == "__main__":
     # conn = psycopg2.connect(
