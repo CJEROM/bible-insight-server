@@ -157,6 +157,15 @@ class Tokenisation:
             UPDATE bible.tokens
             SET pos = %s, tag = %s, dep = %s, head_token_id = %s, lemma_id = %s
             WHERE id = %s;
+        """,
+        "create_pos_lookup": """
+            INSERT INTO lookup.nlp_pos_types (pos_tag) VALUES (%s) ON CONFLICT DO NOTHING
+        """,
+        "create_dep_lookup": """
+            INSERT INTO lookup.nlp_dep_types (dep) VALUES (%s) ON CONFLICT DO NOTHING
+        """,
+        "create_tag_lookup": """
+            INSERT INTO lookup.nlp_tag_types (tag) VALUES (%s) ON CONFLICT DO NOTHING
         """
     }
 
@@ -297,6 +306,11 @@ class Tokenisation:
             pos = token.pos_
             tag = token.tag_
             dep = token.dep_
+
+            # Makes sure they exist in lookup tables
+            self.cur.execute(self.SQL.get("create_pos_lookup"), (pos,))
+            self.cur.execute(self.SQL.get("create_tag_lookup"), (tag,))
+            self.cur.execute(self.SQL.get("create_dep_lookup"), (dep,))
 
             head_idx = token.head.i
             head_db_id = token_mapping[head_idx]
