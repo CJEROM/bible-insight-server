@@ -1,5 +1,6 @@
 -- ================================================== Spacy Look up Tables ==================================================
 
+-- Source: https://github.com/explosion/spaCy/blob/master/spacy/glossary.py
 INSERT INTO lookup.nlp_pos_types (pos_tag, description) 
 VALUES
     ('ADJ',  'Adjective – modifies a noun (e.g. beautiful, large)'),
