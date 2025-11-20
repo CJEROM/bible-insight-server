@@ -404,20 +404,20 @@ CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
 
 CREATE TABLE lookup.nlp_pos_types (
     id SERIAL PRIMARY KEY,
-    pos_tag VARCHAR(10) NOT NULL UNIQUE,  -- e.g. 'NOUN', 'VERB'
-    description TEXT NOT NULL             -- e.g. 'Noun, a person, place, or thing'
+    pos_tag VARCHAR(10) NOT NULL UNIQUE,    -- e.g. 'NOUN', 'VERB'
+    description TEXT                        -- e.g. 'Noun, a person, place, or thing'
 );
 
 CREATE TABLE lookup.nlp_tag_types (
     id SERIAL PRIMARY KEY,
     tag VARCHAR(10) NOT NULL UNIQUE,
-    description TEXT NOT NULL
+    description TEXT
 );
 
 CREATE TABLE lookup.nlp_dep_types (
     id SERIAL PRIMARY KEY,
     dep VARCHAR(20) NOT NULL UNIQUE,
-    description TEXT NOT NULL
+    description TEXT
 );
 
 CREATE TABLE IF NOT EXISTS nlp.spacy_modules (
