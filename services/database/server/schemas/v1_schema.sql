@@ -468,7 +468,7 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     tag                     TEXT,
     dep                     TEXT,
     head_token_id           INTEGER,
-    lemma_id                INTEGER,
+    lemma_id                TEXT,
     trailing_space          BOOLEAN,
     is_alpha                BOOLEAN,
     is_punct                BOOLEAN,
