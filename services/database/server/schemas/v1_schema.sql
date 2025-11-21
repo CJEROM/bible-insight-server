@@ -273,7 +273,7 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     strong                  TEXT,
     loc                     TEXT,
     state                   TEXT,
-    parent_node_id          INTEGER NOT NULL,
+    parent_node_id          INTEGER, -- Can be null due to usx root node
     index_in_parent         INTEGER NOT NULL,
     book_map_id             INTEGER NOT NULL,
     canonical_path          TEXT NOT NULL,
