@@ -260,7 +260,7 @@ CREATE TABLE IF NOT EXISTS lookup.node_options (
 CREATE TABLE IF NOT EXISTS bible.nodes (
     id                      SERIAL PRIMARY KEY,
     node_text               TEXT,
-    node_type               TEXT NOT NULL,
+    node_type               TEXT,
     code                    TEXT,
     sid                     TEXT,
     eid                     TEXT,
@@ -274,9 +274,9 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     loc                     TEXT,
     state                   TEXT,
     parent_node_id          INTEGER, -- Can be null due to usx root node
-    index_in_parent         INTEGER NOT NULL,
-    book_map_id             INTEGER NOT NULL,
-    canonical_path          TEXT NOT NULL,
+    index_in_parent         INTEGER,
+    book_map_id             INTEGER,
+    canonical_path          TEXT,
     is_tokenisable          BOOLEAN,
     chapter_start_offset    INTEGER,
     chapter_end_offset      INTEGER,
