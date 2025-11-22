@@ -73,7 +73,6 @@ class Verse:
             SELECT start_node, end_node FROM bible.chapteroccurences WHERE id = %s;
         """, (self.chapter_occurence_id,))
         chapter_start_node, chapter_end_node = self.cur.fetchone()
-        print(chapter_start_node, chapter_end_node)
 
         self.cur.execute("""
             SELECT id FROM bible.nodes 
