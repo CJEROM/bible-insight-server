@@ -50,7 +50,7 @@ class Book:
     # Purpose is to split xml up into chapters, for token processing
     def createTextChapters(self):
         additions = 0
-        # Grab all chapter_refs for this particular book
+        # Grab all chapter_refs for this particular book from database
         self.cur.execute("""
             SELECT chapter_ref FROM bible.chapters WHERE book_code=%s
         """, (self.book_code,))
@@ -66,6 +66,7 @@ class Book:
 
             # In case of WLC for example, Malachi 4 doesn't exist, so skip over chapter
             #       if it doesn't exist for this book.
+            # Should also account for upper range increased due to non standard chapters (skip over them)
             if chapter_found == None:
                 continue
 
