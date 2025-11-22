@@ -29,6 +29,17 @@ NLP_MAPPING = {
     "heb": "he"                 # HEBREW
 }
 
+# Spacy packages need to be installed, so need to account for storage space for these:
+# To Install a package run the following command:
+#       python3 -m spacy download en_core_web_lg 
+
+# Where "en" can be replaced by any other language code below => See also https://spacy.io/usage/models#section-languages 
+# where "lg" can be replaced by ["sm" ,"md", "lg", "trf"] => See https://spacy.io/models/en
+
+# Hebrew has no trained packages so no tokenisation
+# Need to change map to consider this
+# Add Validation to check for existence of key
+
 # Will create tokens for one translation at a time, to preprocess it all, then carry on with the rest before moving onto others.
 
 class Tokenisation:
