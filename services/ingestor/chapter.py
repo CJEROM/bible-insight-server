@@ -154,7 +154,7 @@ class Chapter:
         self.createChapter()
         # Create a Chapter Occurence
         self.cur.execute("""
-            SELECT id FROM bible.nodes WHERE book_map_id = %s AND (sid = %s OR eid = %s) AND node_type = 'chapter';
+            SELECT id FROM bible.nodes WHERE book_map_id = %s AND (sid = %s OR eid = %s) AND node_type = 'chapter' ORDER BY id;
         """, (self.book_map_id, self.chapter_ref, self.chapter_ref))
         self.start_node, self.end_node = self.cur.fetchall()
 
@@ -196,7 +196,7 @@ class Chapter:
         # Have to be created here since not all paragraphs fit inside a chapter
         all_paragraphs = self.chapter_xml.find_all("para")
         self.cur.execute("""
-            SELECT id FROM bible.nodes WHERE book_map_id = %s AND node_type = 'para' AND id BETWEEN %s AND %s;
+            SELECT id FROM bible.nodes WHERE book_map_id = %s AND node_type = 'para' AND id BETWEEN %s AND %s ORDER BY id;
         """, (self.book_map_id, self.start_node, self.end_node))
         para_node_ids = self.cur.fetchall()
 
@@ -237,7 +237,7 @@ class Chapter:
 
     def createTranslationNotes(self):
         self.cur.execute("""
-            SELECT id FROM bible.nodes WHERE book_map_id = %s AND node_type = 'note' AND id BETWEEN %s AND %s;
+            SELECT id FROM bible.nodes WHERE book_map_id = %s AND node_type = 'note' AND id BETWEEN %s AND %s ORDER BY id;
         """, (self.book_map_id, self.start_node, self.end_node))
         translation_note_node_ids = self.cur.fetchall()
         # Go through chapter and grab all cross references and footnotes, and write to database
