@@ -101,7 +101,8 @@ class TranslationNote:
             )
             SELECT id
             FROM descendants
-            WHERE node_type = %s;
+            WHERE node_type = %s
+            ORDER BY id;
         """
     }
 

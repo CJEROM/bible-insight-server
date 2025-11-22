@@ -73,12 +73,14 @@ class Verse:
             SELECT start_node, end_node FROM bible.chapteroccurences WHERE id = %s;
         """, (self.chapter_occurence_id,))
         chapter_start_node, chapter_end_node = self.cur.fetchone()
+        print(chapter_start_node, chapter_end_node)
 
         self.cur.execute("""
             SELECT id FROM bible.nodes 
             WHERE (sid = %s OR eid = %s) 
                 AND node_type = 'verse' 
-                AND id BETWEEN %s AND %s;
+                AND id BETWEEN %s AND %s
+            ORDER BY id;
         """, (self.verse_ref, self.verse_ref, chapter_start_node, chapter_end_node))
         start_node, end_note = self.cur.fetchall()
 
