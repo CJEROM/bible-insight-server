@@ -266,7 +266,7 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     eid                     TEXT,
     vid                     TEXT,
     style                   TEXT,
-    number                  INTEGER,
+    number                  TEXT,
     caller                  TEXT,
     closed                  TEXT,
     version                 TEXT,
