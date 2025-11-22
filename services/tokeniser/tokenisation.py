@@ -33,6 +33,34 @@ NLP_MAPPING = {
 
 class Tokenisation:
     SQL = {
+        # --------------------------------- Fetch Types ---------------------------------
+        "get_language": """
+            SELECT
+                ti.language_id
+            FROM bible.translations t
+                JOIN bible.translationinfo ti ON t.dbl_id = ti.dbl_id
+            WHERE t.id = %s;
+        """,
+        "get_translation_books": """
+            SELECT id FROM bible.booktofile WHERE translation_id = %s
+        """,
+        "get_book_chapters": """
+            SELECT id, reconstructed_text FROM bible.chapteroccurences WHERE book_map_id = %s
+        """,
+        "get_chapter_verses": """
+            SELECT id FROM bible.verseoccurences WHERE chapter_id = %s
+        """,
+        # --------------------------------- NLP Lookup Types ---------------------------------
+        "create_pos_lookup": """
+            INSERT INTO lookup.nlp_pos_types (pos_tag) VALUES (%s) ON CONFLICT DO NOTHING
+        """,
+        "create_dep_lookup": """
+            INSERT INTO lookup.nlp_dep_types (dep) VALUES (%s) ON CONFLICT DO NOTHING
+        """,
+        "create_tag_lookup": """
+            INSERT INTO lookup.nlp_tag_types (tag) VALUES (%s) ON CONFLICT DO NOTHING
+        """,
+        # --------------------------------- Node Types ---------------------------------
         "init_tokenisable_nodes": """
             WITH RECURSIVE text_nodes AS (
                 SELECT
@@ -101,80 +129,46 @@ class Tokenisation:
             )
             ORDER BY n.id ASC
         """,
-        "create_tokens": """
-            INSERT INTO bible.tokens (text, node_id, start_offset, end_offset, trailing_space, is_alpha, is_punct, is_space, is_quote, is_left_punct, is_right_punct, like_num, language_id, translation_id)
-            VALUES 
-                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id;
-        """,
-        "get_language": """
-            SELECT
-                ti.language_id
-            FROM bible.translations t
-                JOIN bible.translationinfo ti ON t.dbl_id = ti.dbl_id
-            WHERE t.id = %s;
-        """,
-        "get_chapter_tokens": """
+        "get_chapter_tokenisable_nodes": """
             WITH chapter_bounds AS (
                 SELECT start_node, end_node
                 FROM bible.chapteroccurences
                 WHERE id = %s
             )
-            SELECT t.*
+            SELECT n.id, n.node_text
             FROM chapter_bounds cb
             JOIN bible.nodes n 
                 ON n.id BETWEEN cb.start_node AND cb.end_node
                 AND n.is_tokenisable = TRUE
-            JOIN bible.tokens t 
-                ON t.node_id = n.id
-            ORDER BY n.id, t.start_offset;
+            ORDER BY n.id;
         """,
-        "get_verse_tokens": """
-            WITH verse_bounds AS (
-                SELECT start_node, end_node
-                FROM bible.verseoccurences
-                WHERE id = %s
-            )
-            SELECT t.*
-            FROM verse_bounds vb
-            JOIN bible.nodes n 
-                ON n.id BETWEEN vb.start_node AND vb.end_node
-                AND n.is_tokenisable = TRUE
-            JOIN bible.tokens t 
-                ON t.node_id = n.id
-            ORDER BY n.id, t.start_offset;
-        """,
-        "get_translation_books": """
-            SELECT id FROM bible.booktofile WHERE translation_id = %s
-        """,
-        "get_book_chapters": """
-            SELECT id FROM bible.chapteroccurences WHERE book_map_id = %s
-        """,
-        "get_chapter_verses": """
-            SELECT id FROM bible.verseoccurences WHERE chapter_id = %s
-        """,
-        "update_tokens": """
-            UPDATE bible.tokens
-            SET pos = %s, tag = %s, dep = %s, head_token_id = %s, lemma_id = %s
+        # --------------------------------- Node Update Types ---------------------------------
+        "update_node_offsets": """
+            UPDATE bible.nodes 
+            SET chapter_start_offset = %s, chapter_end_offset = %s
             WHERE id = %s;
         """,
-        "create_pos_lookup": """
-            INSERT INTO lookup.nlp_pos_types (pos_tag) VALUES (%s) ON CONFLICT DO NOTHING
+        "update_chapter_occurence_text": """
+            UPDATE bible.chapteroccurences 
+            SET reconstructed_text = %s
+            WHERE id = %s;
         """,
-        "create_dep_lookup": """
-            INSERT INTO lookup.nlp_dep_types (dep) VALUES (%s) ON CONFLICT DO NOTHING
+        # --------------------------------- Token Types ---------------------------------
+        "create_token": """
+            INSERT INTO bible.tokens (text, chapter_start_offset, chapter_end_offset, pos, tag, dep, lemma_id, trailing_space, is_alpha, is_punct, is_space, is_quote, is_left_punct, is_right_punct, like_num, language_id, translation_id)
+            VALUES 
+                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id;
         """,
-        "create_tag_lookup": """
-            INSERT INTO lookup.nlp_tag_types (tag) VALUES (%s) ON CONFLICT DO NOTHING
-        """,
-        "update_token_trailing_space": """
-            UPDATE bible.tokens SET trailing_space = %s WHERE id = %s;
+        "update_token_head": """
+            UPDATE bible.tokens 
+            SET head_token_id = %s
+            WHERE id = %s;
         """
     }
 
     def __init__(self, translation_id):
         self.translation_id = translation_id
-        
 
         # Adds a database connection
         self.conn = psycopg2.connect(
@@ -188,167 +182,121 @@ class Tokenisation:
 
         self.cur.execute(self.SQL.get("get_language"), (self.translation_id,))
         self.language_id = self.cur.fetchone()[0]
-        
+
+        self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
+
+        self.reconstruct_chapter_nodes()
         self.create_tokens()
 
         # Then run a part that will run in a lopp like semi-supervised learning for tokeniser 
         #     to figure out if it has done it correctly by just doing distinct query and looking for weird cases
-        self.reconstruct_tokens(self.fetch_chapter_tokens(1))
+        # self.reconstruct_tokens(self.fetch_chapter_tokens(1))
 
         self.conn.commit()
         self.conn.close()
     
-    def get_tokenisable_nodes(self):
-        # First figure out whether the text_nodes are tokenisable (should put a query together for it)
-        # Then update them as such in the database
-        self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
+    def reconstruct_chapter_nodes(self):
+        # Get all Books for this Translation
+        self.cur.execute(self.SQL.get("get_translation_books"), (self.translation_id,))
+        all_books = self.cur.fetchall()
 
-        # Then get all tokenisable nodes
-        self.cur.execute(self.SQL.get("get_tokenisable_nodes"), (self.translation_id,))
-        tokenisable_nodes = self.cur.fetchall()
-        return tokenisable_nodes
+        for book_map_id in all_books:
+            # Get all Chapters for this Book
+            self.cur.execute(self.SQL.get("get_book_chapters"), (book_map_id,))
+            all_chapters = self.cur.fetchall()
+
+            for chapter_occurence_id,_ in all_chapters:
+                # Get all tokenisable nodes for this chapter.
+                self.cur.execute(self.SQL.get("get_chapter_tokenisable_nodes"), (chapter_occurence_id,))
+                tokenisable_nodes = self.cur.fetchall()
+
+                chapter_text = ""
+
+                for node_id, text in tokenisable_nodes:
+                    start = len(chapter_text)
+                    chapter_text+=text  # Accumulate text for chapter occurence from nodes
+                    end = len(chapter_text)
+
+                    # Update start, end offsets for node
+                    self.cur.execute(self.SQL.get("update_node_offsets"), (start, end, node_id))
+
+                # When finished iterating through nodes
+                #       update chapter_occurences with reconstructed chapter_text
+                self.cur.execute(self.SQL.get("update_chapter_occurence_text"), (chapter_text, chapter_occurence_id))
+                print(chapter_text)
     
     def create_tokens(self):
-        self.cur.execute(self.SQL.get("get_tokenisable_nodes"), (self.translation_id,))
-        tokenisable_nodes = self.cur.fetchall()
-
-        if len(tokenisable_nodes) > 0:
-            return
-
-        nlp = spacy.blank("en")
-        for node_id, text in self.get_tokenisable_nodes():
-            node_doc = nlp(text)
-
-            for token in node_doc:
-                self.cur.execute(
-                    self.SQL.get("create_tokens"), 
-                    (
-                        token.text, 
-                        node_id,
-                        token.idx,
-                        token.idx + len(token.text),
-                        len(token.whitespace_) > 0,
-                        token.is_alpha,
-                        token.is_punct,
-                        token.is_space,
-                        token.is_quote,
-                        token.is_left_punct,
-                        token.is_right_punct,
-                        token.like_num,
-                        self.language_id,
-                        self.translation_id
-                    ))
-
-    def fetch_verse_tokens(self, verse_occurence_id):
-        # Responsible for reconstructing verses from tokens, to allow for easier nlp
-        # 1. Get all verse occurences for the translation
-        # 2. For each verse occurence, get all tokens that belong to it
-        # 3. Reconstruct the verse text from the tokens
-        self.cur.execute(self.SQL.get("get_verse_tokens"), (verse_occurence_id,))
-        verse_tokens = self.cur.fetchall()
-        return verse_tokens
-
-    def fetch_chapter_tokens(self, chapter_occurence_id):
-        # Responsible for reconstructing chapters from verses, to allow for easier nlp
-        # 1. Get all chapter occurences for the translation
-        # 2. For each chapter occurence, get all tokens that belong to it
-        # 3. Reconstruct the chapter text from the tokens
-        # 4. Apply nlp to the chapter text to get better tokenisation
-        # 5. Update the tokens in the database with the new tokenisation
-        self.cur.execute(self.SQL.get("get_chapter_tokens"), (chapter_occurence_id,))
-        chapter_tokens = self.cur.fetchall()
-        return chapter_tokens
-
-    def reconstruct_tokens(self, tokens):
-        joined_text = ""
-
-        # Get token mappings for chapter reconstruction
-
-        token_mapping = {}
-        words = []
-        spaces = []
-        offsets = []
-
-        cursor = 0
-        j = 0  # index for words/spaces/offsets
-
-        for i, token in enumerate(tokens):
-            token_id = token[0]
-            token_text = token[1]
-            trailing_space = token[10]
-
-            # If newline: convert to trailing space on previous token
-            if token_text == "\n":
-                if j > 0:  # previous token exists in filtered list
-                    spaces[j-1] = True
-
-                    # update DB trailing_space for that token ID
-                    prev_token_db_id = token_mapping[j-1]
-                    self.cur.execute(
-                        self.SQL.get("update_token_trailing_space"),
-                        (True, prev_token_db_id)
-                    )
-                continue
-
-            # Calculate offsets in the reconstructed text
-            start = cursor
-            end = start + len(token_text)
-
-            # Only advance cursor after computing start/end
-            cursor = end + (1 if trailing_space else 0)
-
-            joined_text+=token_text
-            if trailing_space:
-                joined_text+=" "
-
-            # Fill arrays
-            token_mapping[j] = token_id
-            words.append(token_text)
-            spaces.append(trailing_space)
-            offsets.append((start, end))
-
-            j += 1  # increment filtered index
-
-        print(joined_text)
-
-        # Load spacy
-
+        # Init spacy pipeline used for training
         spacy_lang = "en"
         nlp = spacy.load(f"{spacy_lang}_core_web_sm")
 
-        # Disable tokenizer because YOU supply tokens
-        nlp.disable_pipes("tok2vec")
+        # Get all Books for this Translation
+        self.cur.execute(self.SQL.get("get_translation_books"), (self.translation_id,))
+        all_books = self.cur.fetchall()
 
-        # --- 3. Construct a Doc with YOUR token boundaries ---
-        doc = Doc(nlp.vocab, words=words, spaces=spaces)
+        for book_map_id in all_books:
+            # Get all Chapters for this Book
+            self.cur.execute(self.SQL.get("get_book_chapters"), (book_map_id,))
+            all_chapters = self.cur.fetchall()
 
-        # --- 4. Apply the remaining pipes manually ---
-        for pipe_name in ["tagger", "parser", "attribute_ruler", "lemmatizer"]:
-            if pipe_name in nlp.pipe_names:
-                doc = nlp.get_pipe(pipe_name)(doc)
+            for chapter_occurence_id, chapter_text in all_chapters:
+                # Start NLP on reconstructed chapter text
+                doc = nlp(chapter_text)
 
-        for i, token in enumerate(doc):
-            pos = token.pos_
-            tag = token.tag_
-            dep = token.dep_
+                token_mapping = {}
+                head_token_mapping = {}
 
-            # Makes sure they exist in lookup tables
-            self.cur.execute(self.SQL.get("create_pos_lookup"), (pos,))
-            self.cur.execute(self.SQL.get("create_tag_lookup"), (tag,))
-            self.cur.execute(self.SQL.get("create_dep_lookup"), (dep,))
+                for i, token in enumerate(doc):
+                    pos = token.pos_
+                    tag = token.tag_
+                    dep = token.dep_
 
-            head_idx = token.head.i
-            head_db_id = token_mapping[head_idx]
+                    # Makes sure they exist in lookup tables
+                    self.cur.execute(self.SQL.get("create_pos_lookup"), (pos,))
+                    self.cur.execute(self.SQL.get("create_tag_lookup"), (tag,))
+                    self.cur.execute(self.SQL.get("create_dep_lookup"), (dep,))
 
-            # You may want a lemma lookup table; for now store lemma text directly
-            lemma = token.lemma_
-            lemma_id = None
+                    # You may want a lemma lookup table; for now store lemma text directly
+                    lemma = token.lemma_
+                    lemma_id = lemma
 
-            self.cur.execute(self.SQL.get("update_tokens"), (
-                pos, tag, dep, head_db_id, lemma_id, token_mapping[i]
-            ))
+                    self.cur.execute(
+                        self.SQL.get("create_token"), 
+                        (
+                            token.text, 
+                            token.idx,
+                            token.idx + len(token.text),
+                            pos,
+                            tag,
+                            dep,
+                            lemma_id,
+                            len(token.whitespace_) > 0,
+                            token.is_alpha,
+                            token.is_punct,
+                            token.is_space,
+                            token.is_quote,
+                            token.is_left_punct,
+                            token.is_right_punct,
+                            token.like_num,
+                            self.language_id,
+                            self.translation_id
+                        )
+                    )
 
-        print(f"Updated {len(doc)} tokens.")
+                    token.head.i
+
+                    token_db_id = self.cur.fetchone()[0]
+                    token_mapping[token.idx] = [token_db_id, token.head.idx]
+
+                print(token_mapping)
+
+                for token_idx, [token_db_id, head_idx] in token_mapping.items():
+                    # update_token_head
+                    head_db_id = token_mapping[head_idx][0]
+                    self.cur.execute(self.SQL.get("update_token_head"), (head_db_id, token_db_id))
+
+                print(f"Created {len(doc)} tokens.")                
+
 
 if __name__ == "__main__":
     # conn = psycopg2.connect(
