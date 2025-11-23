@@ -87,6 +87,16 @@ class TranslationNote:
             VALUES (%s, %s, %s)
             RETURNING id;
         """,
+        "translation_ref_note": """
+            INSERT INTO bible.translationrefnotes (node_id, from_verse_ref, to_verse_ref, from_chapter_ref, to_chapter_ref) 
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id;
+        """,
+        "translation_foot_note": """
+            INSERT INTO bible.translationfootnotes (node_id, chapter_ref, verse_ref) 
+            VALUES (%s, %s, %s)
+            RETURNING id;
+        """,
         "ref → nodes": """
             WITH RECURSIVE descendants AS (
                 SELECT id, parent_node_id, node_type
