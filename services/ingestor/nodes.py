@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup, Tag, NavigableString
 import psycopg2
+from psycopg2.extras import execute_values
 
 from pathlib import Path
 import os
@@ -21,64 +22,14 @@ POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 # Will be created from books class
 class Nodes:
     SQL = {
-        "xml": """
-            INSERT INTO bible.nodes (node_type, version, encoding) 
-            VALUES ('xml', %s, %s)
+        "new_node": """
+            INSERT INTO bible.nodes (node_text, node_type, code, sid, eid, vid, style, number, caller, closed, version, strong, loc, parent_node_id, index_in_parent, book_map_id, canonical_path) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """,
-        "usx": """
-            INSERT INTO bible.nodes (node_type, version) 
-            VALUES ('usx', %s)
-            RETURNING id;
-        """,
-        "book": """
-            INSERT INTO bible.nodes (node_type, style, code) 
-            VALUES ('book', %s, %s)
-            RETURNING id;
-        """,
-        "chapter": """
-            INSERT INTO bible.nodes (node_type, style, number, sid, eid) 
-            VALUES ('chapter', %s, %s, %s, %s)
-            RETURNING id;
-        """,
-        "para": """
-            INSERT INTO bible.nodes (node_type, style, vid) 
-            VALUES ('para', %s, %s)
-            RETURNING id;
-        """,
-        "verse": """
-            INSERT INTO bible.nodes (node_type, style, number, sid, eid) 
-            VALUES ('verse', %s, %s, %s, %s)
-            RETURNING id;
-        """,
-        "note": """
-            INSERT INTO bible.nodes (node_type, style, caller) 
-            VALUES ('note', %s, %s)
-            RETURNING id;
-        """,
-        "char": """
-            INSERT INTO bible.nodes (node_type, style, closed, strong) 
-            VALUES ('char', %s, %s, %s)
-            RETURNING id;
-        """,
-        "ref": """
-            INSERT INTO bible.nodes (node_type, loc) 
-            VALUES ('ref', %s)
-            RETURNING id;
-        """,
-        "text": """
-            INSERT INTO bible.nodes (node_type, node_text) 
-            VALUES ('text', %s)
-            RETURNING id;
-        """,
-        "update_node": """
-            UPDATE bible.nodes
-            SET parent_node_id = %s,
-                index_in_parent = %s,
-                book_map_id = %s,
-                canonical_path = %s
-            WHERE id = %s;
-        """,
+        "node_count": """
+            SELECT COUNT(*) FROM bible.nodes;
+        """
     }
 
     def __init__(self, book_map_id, db_conn, book_xml):
@@ -94,84 +45,58 @@ class Nodes:
             
         self.conn.commit()
     
-    def execute_and_get_id(self, query, params):
-        self.cur.execute(query, params)
-        return self.cur.fetchone()[0]
-    
     def walk_parsed_xml(self):
         node_id_map = {}    # maps bs4 node → SQL node_id
         child_index = {}    # parent → next child index
         path_map = {}       # bs4 node → canonical path
 
+        all_new_nodes = []
+
+        self.cur.execute(self.SQL.get("node_count"))
+        node_id_offset = self.cur.fetchone()[0]
+
+        node_id_counter = 1
+
         for node in self.book_soup.descendants:
-            node_id = None # Initialise node_id for the note we are going to create in DB
+            # Initialise node_id for the note we are going to create in DB
+            node_id = node_id_counter + node_id_offset # since i will be 0, want to start at 1 instead + offset from database to say this new node is
             node_type = None
+            
+            this_node = [None] * 17 # create mutable list of length 17
 
             if isinstance(node, Tag):
                 query = self.SQL.get(node.name)
                 node_type = node.name
-                match node_type:
-                    case "xml":
-                        version = node.get("version")
-                        encoding = node.get("encoding")
 
-                        node_id = self.execute_and_get_id(query, (version, encoding))
-                    case "usx":
-                        version = node.get("version")
+                this_node[1] = node_type # node_type, 1
+                this_node[2] = node.get("code") # code, 2
+                this_node[3] = node.get("sid") # sid, 3
+                this_node[4] = node.get("eid") # eid, 4
+                this_node[5] = node.get("vid") # vid, 5
+                this_node[6] = node.get("style") # style, 6 
+                this_node[7] = node.get("number") # number, 7
+                this_node[8] = node.get("caller") # caller, 8
+                this_node[9] = node.get("closed") # closed, 9
+                this_node[10] = node.get("version") # version, 10
+                strong = node.get("strong")
+                this_node[11] = node.get("strong") # strong, 11
+                this_node[12] = node.get("loc") # loc, 12
 
-                        node_id = self.execute_and_get_id(query, (version,))
-                    case "book":
-                        style = node.get("style")
-                        code = node.get("code")
-
-                        node_id = self.execute_and_get_id(query, (style, code))
-                    case "chapter":
-                        style = node.get("style")
-                        number = node.get("number")
-                        sid = node.get("sid")
-                        eid = node.get("eid")
-
-                        node_id = self.execute_and_get_id(query, (style, number, sid, eid))
-                    case "para":
-                        style = node.get("style")
-                        vid = node.get("vid")
-                        node_id = self.execute_and_get_id(query, (style, vid))
-                    case "verse":
-                        style = node.get("style")
-                        number = node.get("number")
-                        sid = node.get("sid")
-                        eid = node.get("eid")
-
-                        node_id = self.execute_and_get_id(query, (style, number, sid, eid))
-                    case "note":
-                        style = node.get("style")
-                        caller = node.get("caller")
-
-                        node_id = self.execute_and_get_id(query, (style, caller))
-                    case "char":
-                        style = node.get("style")
-                        closed = node.get("closed")
-                        strong = node.get("strong")
-
-                        if strong != None:
-                            self.createStrongs(strong)
-
-                        node_id = self.execute_and_get_id(query, (style, closed, strong))
-                    case "ref":
-                        loc = node.get("loc")
-
-                        node_id = self.execute_and_get_id(query, (loc,))
+                # Consider creating init for all strongs numbers instead
+                if strong != None:
+                    self.createStrongs(strong)
 
             if isinstance(node, NavigableString):  
-                node_text = str(node)
                 node_type = "text"
-                node_id = self.execute_and_get_id(self.SQL.get("text"), (node_text,))
 
-            # If nothing was created, skip
-            if node_id is None:
+                this_node[0] = str(node) # node_text, 0
+                this_node[1] = node_type # node_type, 1
+
+            # ------ Skip empty nodes
+            if all(x is None for x in this_node):
                 continue
 
-            # Do something with node_id's?
+            # ------ Parent & child index tracking
             node_id_map[id(node)] = node_id # add to node_map
 
             # With mapped id, find parent and get associated node_id
@@ -192,14 +117,29 @@ class Nodes:
             else:
                 index_in_parent = None
 
-            # 1. Build component
+            # ------ Build Canonical Path
             parent_path = path_map.get(id(parent_obj), "") # if not exists, gives empty string
 
             new_path = f"/{node_type}:{index_in_parent}" 
             canonical_path = parent_path + new_path
             path_map[id(node)] = canonical_path
 
-            self.cur.execute(self.SQL.get("update_node"), (parent_node_id, index_in_parent, self.book_map_id, canonical_path, node_id))
+            # Update the rest of the node parts that required more processing
+            this_node[13] = parent_node_id # parent_node_id, 13
+            this_node[14] = index_in_parent # index_in_parent, 14
+            this_node[15] = self.book_map_id # book_map_id, 15
+            this_node[16] = canonical_path # canonical_path, 16 
+
+            # Prepare for next node, and add for bulk insert
+            all_new_nodes.append(tuple(this_node))
+            node_id_counter += 1
+
+        # Now bulk insert all of the nodes into the database (in batches / chunks)
+        CHUNK = 20000  # ideal for execute_values
+
+        sql_query = self.SQL.get("new_node")
+        for i in range(0, len(all_new_nodes), CHUNK):
+            execute_values(self.cur, sql_query, all_new_nodes[i:i+CHUNK])
     
     # May remove if I choose to initialise it in a different way e.g. init script
     def createStrongs(self, strong_code):
