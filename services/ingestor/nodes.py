@@ -24,8 +24,7 @@ class Nodes:
     SQL = {
         "new_node": """
             INSERT INTO bible.nodes (node_text, node_type, code, sid, eid, vid, style, number, caller, closed, version, strong, loc, parent_node_id, index_in_parent, book_map_id, canonical_path) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id;
+            VALUES %s;
         """,
         "node_count": """
             SELECT COUNT(*) FROM bible.nodes;
@@ -40,6 +39,13 @@ class Nodes:
         # Initialise variables 
         self.book_soup = BeautifulSoup(book_xml, "xml")
         self.book_map_id = book_map_id
+
+        self.created_nodes = {
+            "chapter": [],
+            "para": [],
+            "verse": [],
+            "note": []
+        }
         
         self.walk_parsed_xml()
             
@@ -65,7 +71,6 @@ class Nodes:
             this_node = [None] * 17 # create mutable list of length 17
 
             if isinstance(node, Tag):
-                query = self.SQL.get(node.name)
                 node_type = node.name
 
                 this_node[1] = node_type # node_type, 1
@@ -134,12 +139,32 @@ class Nodes:
             all_new_nodes.append(tuple(this_node))
             node_id_counter += 1
 
+            if node_type in self.created_nodes.keys():
+                self.created_nodes[node_type].append({
+                    "id": node_id,
+                    "bs4": node,
+                    "path": canonical_path,
+                    "data": tuple(this_node),
+                })
+
         # Now bulk insert all of the nodes into the database (in batches / chunks)
         CHUNK = 20000  # ideal for execute_values
 
         sql_query = self.SQL.get("new_node")
         for i in range(0, len(all_new_nodes), CHUNK):
             execute_values(self.cur, sql_query, all_new_nodes[i:i+CHUNK])
+
+    def get_chapters(self):
+        return self.created_nodes["chapter"]
+    
+    def get_paras(self):
+        return self.created_nodes["para"]
+    
+    def get_verses(self):
+        return self.created_nodes["verse"]
+    
+    def get_notes(self):
+        return self.created_nodes["notes"]
     
     # May remove if I choose to initialise it in a different way e.g. init script
     def createStrongs(self, strong_code):
