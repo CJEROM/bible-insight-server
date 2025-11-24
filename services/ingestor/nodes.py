@@ -152,9 +152,10 @@ class Nodes:
             # Add to dictionary to show start and end nodes for chapters or verse
             if node_type in ["chapter", "verse"]:
                 if sid != None:
+                    self.created_nodes[node_type][sid] = {}
                     self.created_nodes[node_type][sid]["sid"] = node_id
                 elif eid != None:
-                    self.created_nodes[node_type][sid]["sid"] = node_id
+                    self.created_nodes[node_type][eid]["eid"] = node_id
             # Add to dictionary to show node_id for para or note
             elif node_type in ["para", "note"]:
                 self.created_nodes[node_type].append(node_id)
@@ -167,6 +168,7 @@ class Nodes:
             execute_values(self.cur, sql_query, all_new_nodes[i:i+CHUNK])
 
     def get_chapters(self):
+        print(self.created_nodes["chapter"])
         return self.created_nodes["chapter"]
     
     def get_paras(self):
@@ -221,4 +223,5 @@ if __name__ == "__main__":
         password=POSTGRES_PASSWORD
     )
 
-    Nodes(None, conn, test_book_xml)
+    new_nodes = Nodes(None, conn, test_book_xml)
+    print(new_nodes.get_chapters()["3JN"])
