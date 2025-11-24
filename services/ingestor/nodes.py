@@ -168,7 +168,6 @@ class Nodes:
             execute_values(self.cur, sql_query, all_new_nodes[i:i+CHUNK])
 
     def get_chapters(self):
-        print(self.created_nodes["chapter"])
         return self.created_nodes["chapter"]
     
     def get_paras(self):
