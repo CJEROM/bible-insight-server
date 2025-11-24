@@ -133,7 +133,7 @@ class Translation:
         </View>
         """
 
-        translation_project = label_studio_client.projects.create(
+        self.translation_project = label_studio_client.projects.create(
             title=self.translation_title,
             description=self.translation_name,
             label_config=project_label_config
@@ -144,7 +144,7 @@ class Translation:
             s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
             aws_access_key_id=MINIO_USERNAME,
             aws_secret_access_key=MINIO_PASSWORD,
-            project=translation_project.id,
+            project=self.translation_project.id,
             bucket="bible-nlp",
             prefix=f"{self.translation_title}/exports/",
             title="TEST Export"
@@ -155,7 +155,7 @@ class Translation:
             VALUES (%s)
             RETURNING id;
         """, (
-            translation_project.id,
+            self.translation_project.id,
         ))
 
         self.cur.execute("""
@@ -164,11 +164,35 @@ class Translation:
             RETURNING id;
         """, (
             self.translation_id,
-            translation_project.id
+            self.translation_project.id
         ))
 
         self.conn.commit()
         self.conn.close()
+
+    def get_translation_id(self):
+        return self.translation_id
+    
+    def get_dbl_id(self):
+        return self.dbl_id
+    
+    def get_agreement_id(self):
+        return self.agreement_id
+    
+    def get_translation_id(self):
+        return self.translation_id
+    
+    def get_translation_project_id(self):
+        return self.translation_project.id
+    
+    def get_translation_title(self):
+        return self.translation_title
+    
+    def get_language_id(self):
+        return self.language_id
+    
+    def get_bible_structure_info(self):
+        return self.bible_structure_info
 
     def get_source(self, source_url):
         # Find if url is already stored source in database

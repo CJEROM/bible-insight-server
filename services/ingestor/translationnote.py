@@ -204,6 +204,15 @@ class TranslationNote:
 
         self.conn.commit()
 
+    def get_note_xml(self):
+        return self.note_xml
+    
+    def get_node_id(self):
+        return self.node_id
+    
+    def get_note_type(self):
+        return self.note_type
+
     def get_note_type(self):
         note_type = None
         

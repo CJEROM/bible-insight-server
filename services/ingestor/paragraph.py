@@ -18,6 +18,18 @@ class Paragraph:
 
         self.conn.commit()
 
+    def get_paragraph_id(self):
+        return self.paragraph_id
+    
+    def get_paragraph_node_id(self):
+        return self.paragraph_node_id
+    
+    def get_verse_text(self):
+        return self.versetext
+    
+    def get_style_id(self):
+        return self.style_id
+
     def getParagraphStyle(self):
         para_style = self.para_xml.get("style")
 

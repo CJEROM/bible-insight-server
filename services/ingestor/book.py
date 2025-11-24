@@ -33,6 +33,15 @@ class Book:
 
         self.conn.commit()
 
+    def get_book_xml(self):
+        return self.book_xml
+    
+    def get_book_map_id(self):
+        return self.book_map_id
+    
+    def get_book_code(self):
+        return self.book_code
+
     def getBibleStructure(self, bible_structure_info: str):
         # Go through bible versification
         chapter_dict = {}

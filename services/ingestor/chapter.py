@@ -48,6 +48,18 @@ class Chapter:
 
         self.conn.commit()
 
+    def get_chapter_ref(self):
+        return self.chapter_ref
+    
+    def get_start_node(self):
+        return self.start_node
+    
+    def get_end_node(self):
+        return self.end_node
+    
+    def get_chapter_occurence_id(self):
+        return self.book_code
+
     # This is to validate the addition of non standard chapters outside the normal 1189 if there are any for a particular translation
     def createChapter(self):
         self.cur.execute("""
@@ -117,93 +129,3 @@ class Chapter:
         # Go through chapter and grab all cross references and footnotes, and write to database
         for i, this_note in enumerate(self.chapter_xml.find_all("note")):
             TranslationNote(self.book_map_id, self.book_code, self.translation_id, this_note, translation_note_node_ids[i], self.conn)
-
-
-    # ================================================================================================================= TOKENIZATION LOGIC =================================================================================================================
-
-#region legacy code
-    def getParagraphStyle(self, para_style):
-        style_file_id = self.cur.execute("""
-            SELECT id FROM bible.files WHERE translation_id=? AND type=?
-        """, (self.translation_id, "styles")).fetchone()
-
-        versetext = "false"
-
-        if style_file_id != None:
-            style = self.db.execute("""
-                SELECT versetext FROM Styles WHERE AND style=?
-            """, (style_file_id[0], para_style)).fetchone()
-            
-            if style != None:
-                versetext = style[0]
-
-        return versetext == "true"
-    
-    def loadLanguageLDML(self):
-        ldml_content = self.db.execute("""
-            SELECT file_content FROM Files WHERE translation_id=? AND type=?
-        """, (self.translation_id, "ldml")).fetchone()
-
-        if ldml_content:
-            ldml_content = BeautifulSoup(ldml_content[0], 'xml')
-        else: 
-            return []
-
-        # Extract punctuation tag from file
-        punctuation_element = ldml_content.find('exemplarCharacters', {'type': 'punctuation'})
-    
-        if punctuation_element:
-            # Get the text content which contains the punctuation in brackets
-            punctuation_text = punctuation_element.get_text()
-            
-            # Parse the bracket notation to extract individual characters
-            punctuation_chars = self.parse_ldml_punctuation(punctuation_text)
-            return punctuation_chars
-        
-        return []# list of punctuation marks
-    
-    def parse_ldml_punctuation(self, exemplar_text):
-        if not exemplar_text.strip():
-            return []
-    
-        # Remove outer brackets
-        content = exemplar_text.strip()[1:-1]  # Remove [ and ]
-    
-        punctuation_chars = []
-        i = 0
-        
-        while i < len(content):
-            char = content[i]
-            
-            if char == '\\' and i + 1 < len(content):
-                # Handle escaped characters
-                next_char = content[i + 1]
-                if next_char == 'u' and i + 5 < len(content):
-                    # Unicode escape sequence like \u2019
-                    unicode_hex = content[i + 2:i + 6]
-                    try:
-                        unicode_char = chr(int(unicode_hex, 16))
-                        punctuation_chars.append(unicode_char)
-                        i += 6
-                    except ValueError:
-                        punctuation_chars.append(next_char)
-                        i += 2
-                else:
-                    # Regular escape like \: or \-
-                    punctuation_chars.append(next_char)
-                    i += 2
-            elif char == '{' and '}' in content[i:]:
-                # Handle multi-character sequences like {...}
-                end_brace = content.find('}', i)
-                sequence = content[i + 1:end_brace]
-                punctuation_chars.append(sequence) # e.g. "..."
-                i = end_brace + 1
-            elif char not in [' ', '\t', '\n']:
-                # Regular character
-                punctuation_chars.append(char)
-                i += 1
-            else:
-                i += 1
-        
-        return punctuation_chars
-#endregion

@@ -21,11 +21,21 @@ class Verse:
         self.conn.commit()
 
         if self.is_special_case == False:
-            self.xml = self.getVerseAndNoteXML()
-            self.text = self.getVerseText(self.xml)
             self.createVerseOccurence()
 
         self.conn.commit()
+
+    def get_verse_ref(self):
+        return self.verse_ref
+    
+    def get_start_node(self):
+        return self.start_node
+    
+    def get_end_node(self):
+        return self.end_node
+    
+    def get_verse_occurence_id(self):
+        return self.verse_occurence_id
     
     def createVerse(self):
         # Check whether non-standard verse has been added or not
@@ -87,57 +97,3 @@ class Verse:
             INSERT INTO bible.verseoccurences (chapter_id, verse_ref, start_node, end_node) 
             VALUES (%s, %s, %s, %s)
         """, (self.chapter_occurence_id, self.verse_ref, start_node, end_note))
-
-    def getVerseAndNoteXML(self):
-        # Regex to get everything between opening and closing paragraph tag
-        start_tag = self.chapter_xml.find("verse", sid=self.verse_ref)
-        end_tag = self.chapter_xml.find("verse", eid=self.verse_ref)
-        para_tag = "<usx>" + str(start_tag.find_parent("para")).split(">")[0] + ">"
-
-        search_string = f"{start_tag}.*{end_tag}"
-        verse_xml = para_tag + "\n"
-        verse_found = re.search(search_string, str(self.chapter_xml), re.DOTALL)
-        
-        verse_xml += verse_found.group(0) if verse_found != None else ""
-        verse_xml += "\n</para></usx>"
-        
-        return verse_xml
-
-    def getVerseText(self, verse_xml):
-        temp_verse_xml = BeautifulSoup(str(verse_xml), "xml")
-
-        verse_sub_paras = temp_verse_xml.find_all("para")
-
-        # Check for para tags
-        for para in verse_sub_paras:
-            # print(para)
-            para_style = para.get("style")
-
-            if para_style != None:
-                # Get latest translation (the one we are currently working on)
-                translation_id = None
-                try:
-                    self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
-                    translation_id = self.cur.fetchone()[0]
-                except Exception as e:
-                    self.conn.rollback()
-                    translation_id = 1
-
-                self.cur.execute("""
-                    SELECT versetext FROM bible.styles WHERE style = %s AND source_file_id = (SELECT style_file FROM bible.translations WHERE id = %s);
-                """, (para_style,translation_id))
-                result = self.cur.fetchone()[0]
-
-                is_versetext = True if result else False
-
-                if is_versetext == False:
-                    para.decompose()
-
-                # Remove <note> tags completely
-                all_notes = para.find_all("note")
-                if len(all_notes) > 0:
-                    for note in para.find_all("note"):
-                        note.decompose()
-
-        final_text = temp_verse_xml.get_text().strip()
-        return final_text
