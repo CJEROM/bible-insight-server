@@ -79,7 +79,7 @@ class Translation:
         self.style_dict = {}
 
         # Initialise logfile
-        self.log_file = Path(__file__).parents[2] / "logs" / f"{self.translation_title}-LOG.txt"
+        self.log_file = Path(__file__).parents[2] / "logs" / f"{self.translation_id}-{self.translation_title}-LOG.txt"
 
         try:
             os.makedirs(self.log_file)
