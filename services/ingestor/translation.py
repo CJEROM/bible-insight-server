@@ -628,8 +628,8 @@ class Translation:
         if property_additions > 0:
             print(f"    [{property_additions}] Properties loaded into database")
 
-        self.log_ingestion_activity(f"Initialised {len(style_additions)} Styles!", "[TRANSLATION]", "DEBUG")
-        self.log_ingestion_activity(f"Initialised {len(property_additions)} Properties!", "[TRANSLATION]", "DEBUG")
+        self.log_ingestion_activity(f"Initialised {style_additions} Styles!", "[TRANSLATION]", "DEBUG")
+        self.log_ingestion_activity(f"Initialised {property_additions} Properties!", "[TRANSLATION]", "DEBUG")
 
     def createVersification(self, file_string):
         # file_xml = BeautifulSoup(file_string, "xml")
@@ -689,7 +689,7 @@ class Translation:
         if additions > 0:
             print(f"    [{additions}] Excluded Verses added to database")
 
-        self.log_ingestion_activity(f"Created {len(additions)} excluded verses", "[TRANSLATION]", "DEBUG")
+        self.log_ingestion_activity(f"Created {additions} excluded verses", "[TRANSLATION]", "DEBUG")
     
     def createVerses(self, section_text):
         verse_additions = 0
@@ -752,8 +752,8 @@ class Translation:
         if verse_additions > 0:
             print(f"    [{verse_additions}] Verses Initialized into database")
             
-        self.log_ingestion_activity(f"Initialised {len(verse_additions)} Verses!", "[TRANSLATION]", "DEBUG")
-        self.log_ingestion_activity(f"Initialised {len(chapter_additions)} Chapters (Non Standard)!", "[TRANSLATION]", "DEBUG")
+        self.log_ingestion_activity(f"Initialised {verse_additions} Verses!", "[TRANSLATION]", "DEBUG")
+        self.log_ingestion_activity(f"Initialised {chapter_additions} Chapters (Non Standard)!", "[TRANSLATION]", "DEBUG")
 
     def elapsed_ingestion_time(self):
         duration = time.time() - self.start_time

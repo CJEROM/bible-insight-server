@@ -96,7 +96,7 @@ class Chapter:
         
         if additions > 0:
             # print(f"    [{additions}] Paragraphs added to database")
-            self.this_translation.log_ingestion_activity(f"Created [{len(additions)}] out of [{len(para_node_ids)}] Paragraphs!", f"[CHAPTER: {self.chapter_ref}]", "INFO")
+            self.this_translation.log_ingestion_activity(f"Created [{additions}] out of [{len(para_node_ids)}] Paragraphs!", f"[CHAPTER: {self.chapter_ref}]", "INFO")
             pass
 
     def createVerseOccurences(self):
