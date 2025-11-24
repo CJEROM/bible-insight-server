@@ -11,6 +11,7 @@ from label_studio_sdk import LabelStudio
 import json
 import traceback
 import sys
+import datetime
 
 from book import Book
 
@@ -74,38 +75,32 @@ class Translation:
         self.translation_name = None
         self.bible_structure_info = None
 
-        log_file = Path(__file__).parents[2] / "downloads" / f"translation-{self.translation_id}-log.txt"
-        with open(log_file, 'w', encoding="utf-8") as f:
+        # Initialise logfile
+        self.log_file = Path(__file__).parents[2] / "downloads" / f"{self.translation_title}-LOG.txt"
+        with open(self.log_file, 'w', encoding="utf-8") as f:
             f.write(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]\n")
-            try:
-                # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
-                match medium:
-                    case "text": # USX Files e.g. for deeper analysis
-                        # unzip first
-                        self.unzip_folder(self.process_location)
-                    case "video": # Videos e.g. for the deaf (sign language)
-                        # self.check_files(self.process_location)
-                        pass
-                    case "audio": # Audio e.g. for the blind or preference
-                        self.check_files(self.process_location)
-            except Exception as e:
-                error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
-                f.write(f"\nERROR\n\n{error_message}\n")
-                print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
-                self.conn.rollback()
 
-            self.conn.commit()
+        try:
+            # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
+            match medium:
+                case "text": # USX Files e.g. for deeper analysis
+                    # unzip first
+                    self.unzip_folder(self.process_location)
+                case "video": # Videos e.g. for the deaf (sign language)
+                    # self.check_files(self.process_location)
+                    pass
+                case "audio": # Audio e.g. for the blind or preference
+                    self.check_files(self.process_location)
+        except Exception as e:
+            error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            self.log_ingestion_activity(error_message, "TRANSLATION", "ERROR")
+            print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
+            self.conn.rollback()
 
-            duration = time.time() - self.start_time
-            hours = int(duration // 3600)
-            minutes = int((duration % 3600) // 60)
-            seconds = int(duration % 60)
-            milliseconds = int((duration % 1) * 1000)  # or *100 for .mm format
+        self.conn.commit()
 
-            formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
-
-            print(f"✅ Completed Translation Import in [{formatted_duration}]!\n")
-            f.write(f"✅ Completed Translation Import in [{formatted_duration}]!\n")
+        print(f"✅ Completed Translation Import in [{self.elapsed_ingestion_time()}]!\n")
+        self.log_ingestion_activity("Completed Translation Ingestion!", "TRANSLATION", "INFO")
 
         # Create Label Studio Project for this specific translation of the bible
         label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
@@ -695,3 +690,17 @@ class Translation:
         
         if additions > 0:
             print(f"    [{additions}] Verses Initialized into database")
+
+    def elapsed_ingestion_time(self):
+        duration = time.time() - self.start_time
+        hours = int(duration // 3600)
+        minutes = int((duration % 3600) // 60)
+        seconds = int(duration % 60)
+        milliseconds = int((duration % 1) * 1000)  # or *100 for .mm format
+
+        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
+        return formatted_duration
+
+    def log_ingestion_activity(self, log_message, source_class, log_level):
+        with open(self.log_file, 'a', encoding="utf-8") as f:
+            f.write(f"{datetime.datetime.now()} {log_level} [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")
