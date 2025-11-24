@@ -6,6 +6,9 @@ import os
 from pathlib import Path
 
 from verse import Verse
+from translation import Translation
+from book import Book
+from chapter import Chapter
 
 from dotenv import load_dotenv
 
@@ -96,23 +99,6 @@ class TranslationNote:
             INSERT INTO bible.translationfootnotes (node_id, chapter_ref, verse_ref) 
             VALUES (%s, %s, %s)
             RETURNING id;
-        """,
-        "ref → nodes": """
-            WITH RECURSIVE descendants AS (
-                SELECT id, parent_node_id, node_type
-                FROM bible.nodes
-                WHERE id = %s
-                    
-                UNION ALL
-
-                SELECT n.id, n.parent_node_id, n.node_type
-                FROM bible.nodes n
-                JOIN descendants d ON n.parent_node_id = d.id
-            )
-            SELECT id
-            FROM descendants
-            WHERE node_type = %s
-            ORDER BY id;
         """
     }
 
@@ -176,9 +162,13 @@ class TranslationNote:
         self.cur.execute(query, params)
         return self.cur.fetchone()[0]
 
-    def __init__(self, book_map_id:int, book_code:str, translation_id:int, note_xml, node_id, db_conn):
-        self.book_map_id = book_map_id
-        self.translation_id = translation_id
+    def __init__(self, this_translation: Translation, this_book: Book, this_chapter: Chapter, note_xml, node_id, db_conn):
+        self.this_translation = this_translation
+        self.this_book = this_book
+        self.this_chapter = this_chapter
+
+        self.book_map_id = self.this_book.get_book_map_id()
+        self.translation_id = self.this_translation.get_translation_id()
         self.note_xml = note_xml
         self.node_id = node_id
 
@@ -191,16 +181,15 @@ class TranslationNote:
         if self.note_type == None:
             return # if note not valid
         
-        self.source_book_code = book_code
+        self.source_book_code = self.this_book.get_book_code()
         self.source_ref, self.source_type = self.get_source_ref()
         
         if self.note_type == "f":
             self.create_footnote()
         elif self.note_type == "x":
-            self.cur.execute(self.SQL.get("ref → nodes"), (self.node_id, "ref")) # Gets ids of ref nodes in this note
-            ref_nodes = self.cur.fetchall()
             for i, ref in enumerate(self.note_xml.find_all("ref")):
-                self.create_destination_ref(ref, ref_nodes[i])
+                crossreference_id = self.create_destination_ref(ref, self.node_id)
+                self.this_translation.log_ingestion_activity(f"Created Cross Reference [ID: {crossreference_id}]", "[NOTE:CROSSREF]", "DEBUG")
 
         self.conn.commit()
 
@@ -267,13 +256,16 @@ class TranslationNote:
         
         if source_type == "verse":
             Verse(chapter_xml=None, verse_ref=source_ref, chapter_occurence_id=None, db_conn=self.conn, is_special_case=True)
+
+        self.this_translation.log_ingestion_activity(f"Created [{source_type}] Source Ref: [{note_ref}] -> [{cleaned_ref}] -> [{source_ref}] <=> [Format: {format}] [Format_Name: {format_name}] ", "[NOTE]", "DEBUG")
         
         return source_ref, source_type
     
     def create_destination_ref(self, ref, ref_node_id):
         destination_ref, destination_type = (None, None)
+        original_ref = ref.get("loc")
 
-        cleaned_ref = self.standardise_ref(ref.get("loc"))
+        cleaned_ref = self.standardise_ref(original_ref)
         ref_book_code, ref_origin = cleaned_ref.split(" ") # e.g GEN 1 => "GEN", "1"
 
         format_types, format_name = self.detect_reference_format(cleaned_ref)
@@ -343,6 +335,8 @@ class TranslationNote:
 
         self.parent_note = None
 
+        self.this_translation.log_ingestion_activity(f"Created [{destination_type}] Source Ref: [{original_ref}] -> [{cleaned_ref}] -> [{destination_ref}] <=> [Format: {format_types}] [Format_Name: {format_name}] ", "[NOTE]", "DEBUG")
+
         # only first fragment is returned, since the others link to first fragment as parent
         return main_note
 
@@ -356,10 +350,11 @@ class TranslationNote:
         elif self.source_type == "chapter":
             footnote_id = self.execute_and_get_id(self.SQL.get("chapter → footnote"), (self.node_id, self.source_ref))
 
-        self.cur.execute(self.SQL.get("ref → nodes"), (self.node_id, "ref")) # Gets ids of ref nodes in this note
-        ref_nodes = self.cur.fetchall()
+        self.this_translation.log_ingestion_activity(f"Created Footnote [ID: {footnote_id}] ", "[NOTE:FOOTNOTE]", "DEBUG")
+
         for i, ref in enumerate(self.note_xml.find_all("ref")):
-            cross_reference_id = self.create_destination_ref(ref, ref_nodes[i])
+            cross_reference_id = self.create_destination_ref(ref, self.node_id)
+            self.this_translation.log_ingestion_activity(f"Created Cross Reference [ID: {cross_reference_id}] [From:FOOTNOTE]", "[NOTE:FOOTNOTE]", "DEBUG")
 
     def create_cross_reference(self, node_id, destination_ref, destination_type):
         query = None
