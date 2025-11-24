@@ -27,7 +27,7 @@ class Book:
 
         self.this_translation.log_ingestion_activity(f"Created with [book_map_id:{self.book_map_id}]", f"[BOOK: {self.book_code}]", "INFO")
 
-        self.book_nodes =       Nodes(book_map_id, db_conn, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
+        self.book_nodes =       Nodes(self.this_translation, self, db_conn, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
         
         self.createTextChapters()
 
