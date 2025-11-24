@@ -93,14 +93,14 @@ class Translation:
                     self.check_files(self.process_location)
         except Exception as e:
             error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
-            self.log_ingestion_activity(error_message, "TRANSLATION", "ERROR")
+            self.log_ingestion_activity(error_message, "[TRANSLATION]", "ERROR")
             print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
             self.conn.rollback()
 
         self.conn.commit()
 
         print(f"✅ Completed Translation Import in [{self.elapsed_ingestion_time()}]!\n")
-        self.log_ingestion_activity("Completed Translation Ingestion!", "TRANSLATION", "INFO")
+        self.log_ingestion_activity("Completed Translation Ingestion!", "[TRANSLATION]", "INFO")
 
         # Create Label Studio Project for this specific translation of the bible
         label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
@@ -162,6 +162,8 @@ class Translation:
             self.translation_project.id
         ))
 
+        self.log_ingestion_activity(f"Created New Label Studio Project [Project_ID: {self.translation_project.id}] [URL: {source_url}]", "[TRANSLATION]", "DEBUG")
+
         self.conn.commit()
         self.conn.close()
 
@@ -215,7 +217,10 @@ class Translation:
             RETURNING id;
         """, (source_url,))
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.sources",))
-        return self.cur.fetchone()[0]
+        new_source_id = self.cur.fetchone()[0]
+
+        self.log_ingestion_activity(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "[TRANSLATION]", "DEBUG")
+        return new_source_id
 
     def unzip_folder(self, zip_path):
         # This will unzip the zip folder, and then delete the original and replace process location with new path name
@@ -234,6 +239,7 @@ class Translation:
 
             # Saves the new location for the usx files to be ran in next part of pipeline
             new_location = downloads_location / top_folder
+            self.log_ingestion_activity(f"Unzipping [{len(all_files)}] files from {zip_path} in {new_location}", "[TRANSLATION]", "DEBUG")
             self.check_files(new_location)
 
         # After unzipping delete the old zip file
@@ -271,8 +277,11 @@ class Translation:
             language_xml.find("nameLocal").text,
             language_xml.find("scriptDirection").text
         ))
+        new_language_id = self.cur.fetchone()[0]
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.languages",))
-        return self.cur.fetchone()[0]
+        self.log_ingestion_activity(f"Created New Language [ID: {new_language_id}] [Name: {language_xml.find("nameLocal").text}]", "[TRANSLATION]", "DEBUG")
+
+        return new_language_id
     
     def update_translationinfo_db(self, metadata_xml):
         self.language_id = self.check_language(metadata_xml.find("language"))
@@ -294,6 +303,7 @@ class Translation:
             self.language_id,
             self.dbl_id
         ))
+        self.log_ingestion_activity(f"Created Translation Info: [abbreviationLocal: {metadata_xml.find("identification").find("abbreviationLocal").text}] [name: {metadata_xml.find("identification").find("name").text}]", "[TRANSLATION]", "DEBUG")
 
         self.create_translation_relationships(metadata_xml)
 
@@ -308,6 +318,7 @@ class Translation:
                 INSERT INTO bible.translationrelationships (from_translation, from_revision, to_translation, to_revision, type) 
                 VALUES (%s, %s, %s, %s, %s)
             """, (self.translation_id, self.revision, relation_dbl_id, relation_revision, relation_type))
+            self.log_ingestion_activity(f"Created Translation Relationship with [ID: {relation_dbl_id}] [Revision: {relation_revision}] [medium: {relation_type}]", "[TRANSLATION]", "DEBUG")
 
     def check_files(self, file_location):
         top_folder = str(file_location).split("\\")[-1]
@@ -359,6 +370,7 @@ class Translation:
             self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml"),
             self.translation_id
         ))
+        self.log_ingestion_activity(f"Updated Translation Entry File IDs", "[TRANSLATION]", "DEBUG")
 
         self.conn.commit() # Commit all changes to database
 
@@ -494,6 +506,7 @@ class Translation:
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.files",))
 
         file_id = self.cur.fetchone()[0]
+        self.log_ingestion_activity(f"Created New File: [{info.object_name}] [File ID:{file_id}] [Bucket: {info.bucket_name}] [etag: {info.etag}]", "[TRANSLATION]", "DEBUG")
 
         if "versification" in object_name:
             self.createVersification(self.stream_file(object_name))
@@ -594,6 +607,9 @@ class Translation:
         if property_additions > 0:
             print(f"    [{property_additions}] Properties loaded into database")
 
+        self.log_ingestion_activity(f"Initialised {len(style_additions)} Styles!", "[TRANSLATION]", "DEBUG")
+        self.log_ingestion_activity(f"Initialised {len(property_additions)} Properties!", "[TRANSLATION]", "DEBUG")
+
     def createVersification(self, file_string):
         # file_xml = BeautifulSoup(file_string, "xml")
         # We can split file string by "#", remove blank ones, then grapb the relevant section
@@ -645,13 +661,20 @@ class Translation:
                     INSERT INTO bible.excludedverses (verse_ref, translation_id) 
                     VALUES (%s, %s)
                 """, (verse_ref, self.translation_id))
-                additions += 1
+                additions+=1
+                
+                self.log_ingestion_activity(f"Created Excluded Verse: {verse_ref}", "[TRANSLATION]", "DEBUG")
 
         if additions > 0:
             print(f"    [{additions}] Excluded Verses added to database")
+
+        self.log_ingestion_activity(f"Created {len(additions)} excluded verses", "[TRANSLATION]", "DEBUG")
     
     def createVerses(self, section_text):
-        additions = 0
+        verse_additions = 0
+        chapter_additions = 0
+
+        self.log_ingestion_activity(f"Initializing Verses...", "[TRANSLATION]", "DEBUG")
         # Create all Verses Tables instances - different from VerseOccurences, just chceck they all exist
         for line in section_text.splitlines():
             sections = line.split(" ")
@@ -682,8 +705,11 @@ class Translation:
                             VALUES (%s, %s, %s, %s);
                         """, (book_code, int(chapter_num), chapter_ref, False))
                         print(f"     Non-Standard Chapter Created: {chapter_ref}")
+                        self.log_ingestion_activity(f"Created Non-Standard Chapter: {chapter_ref}", "[TRANSLATION]", "DEBUG")
+                        chapter_additions+=1
                     except Exception as e:
                         print(f"❌ Skipped Chapter Creation of [{chapter_ref}] because of {e}")
+                        self.log_ingestion_activity(f"Skipped Chapter Creation of [{chapter_ref}] because of {e}", "[TRANSLATION]", "ERROR")
                         # In the case it can't seem to create a new chapter then skip the chapter (won't take it as important)
 
                 for verse in range(1, (int(verse_count)+1)):
@@ -699,10 +725,14 @@ class Translation:
                             INSERT INTO bible.verses (chapter_ref, verse_ref, verse) 
                             VALUES (%s, %s, %s)
                         """, (chapter_ref, verse_ref, str(verse)))
-                        additions += 1
+                        verse_additions += 1
+                        self.log_ingestion_activity(f"Created Verse: {verse_ref}", "[TRANSLATION]", "DEBUG")
         
-        if additions > 0:
-            print(f"    [{additions}] Verses Initialized into database")
+        if verse_additions > 0:
+            print(f"    [{verse_additions}] Verses Initialized into database")
+            
+        self.log_ingestion_activity(f"Initialised {len(verse_additions)} Verses!", "[TRANSLATION]", "DEBUG")
+        self.log_ingestion_activity(f"Initialised {len(chapter_additions)} Chapters (Non Standard)!", "[TRANSLATION]", "DEBUG")
 
     def elapsed_ingestion_time(self):
         duration = time.time() - self.start_time

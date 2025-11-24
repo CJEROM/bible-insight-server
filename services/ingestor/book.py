@@ -26,7 +26,7 @@ class Book:
 
         self.book_code =        book_code
 
-        self.this_translation.log_ingestion_activity(f"Created with book_map_id:{self.book_map_id}", book_code, "INFO")
+        self.this_translation.log_ingestion_activity(f"Created with [book_map_id:{self.book_map_id}]", f"[{book_code}]", "INFO")
 
         self.book_nodes =       Nodes(book_map_id, db_conn, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
         
@@ -55,6 +55,8 @@ class Book:
         """, (self.book_code,))
         all_chapters = self.cur.fetchall()
 
+        self.this_translation.log_ingestion_activity(f"Checking {len(all_chapters)} Chapters", f"[{self.book_code}]", "DEBUG")
+
         for chapter in all_chapters:
             chapter_ref = chapter[0]
             start_tag = self.book_xml.find("chapter", sid=chapter_ref)
@@ -67,6 +69,7 @@ class Book:
             #       if it doesn't exist for this book.
             # Should also account for upper range increased due to non standard chapters (skip over them)
             if chapter_found == None:
+                self.this_translation.log_ingestion_activity(f"Chapter {chapter_ref} invalid, skipping...", f"[{self.book_code}]", "DEBUG")
                 continue
 
             # Have to add encapsulating tags, since otherwise only first chapter tag, 
