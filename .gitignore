@@ -10,7 +10,9 @@ devops/docker/*/*
 # Also, don't ignore subfolders needed for those files (if any)
 !devops/docker/
 
-downloads
+downloads/
+logs/
+backups/
 
 **/__pycache__/
 *.py[cod]
@@ -18,10 +20,7 @@ downloads
 .git-replacements.txt
 .env
 
-backups/
-
 .DS_Store
-
 
 venv/
 .venv/

@@ -76,7 +76,14 @@ class Translation:
         self.bible_structure_info = None
 
         # Initialise logfile
-        self.log_file = Path(__file__).parents[2] / "downloads" / f"{self.translation_title}-LOG.txt"
+        self.log_file = Path(__file__).parents[2] / "logs" / f"{self.translation_title}-LOG.txt"
+
+        try:
+            os.makedirs(self.log_file)
+        except Exception as e:
+            print("Log File Path Already Exists!")
+        print(f"See Log File at: {self.log_file}!")
+        
         with open(self.log_file, 'w', encoding="utf-8") as f:
             f.write(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]\n")
 
