@@ -94,11 +94,12 @@ class Chapter:
         self.this_translation.log_ingestion_activity(f"Creating [{len(para_node_ids)}] Paragraphs ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
 
         for i, (para) in enumerate(all_paragraphs):
-            Paragraph(self.translation_id, para_node_ids[i], para, self.conn)
+            Paragraph(self.this_translation, self.this_book, self, para_node_ids[i], para, self.conn)
             additions += 1
         
         if additions > 0:
             # print(f"    [{additions}] Paragraphs added to database")
+            self.this_translation.log_ingestion_activity(f"Created [{len(additions)}] out of [{len(para_node_ids)}] Paragraphs!", f"[CHAPTER: {self.chapter_ref}]", "INFO")
             pass
 
     def createVerseOccurences(self):
