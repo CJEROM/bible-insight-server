@@ -36,7 +36,7 @@ MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
 LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
 LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
 
-class MinioUSXUpload:
+class Translation:
     def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id, dbl_id, agreement_id):
         self.client = minio_client
         self.medium = medium # Audio | Video | Text (USX)
