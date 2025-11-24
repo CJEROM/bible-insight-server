@@ -225,7 +225,7 @@ class TranslationNote:
                 source_ref = partial_ref
         
         if source_type == "verse":
-            Verse(chapter_xml=None, verse_ref=source_ref, chapter_occurence_id=None, db_conn=self.conn, is_special_case=True)
+            Verse(self.this_translation, self.this_book, self.this_chapter, verse_ref=source_ref, db_conn=self.conn, is_special_case=True)
 
         self.this_translation.log_ingestion_activity(f"Created [{source_type}] Source Ref: [{note_ref}] -> [{cleaned_ref}] -> [{source_ref}] <=> [Format: {format}] [Format_Name: {format_name}] ", "[NOTE]", "DEBUG")
         
@@ -330,7 +330,7 @@ class TranslationNote:
         this_ref = [None] * 5
 
         if destination_type == "verse":
-            Verse(chapter_xml=None, verse_ref=destination_ref, chapter_occurence_id=None, db_conn=self.conn, is_special_case=True)
+            Verse(self.this_translation, self.this_book, self.this_chapter, verse_ref=destination_ref, db_conn=self.conn, is_special_case=True)
 
         this_ref[0] = node_id # node_id
         # this_ref[1] = # from_verse_ref
