@@ -77,10 +77,11 @@ class Translation:
         self.style_dict = {}
 
         # Initialise logfile
-        self.log_file = Path(__file__).parents[2] / "logs" / f"{self.translation_id}-{self.translation_title}-LOG.txt"
+        log_path = Path(__file__).parents[2] / "logs"
+        self.log_file = log_path / f"{self.translation_id}-{self.translation_title}-LOG.log"
 
         try:
-            os.makedirs(self.log_file)
+            os.makedirs(log_path)
         except Exception as e:
             print("Log File Path Already Exists!")
         print(f"See Log File at: {self.log_file}!")
