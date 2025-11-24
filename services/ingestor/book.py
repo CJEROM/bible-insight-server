@@ -1,13 +1,16 @@
 from bs4 import BeautifulSoup
 import re
 
-from translation import Translation
 from chapter import Chapter
 from nodes import Nodes
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from translation import Translation
+
 # Changing since will only be relevant for text anyway
 class Book:
-    def __init__(self, this_translation: Translation, book_code, book_map_id, file_id, book_string, db_conn):
+    def __init__(self, this_translation: "Translation", book_code, book_map_id, file_id, book_string, db_conn):
         self.this_translation = this_translation
 
         self.language_id =      self.this_translation.get_language_id()

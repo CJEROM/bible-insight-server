@@ -1,14 +1,16 @@
-from verse import Verse
 from bs4 import BeautifulSoup, Tag
 import psycopg2
 import re
 import os
 from pathlib import Path
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from translation import Translation
+    from book import Book
+    from chapter import Chapter
+
 from verse import Verse
-from translation import Translation
-from book import Book
-from chapter import Chapter
 
 from dotenv import load_dotenv
 
@@ -132,7 +134,7 @@ class TranslationNote:
         self.cur.execute(query, params)
         return self.cur.fetchone()[0]
 
-    def __init__(self, this_translation: Translation, this_book: Book, this_chapter: Chapter, note_xml, node_id, db_conn):
+    def __init__(self, this_translation: "Translation", this_book: "Book", this_chapter: "Chapter", note_xml, node_id, db_conn):
         self.this_translation = this_translation
         self.this_book = this_book
         self.this_chapter = this_chapter

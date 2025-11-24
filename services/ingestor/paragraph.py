@@ -1,9 +1,11 @@
-from translation import Translation
-from book import Book
-from chapter import Chapter
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from translation import Translation
+    from book import Book
+    from chapter import Chapter
 
 class Paragraph:
-    def __init__(self, this_translation: Translation, this_book: Book, this_chapter: Chapter, paragraph_node_id, para_xml, db_conn):
+    def __init__(self, this_translation: "Translation", this_book: "Book", this_chapter: "Chapter", paragraph_node_id, para_xml, db_conn):
         self.this_translation = this_translation
         self.this_book = this_book
         self.this_chapter = this_chapter

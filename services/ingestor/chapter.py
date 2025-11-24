@@ -1,13 +1,16 @@
 from bs4 import BeautifulSoup
 
-from translation import Translation
-from book import Book
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from translation import Translation
+    from book import Book
+
 from paragraph import Paragraph
 from verse import Verse
 from translationnote import TranslationNote
 
 class Chapter:
-    def __init__(self, this_translation: Translation, this_book: Book, chapter_ref, chapter_text, db_conn):
+    def __init__(self, this_translation: "Translation", this_book: "Book", chapter_ref, chapter_text, db_conn):
         self.this_translation = this_translation
         self.this_book =        this_book
 

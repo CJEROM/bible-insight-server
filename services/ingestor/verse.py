@@ -1,9 +1,11 @@
-from translation import Translation
-from book import Book
-from chapter import Chapter
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from translation import Translation
+    from book import Book
+    from chapter import Chapter
 
 class Verse:
-    def __init__(self, this_translation: Translation, this_book: Book, this_chapter: Chapter, verse_ref, db_conn, is_special_case=False):
+    def __init__(self, this_translation: "Translation", this_book: "Book", this_chapter: "Chapter", verse_ref, db_conn, is_special_case=False):
         self.this_translation = this_translation
         self.this_book = this_book
         self.this_chapter = this_chapter

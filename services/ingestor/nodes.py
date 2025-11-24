@@ -6,6 +6,11 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from translation import Translation
+    from book import Book
+
 # Automatically find the project root (folder containing .env)
 current = Path(__file__).resolve()
 for parent in current.parents:
@@ -31,14 +36,17 @@ class Nodes:
         """
     }
 
-    def __init__(self, book_map_id, db_conn, book_xml):
+    def __init__(self, this_translation: "Translation", this_book: "Book", db_conn, book_xml):
+        self.this_translation = this_translation
+        self.this_book = this_book
+
         # Adds a database connection
         self.conn = db_conn
         self.cur = self.conn.cursor()
 
         # Initialise variables 
         self.book_soup = BeautifulSoup(book_xml, "xml")
-        self.book_map_id = book_map_id
+        self.book_map_id = self.this_book.get_book_map_id()
 
         self.created_nodes = {
             "chapter": {},
