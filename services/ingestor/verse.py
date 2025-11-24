@@ -53,14 +53,15 @@ class Verse:
         if verse_found == None:
             verse_splits = self.verse_ref.split("-")
             chapter_ref, verse_num = verse_splits[0].split(":")
+            verse_suffix = self.verse_ref.split(":")[1]
 
             # Check whether verse_ref is non standard e.g. GEN 1:1-2
             if len(verse_splits) > 1:
                 # Create new non standard verse first (to preseve foreign key constraint in db as well before verse occurence created)
                 self.cur.execute("""
-                    INSERT INTO bible.verses (chapter_ref, verse_ref, standard) 
-                    VALUES (%s, %s, %s)
-                """, (chapter_ref, self.verse_ref, False))
+                    INSERT INTO bible.verses (chapter_ref, verse_ref, standard, verse) 
+                    VALUES (%s, %s, %s, %s)
+                """, (chapter_ref, self.verse_ref, False, verse_suffix))
 
                 self.this_translation.log_ingestion_activity(f"Created New Verse", f"[VERSE: {self.verse_ref}]", "DEBUG")
 
@@ -79,7 +80,7 @@ class Verse:
                 self.cur.execute("""
                     INSERT INTO bible.verses (chapter_ref, verse_ref, standard, verse) 
                     VALUES (%s, %s, %s, %s)
-                """, (chapter_ref, self.verse_ref, False, verse_num))
+                """, (chapter_ref, self.verse_ref, False, verse_suffix))
                 self.this_translation.log_ingestion_activity(f"Created New Verse", f"[VERSE: {self.verse_ref}]", "DEBUG")
                 
                 new_verse_ref = self.verse_ref[:-1]
@@ -90,26 +91,14 @@ class Verse:
                 self.this_translation.log_ingestion_activity(f"Created Verse Correction [{new_verse_ref}]", f"[VERSE: {self.verse_ref}]", "DEBUG")
 
     def createVerseOccurence(self):
-        self.cur.execute("""
-            SELECT start_node, end_node FROM bible.chapteroccurences WHERE id = %s;
-        """, (self.chapter_occurence_id,))
-        chapter_start_node, chapter_end_node = self.cur.fetchone()
-
-        # Look to replace with nodes object
-        self.cur.execute("""
-            SELECT id FROM bible.nodes 
-            WHERE (sid = %s OR eid = %s) 
-                AND node_type = 'verse' 
-                AND id BETWEEN %s AND %s
-            ORDER BY id;
-        """, (self.verse_ref, self.verse_ref, chapter_start_node, chapter_end_node))
-        self.start_node, self.end_note = self.cur.fetchall()
+        self.start_node = self.this_book.get_book_nodes().get_chapters()[self.verse_ref]["sid"]
+        self.end_node = self.this_book.get_book_nodes().get_chapters()[self.verse_ref]["eid"]
 
         self.cur.execute("""
             INSERT INTO bible.verseoccurences (chapter_id, verse_ref, start_node, end_node) 
             VALUES (%s, %s, %s, %s)
             RETURNING id;
-        """, (self.chapter_occurence_id, self.verse_ref, self.start_node, self.end_note))
+        """, (self.chapter_occurence_id, self.verse_ref, self.start_node, self.end_node))
         self.verse_occurence_id = self.cur.fetchone()[0]
 
         self.this_translation.log_ingestion_activity(f"Created New Verse Occurence [ID: {self.verse_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.start_node}]", f"[VERSE: {self.verse_ref}]", "DEBUG")
