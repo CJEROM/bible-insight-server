@@ -48,6 +48,8 @@ class Chapter:
         """, (self.chapter_ref, self.book_map_id, self.start_node, self.end_node))
         self.chapter_occurence_id = self.cur.fetchone()[0]
 
+        self.this_translation.log_ingestion_activity(f"Created Chapter [Occurence ID: {self.chapter_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.start_node}]", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
+
         self.conn.commit()
 
         self.last_verse =       self.createVerseOccurences()
@@ -84,6 +86,7 @@ class Chapter:
             """, (book_code, int(chapter_num), self.chapter_ref, False))
             # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))
             print(f"     Non-Standard Chapter Created: {self.chapter_ref}")
+            self.this_translation.log_ingestion_activity(f"Created Non-Standard Chapter: {self.chapter_ref}", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
 
     def createParagraphs(self):
         additions = 0
@@ -93,6 +96,8 @@ class Chapter:
             SELECT id FROM bible.nodes WHERE book_map_id = %s AND node_type = 'para' AND id BETWEEN %s AND %s ORDER BY id;
         """, (self.book_map_id, self.start_node, self.end_node))
         para_node_ids = self.cur.fetchall()
+
+        self.this_translation.log_ingestion_activity(f"Creating [{len(para_node_ids)}] Paragraphs ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
 
         for i, (para) in enumerate(all_paragraphs):
             Paragraph(self.translation_id, para_node_ids[i], para, self.conn)
@@ -105,6 +110,9 @@ class Chapter:
     def createVerseOccurences(self):
         additions = 0
         all_verses = self.chapter_xml.find_all("verse")
+
+        self.this_translation.log_ingestion_activity(f"Creating [{len(all_verses)}] Verse Occurences ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
+
         latest_ref = None
 
         for verse in all_verses:
@@ -134,6 +142,9 @@ class Chapter:
             SELECT id FROM bible.nodes WHERE book_map_id = %s AND node_type = 'note' AND id BETWEEN %s AND %s ORDER BY id;
         """, (self.book_map_id, self.start_node, self.end_node))
         translation_note_node_ids = self.cur.fetchall()
+        
+        self.this_translation.log_ingestion_activity(f"Creating [{len(translation_note_node_ids)}] Translation Notes ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
+
         # Go through chapter and grab all cross references and footnotes, and write to database
         for i, this_note in enumerate(self.chapter_xml.find_all("note")):
             TranslationNote(self.book_map_id, self.book_code, self.translation_id, this_note, translation_note_node_ids[i], self.conn)
