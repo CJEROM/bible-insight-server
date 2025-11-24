@@ -606,6 +606,7 @@ class Translation:
 
                 style_id = self.cur.fetchone()[0]
 
+                self.style_dict[style] = {}
                 self.style_dict[style]["id"] = style_id
                 self.style_dict[style]["versetext"] = style_versetext
 
