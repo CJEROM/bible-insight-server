@@ -9,7 +9,7 @@ import time
 from minio import Minio
 from pathlib import Path
 
-from services.ingestor.translation import Translation
+from translation import Translation
 
 from dotenv import load_dotenv
 
