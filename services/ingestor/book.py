@@ -1,9 +1,5 @@
 from bs4 import BeautifulSoup
-from pathlib import Path
 import re
-import datetime
-
-import psycopg2
 
 from translation import Translation
 from chapter import Chapter
