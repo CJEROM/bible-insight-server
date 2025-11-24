@@ -10,7 +10,6 @@ class Chapter:
     def __init__(self, this_translation: Translation, this_book: Book, chapter_ref, chapter_text, db_conn):
         self.this_translation = this_translation
         self.this_book =        this_book
-        # self.chapter_nodes = self.this_book.get_book_nodes().get_chapters()
 
         self.language_id =      self.this_translation.get_language_id()
         self.translation_id =   self.this_translation.get_translation_id()
@@ -28,11 +27,9 @@ class Chapter:
         self.cur =              self.conn.cursor()
         
         self.createChapter()
-        # Replace with reference to Nodes object instead for correct data
-        self.cur.execute("""
-            SELECT id FROM bible.nodes WHERE book_map_id = %s AND (sid = %s OR eid = %s) AND node_type = 'chapter' ORDER BY id;
-        """, (self.book_map_id, self.chapter_ref, self.chapter_ref))
-        self.start_node, self.end_node = self.cur.fetchall()
+
+        self.start_node = self.this_book.get_book_nodes().get_chapters()[self.chapter_ref]["sid"]
+        self.end_node = self.this_book.get_book_nodes().get_chapters()[self.chapter_ref]["eid"]
 
         # Create a Chapter Occurence
         self.cur.execute("""
