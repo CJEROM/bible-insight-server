@@ -1,33 +1,35 @@
 from bs4 import BeautifulSoup
 from pathlib import Path
 import re
+import datetime
 
 import psycopg2
 
+from translation import Translation
 from chapter import Chapter
 from nodes import Nodes
 
 # Changing since will only be relevant for text anyway
 class Book:
-    def __init__(self, language_id, translation_id, book_map_id, file_id, book_string, db_conn, bible_structure_info):
-        self.language_id = language_id
-        self.translation_id = translation_id
+    def __init__(self, this_translation: Translation, book_code, book_map_id, file_id, book_string, db_conn):
+        self.this_translation = this_translation
+
+        self.language_id = self.this_translation.get_language_id()
+        self.translation_id = self.this_translation.get_translation_id()
         self.book_map_id = book_map_id
         self.file_id = file_id
         self.book_xml = BeautifulSoup(book_string, "xml")
-
-        Nodes(book_map_id, db_conn, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
 
         # Adds a database connection
         self.conn = db_conn
         self.cur = self.conn.cursor()
 
-        self.cur.execute("""
-            SELECT book_code FROM bible.booktofile WHERE id = %s;
-        """, (self.book_map_id,))
-        self.book_code = self.cur.fetchone()[0]
+        self.book_code = book_code
+        self.bible_structure = self.this_translation.get_bible_structure_info()
 
-        self.bible_structure = self.getBibleStructure(bible_structure_info)
+        self.this_translation.log_ingestion_activity(f"Created with book_map_id:{self.book_map_id}", book_code, "INFO")
+
+        self.book_nodes = Nodes(book_map_id, db_conn, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
         
         self.createTextChapters()
 
@@ -41,20 +43,9 @@ class Book:
     
     def get_book_code(self):
         return self.book_code
-
-    def getBibleStructure(self, bible_structure_info: str):
-        # Go through bible versification
-        chapter_dict = {}
-        for line in bible_structure_info.splitlines():
-            parts = line.split()
-            book = parts[0]
-            chapters = parts[1:]
-            
-            for ch in chapters:
-                chapter_num, verse_count = ch.split(':')
-                chapter_dict[f"{book} {chapter_num}"] = int(verse_count)
-
-        return chapter_dict
+    
+    def get_book_nodes(self):
+        return self.book_nodes
 
     # Purpose is to split xml up into chapters, for token processing
     def createTextChapters(self):
@@ -89,9 +80,7 @@ class Book:
             Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, chapter_text, self.conn, self.bible_structure)
             additions += 1
 
-            log_file = Path(__file__).parents[2] / "downloads" / f"translation-{self.translation_id}-log.txt"
-            with open(log_file, 'a', encoding="utf-8") as f:
-                f.write(f"{chapter_ref}\n")
+            self.this_translation.log_ingestion_activity(chapter_ref, "BOOK", "INFO")
         
         if additions > 0:
             # print(f"    [{additions}] Chapters added for {self.book_code[0]}")

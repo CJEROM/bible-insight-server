@@ -187,7 +187,19 @@ class Translation:
         return self.language_id
     
     def get_bible_structure_info(self):
-        return self.bible_structure_info
+        structure = self.bible_structure_info
+        # Go through bible versification
+        chapter_dict = {}
+        for line in structure.splitlines():
+            parts = line.split()
+            book = parts[0]
+            chapters = parts[1:]
+            
+            for ch in chapters:
+                chapter_num, verse_count = ch.split(':')
+                chapter_dict[f"{book} {chapter_num}"] = int(verse_count)
+
+        return chapter_dict
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
@@ -375,6 +387,7 @@ class Translation:
             found_book = self.cur.fetchone()
 
             if found_book != None:
+                found_book = found_book[0]
                 # If this is text and the book is among ones we are interested in, take the file and upload it to minio
                 object_name = f"{top_folder}/{self.revision}/{file_name}"
                 content_type = metadata_xml.find("resource", uri=content.get("src")).get("mimeType")
@@ -385,7 +398,7 @@ class Translation:
                 long_name = book_info.find("long").text
 
                 # Skip any that are not 3 John book (used when testing = shortest book in the bible)
-                # if found_book[0] != "3JN":
+                # if found_book != "3JN":
                 #     continue
 
                 # ✅ Proper loading bar (50 characters wide)
@@ -395,7 +408,7 @@ class Translation:
                 
                 # Then update the database linking to them
                 if self.medium == "text":
-                    sys.stdout.write(f"\r    Processing books: |{bar}| {percentage}% | {found_book[0]} | ")
+                    sys.stdout.write(f"\r    Processing books: |{bar}| {percentage}% | {found_book} | ")
                     sys.stdout.flush()
 
                     self.cur.execute("""
@@ -403,7 +416,7 @@ class Translation:
                     """, (book, self.translation_id, file_id, short_name, long_name))
                     # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
                     book_map_id = self.cur.fetchone()[0]
-                    Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn, self.bible_structure_info)                    
+                    Book(self, found_book, book_map_id, file_id, self.stream_file(object_name), self.conn)                    
                 if self.medium == "audio":
                     sys.stdout.write(f"\r    Processing books: |{bar}| {percentage}% | {chapter_ref} | ")
                     sys.stdout.flush()
