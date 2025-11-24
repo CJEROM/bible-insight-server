@@ -280,6 +280,7 @@ class Translation:
         if language_id != None:
             return language_id[0]
         
+        language_name = language_xml.find("nameLocal").text
         self.cur.execute("""
             INSERT INTO bible.languages (iso, name, namelocal, scriptdirection) 
             VALUES (%s, %s, %s, %s)
@@ -292,12 +293,16 @@ class Translation:
         ))
         new_language_id = self.cur.fetchone()[0]
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.languages",))
-        self.log_ingestion_activity(f"Created New Language [ID: {new_language_id}] [Name: {language_xml.find("nameLocal").text}]", "[TRANSLATION]", "DEBUG")
+        self.log_ingestion_activity(f"Created New Language [ID: {new_language_id}] [Name: {language_name}]", "[TRANSLATION]", "DEBUG")
 
         return new_language_id
     
     def update_translationinfo_db(self, metadata_xml):
         self.language_id = self.check_language(metadata_xml.find("language"))
+
+        abbreviation = metadata_xml.find("identification").find("abbreviationLocal").text
+        translation_name = metadata_xml.find("identification").find("name").text
+
         self.cur.execute("""
             UPDATE bible.translationinfo
             SET medium = %s,
@@ -316,7 +321,7 @@ class Translation:
             self.language_id,
             self.dbl_id
         ))
-        self.log_ingestion_activity(f"Created Translation Info: [abbreviationLocal: {metadata_xml.find("identification").find("abbreviationLocal").text}] [name: {metadata_xml.find("identification").find("name").text}]", "[TRANSLATION]", "DEBUG")
+        self.log_ingestion_activity(f"Created Translation Info: [abbreviationLocal: {abbreviation}] [name: {translation_name}]", "[TRANSLATION]", "DEBUG")
 
         self.create_translation_relationships(metadata_xml)
 
