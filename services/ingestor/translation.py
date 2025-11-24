@@ -62,8 +62,6 @@ class Translation:
 
         self.start_time = time.time()
 
-        self.source_id = self.get_source(source_url)
-
         print("✅ Starting Upload ...")
 
         # Fetch and print result
@@ -89,6 +87,8 @@ class Translation:
         
         with open(self.log_file, 'w', encoding="utf-8") as f:
             f.write(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]\n")
+
+        self.source_id = self.get_source(source_url)
 
         try:
             # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
