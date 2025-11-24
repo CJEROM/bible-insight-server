@@ -60,39 +60,9 @@ POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
 class TranslationNote:
     SQL = {
-        "chapter → footnote": """
-            INSERT INTO bible.translationfootnotes (node_id, chapter_ref) 
-            VALUES (%s, %s)
-            RETURNING id;
-        """,
-        "verse → footnote": """
-            INSERT INTO bible.translationfootnotes (node_id, verse_ref) 
-            VALUES (%s, %s)
-            RETURNING id;
-        """,
-        "chapter → chapter": """
-            INSERT INTO bible.translationrefnotes (node_id, from_chapter_ref, to_chapter_ref) 
-            VALUES (%s, %s, %s)
-            RETURNING id;
-        """,
-        "verse → chapter": """
-            INSERT INTO bible.translationrefnotes (node_id, from_verse_ref, to_chapter_ref) 
-            VALUES (%s, %s, %s)
-            RETURNING id;
-        """,
-        "verse → verse": """
-            INSERT INTO bible.translationrefnotes (node_id, from_verse_ref, to_verse_ref) 
-            VALUES (%s, %s, %s)
-            RETURNING id;
-        """,
-        "chapter → verse": """
-            INSERT INTO bible.translationrefnotes (node_id, from_verse_ref, to_chapter_ref) 
-            VALUES (%s, %s, %s)
-            RETURNING id;
-        """,
         "translation_ref_note": """
             INSERT INTO bible.translationrefnotes (node_id, from_verse_ref, to_verse_ref, from_chapter_ref, to_chapter_ref) 
-            VALUES (%s, %s, %s, %s, %s)
+            VALUES %s
             RETURNING id;
         """,
         "translation_foot_note": """
@@ -346,9 +316,9 @@ class TranslationNote:
 
         # Simpler logic since can only have foot note for a chapter "PSA 46" or verse "LUK 1:17", (verse can be non-standard "MIC 4:14a" or mixed "MAT 12:18-21")
         if self.source_type == "verse":
-            footnote_id = self.execute_and_get_id(self.SQL.get("verse → footnote"), (self.node_id, self.source_ref))
+            footnote_id = self.execute_and_get_id(self.SQL.get("translation_foot_note"), (self.node_id, None, self.source_ref))
         elif self.source_type == "chapter":
-            footnote_id = self.execute_and_get_id(self.SQL.get("chapter → footnote"), (self.node_id, self.source_ref))
+            footnote_id = self.execute_and_get_id(self.SQL.get("translation_foot_note"), (self.node_id, self.source_ref, None))
 
         self.this_translation.log_ingestion_activity(f"Created Footnote [ID: {footnote_id}] ", "[NOTE:FOOTNOTE]", "DEBUG")
 
@@ -357,23 +327,33 @@ class TranslationNote:
             self.this_translation.log_ingestion_activity(f"Created Cross Reference [ID: {cross_reference_id}] [From:FOOTNOTE]", "[NOTE:FOOTNOTE]", "DEBUG")
 
     def create_cross_reference(self, node_id, destination_ref, destination_type):
-        query = None
+        this_ref = [None] * 5
 
         if destination_type == "verse":
             Verse(chapter_xml=None, verse_ref=destination_ref, chapter_occurence_id=None, db_conn=self.conn, is_special_case=True)
 
+        this_ref[0] = node_id # node_id
+        # this_ref[1] = # from_verse_ref
+        # this_ref[2] = # to_verse_ref
+        # this_ref[3] = # from_chapter_ref
+        # this_ref[4] = # to_chapter_ref
+           
         if self.source_type == "verse" and destination_type == "chapter":
-            query = self.SQL.get("verse → chapter")
+            this_ref[1] = self.source_ref # from_verse_ref
+            this_ref[4] = destination_ref# to_chapter_ref
         elif self.source_type == "verse" and destination_type == "verse":
-            query = self.SQL.get("verse → verse")
+            this_ref[1] = self.source_ref# from_verse_ref
+            this_ref[2] = destination_ref# to_verse_ref
         elif self.source_type == "chapter" and destination_type == "chapter":
-            query = self.SQL.get("chapter → chapter")
+            this_ref[3] = self.source_ref # from_chapter_ref
+            this_ref[4] = destination_ref# to_chapter_ref
         elif self.source_type == "chapter" and destination_type == "verse":
-            query = self.SQL.get("chapter → verse")
+            this_ref[2] = destination_ref# to_verse_ref
+            this_ref[3] = self.source_ref # from_chapter_ref
         else:
             return None # if not any of these combos then quit
 
-        cross_reference_id = self.execute_and_get_id(query, (node_id, self.source_ref, destination_ref))
+        cross_reference_id = self.execute_and_get_id(self.SQL.get("translation_ref_note"), this_ref)
         return cross_reference_id
 
 # ✅ Test examples:
