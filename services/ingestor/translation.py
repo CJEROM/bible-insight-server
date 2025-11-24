@@ -75,6 +75,9 @@ class Translation:
         self.translation_name = None
         self.bible_structure_info = None
 
+        self.style_file_id = None
+        self.style_dict = {}
+
         # Initialise logfile
         self.log_file = Path(__file__).parents[2] / "logs" / f"{self.translation_title}-LOG.txt"
 
@@ -194,6 +197,9 @@ class Translation:
     
     def get_language_id(self):
         return self.language_id
+    
+    def get_style_dict(self):
+        return self.style_dict
     
     def get_bible_structure_info(self):
         structure = self.bible_structure_info
@@ -592,8 +598,10 @@ class Translation:
                     RETURNING id;
                 """, (style, style_name, style_description, style_versetext, style_publishable, styles_file_id))
 
-                # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.styles",))
                 style_id = self.cur.fetchone()[0]
+
+                self.style_dict[style]["id"] = style_id
+                self.style_dict[style]["versetext"] = style_versetext
 
                 previous_style_parent = style_parent
 

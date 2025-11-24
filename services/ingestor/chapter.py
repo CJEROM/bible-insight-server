@@ -83,10 +83,7 @@ class Chapter:
         additions = 0
         # Have to be created here since not all paragraphs fit inside a chapter
         all_paragraphs = self.chapter_xml.find_all("para")
-        self.cur.execute("""
-            SELECT id FROM bible.nodes WHERE book_map_id = %s AND node_type = 'para' AND id BETWEEN %s AND %s ORDER BY id;
-        """, (self.book_map_id, self.start_node, self.end_node))
-        para_node_ids = self.cur.fetchall()
+        para_node_ids = self.this_book.get_book_nodes().get_paras()
 
         self.this_translation.log_ingestion_activity(f"Creating [{len(para_node_ids)}] Paragraphs ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
 

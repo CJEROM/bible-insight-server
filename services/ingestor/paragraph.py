@@ -38,17 +38,8 @@ class Paragraph:
     def getParagraphStyle(self):
         para_style = self.para_xml.get("style")
 
-        style_id = None
-        versetext = False
-
-        self.cur.execute("""
-            SELECT id, versetext FROM bible.styles WHERE style=%s
-        """, (para_style,))
-        style = self.cur.fetchone()
-        
-        if style != None:
-            style_id = style[0]
-            versetext = style[1]
+        style_id = self.this_translation.get_style_dict()[para_style]["id"]
+        versetext = self.this_translation.get_style_dict()[para_style]["versetext"]
 
         return style_id, versetext
         
