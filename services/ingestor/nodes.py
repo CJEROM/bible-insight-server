@@ -41,9 +41,9 @@ class Nodes:
         self.book_map_id = book_map_id
 
         self.created_nodes = {
-            "chapter": [],
+            "chapter": {},
+            "verse": {},
             "para": [],
-            "verse": [],
             "note": []
         }
         
@@ -71,20 +71,22 @@ class Nodes:
             this_node = [None] * 17 # create mutable list of length 17
 
             if isinstance(node, Tag):
-                node_type = node.name
+                node_type =     node.name
 
-                this_node[1] = node_type # node_type, 1
-                this_node[2] = node.get("code") # code, 2
-                this_node[3] = node.get("sid") # sid, 3
-                this_node[4] = node.get("eid") # eid, 4
-                this_node[5] = node.get("vid") # vid, 5
-                this_node[6] = node.get("style") # style, 6 
-                this_node[7] = node.get("number") # number, 7
-                this_node[8] = node.get("caller") # caller, 8
-                this_node[9] = node.get("closed") # closed, 9
+                this_node[1] =  node_type # node_type, 1
+                this_node[2] =  node.get("code") # code, 2
+                sid =           node.get("sid")
+                this_node[3] =  sid # sid, 3
+                eid =           node.get("eid")
+                this_node[4] =  eid # eid, 4
+                this_node[5] =  node.get("vid") # vid, 5
+                this_node[6] =  node.get("style") # style, 6 
+                this_node[7] =  node.get("number") # number, 7
+                this_node[8] =  node.get("caller") # caller, 8
+                this_node[9] =  node.get("closed") # closed, 9
                 this_node[10] = node.get("version") # version, 10
-                strong = node.get("strong")
-                this_node[11] = node.get("strong") # strong, 11
+                strong =        node.get("strong")
+                this_node[11] = strong # strong, 11
                 this_node[12] = node.get("loc") # loc, 12
 
                 # Consider creating init for all strongs numbers instead
@@ -139,13 +141,15 @@ class Nodes:
             all_new_nodes.append(tuple(this_node))
             node_id_counter += 1
 
-            if node_type in self.created_nodes.keys():
-                self.created_nodes[node_type].append({
-                    "id": node_id,
-                    "bs4": node,
-                    "path": canonical_path,
-                    "data": tuple(this_node),
-                })
+            # Add to dictionary to show start and end nodes for chapters or verse
+            if node_type in ["chapter", "verse"]:
+                if sid != None:
+                    self.created_nodes[node_type][sid]["sid"] = node_id
+                elif eid != None:
+                    self.created_nodes[node_type][sid]["sid"] = node_id
+            # Add to dictionary to show node_id for para or note
+            elif node_type in ["para", "note"]:
+                self.created_nodes[node_type].append(node_id)
 
         # Now bulk insert all of the nodes into the database (in batches / chunks)
         CHUNK = 20000  # ideal for execute_values
