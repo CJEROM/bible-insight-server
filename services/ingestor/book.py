@@ -14,22 +14,21 @@ class Book:
     def __init__(self, this_translation: Translation, book_code, book_map_id, file_id, book_string, db_conn):
         self.this_translation = this_translation
 
-        self.language_id = self.this_translation.get_language_id()
-        self.translation_id = self.this_translation.get_translation_id()
-        self.book_map_id = book_map_id
-        self.file_id = file_id
-        self.book_xml = BeautifulSoup(book_string, "xml")
+        self.language_id =      self.this_translation.get_language_id()
+        self.translation_id =   self.this_translation.get_translation_id()
+        self.book_map_id =      book_map_id
+        self.file_id =          file_id
+        self.book_xml =         BeautifulSoup(book_string, "xml")
 
         # Adds a database connection
-        self.conn = db_conn
-        self.cur = self.conn.cursor()
+        self.conn =             db_conn
+        self.cur =              self.conn.cursor()
 
-        self.book_code = book_code
-        self.bible_structure = self.this_translation.get_bible_structure_info()
+        self.book_code =        book_code
 
         self.this_translation.log_ingestion_activity(f"Created with book_map_id:{self.book_map_id}", book_code, "INFO")
 
-        self.book_nodes = Nodes(book_map_id, db_conn, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
+        self.book_nodes =       Nodes(book_map_id, db_conn, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
         
         self.createTextChapters()
 
@@ -77,7 +76,7 @@ class Book:
             chapter_text += "\n</usx>"
 
             # Create Chapter Classes
-            Chapter(self.language_id, self.translation_id, self.book_map_id, chapter_ref, chapter_text, self.conn, self.bible_structure)
+            Chapter(self.this_translation, self, chapter_ref, chapter_text, self.conn)
             additions += 1
 
             self.this_translation.log_ingestion_activity(chapter_ref, "BOOK", "INFO")
