@@ -1,10 +1,4 @@
-from bs4 import BeautifulSoup, Tag, NavigableString
-import spacy
-from spacy.tokenizer import Tokenizer
-from spacy.util import compile_infix_regex
-import re
-import json
-import psycopg2
+from bs4 import BeautifulSoup
 
 from translation import Translation
 from book import Book
@@ -48,7 +42,7 @@ class Chapter:
         """, (self.chapter_ref, self.book_map_id, self.start_node, self.end_node))
         self.chapter_occurence_id = self.cur.fetchone()[0]
 
-        self.this_translation.log_ingestion_activity(f"Created Chapter [Occurence ID: {self.chapter_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.start_node}]", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Created Chapter Occurence [ID: {self.chapter_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.start_node}]", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
 
         self.conn.commit()
 
@@ -118,7 +112,7 @@ class Chapter:
         for verse in all_verses:
             verse_ref = verse.get("sid")
             if verse_ref:
-                Verse(self.chapter_xml, verse_ref, self.chapter_occurence_id, self.conn)
+                Verse(self.this_translation, self.this_book, self, verse_ref, self.conn)
                 additions += 1
 
             latest_ref = verse_ref
