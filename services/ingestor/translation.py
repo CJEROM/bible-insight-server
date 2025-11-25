@@ -555,13 +555,7 @@ class Translation:
     def createStylesAndProperties(self, styles_string, styles_file_id):
         style_additions = 0
         property_additions = 0
-        # We only set styles and properties once, since it is duplicated across all translations, just usx formatting.
-        self.cur.execute("""SELECT last_value FROM bible.styles_id_seq;""")
-        styles = self.cur.fetchone()[0]
 
-        if styles > 1:
-            return
-        
         styles_xml = BeautifulSoup(styles_string, "xml")
         properties = styles_xml.find_all("property")
 
