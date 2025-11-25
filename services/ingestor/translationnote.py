@@ -203,7 +203,10 @@ class TranslationNote:
         #   To only set up ref like its a single or double format (tho only verse-range accepted), so force ref into that format
         #   Double format will only ever extend another 1 verse, and it migth turn into multi if that's into the next chapter (supress these)
 
-        fragment_format = format[0]
+        fragment_format = format
+        if len(format) > 1:
+            fragment_format = format[0]
+        
         if fragment_format == None:
             return None, None
         
