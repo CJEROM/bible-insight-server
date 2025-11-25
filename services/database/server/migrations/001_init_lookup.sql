@@ -157,7 +157,10 @@ VALUES
     ('ref','tag representing a reference to other parts of scripture', TRUE),
     ('note','tag representing a footnote or crossreference', TRUE),
     ('book','tag representing a book', TRUE),
-    ('text','not a tag but represents text in the parsed xml structure', TRUE);
+    ('text','not a tag but represents text in the parsed xml structure', TRUE),
+    ('table', 'tag representing a table', TRUE),
+    ('row', 'tag representing a row in a table', TRUE),
+    ('cell', 'tag representing a cell in a row in a table (forms colums in row)', TRUE);
 
 -- maps each node type to the attributes it uses
 INSERT INTO lookup.node_map (node_type, node_attribute) 
@@ -193,7 +196,14 @@ VALUES
     ('book','code'),
     ('book','style'),
     -- text
-    ('text','text');
+    ('text','text'),
+    -- table (no attributes)
+    -- row
+    ('row','style'),
+    -- cell
+    ('cell','style'),
+    ('cell','align'),
+    ('cell','text');
 
 -- INSERT INTO lookup.node_options (relationship_types, description) 
 -- VALUES
@@ -215,7 +225,11 @@ VALUES
     ('book', 'text'),
     ('note', 'text'),
     ('char', 'ref'),
-    ('ref', 'text');
+    ('ref', 'text'),
+    ('usx', 'table'),
+    ('table', 'row'),
+    ('row', 'cell'),
+    ('cell', 'text');
 
 -- ================================================== Quote Look up Tables ==================================================
 
