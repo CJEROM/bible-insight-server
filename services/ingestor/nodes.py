@@ -51,7 +51,7 @@ class Nodes:
         self.created_nodes = {
             "chapter": {},
             "verse": {},
-            "para": [],
+            "para": {},
             "note": {}
         }
         
@@ -71,7 +71,7 @@ class Nodes:
 
         node_id_counter = 1
 
-        node_chapter_ref = None
+        node_chapter_ref = self.this_book.get_book_code() + " 1"
 
         for node in self.book_soup.descendants:
             # Initialise node_id for the note we are going to create in DB
@@ -151,6 +151,8 @@ class Nodes:
             all_new_nodes.append(tuple(this_node))
             node_id_counter += 1
 
+            self.this_translation.log_ingestion_activity(f"Created New Node: {this_node}", f"[NODE:{node_type}]", "INFO")
+
             # Add to dictionary to show start and end nodes for chapters or verse
             if node_type in ["chapter", "verse"]:
                 if sid != None:
@@ -158,14 +160,17 @@ class Nodes:
                     self.created_nodes[node_type][sid]["sid"] = node_id
                     if node_type == "chapter":
                         node_chapter_ref = sid
-                        self.created_nodes["note"][node_chapter_ref] = []
                 elif eid != None:
                     self.created_nodes[node_type][eid]["eid"] = node_id
             # Add to dictionary to show node_id for para or note
-            elif node_type == "para":
-                self.created_nodes[node_type].append(node_id)
-            # Add to dictionary to show node_id for para or note
-            elif node_type == "note":
+            elif node_type in ["para", "note"]:
+                print(node_type, self.created_nodes[node_type])
+                # Check if need to inialise for chapter
+                if self.created_nodes[node_type] == {}:
+                    self.created_nodes[node_type][node_chapter_ref] = []
+                elif self.created_nodes[node_type].get(node_chapter_ref) == None:
+                    self.created_nodes[node_type][node_chapter_ref] = []
+
                 self.created_nodes[node_type][node_chapter_ref].append(node_id)
 
         # Now bulk insert all of the nodes into the database (in batches / chunks)
@@ -185,7 +190,7 @@ class Nodes:
         return self.created_nodes["verse"]
     
     def get_notes(self):
-        return self.created_nodes["notes"]
+        return self.created_nodes["note"]
     
     # May remove if I choose to initialise it in a different way e.g. init script
     def createStrongs(self, strong_code):
