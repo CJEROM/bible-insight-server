@@ -72,6 +72,7 @@ class Translation:
         self.cur = self.conn.cursor()
 
         self.start_time = time.time()
+        self.progress_message = None
 
         print("✅ Starting Upload ...")
 
@@ -450,8 +451,7 @@ class Translation:
                 
                 # Then update the database linking to them
                 if self.medium == "text":
-                    sys.stdout.write(f"\r    Processing books: |{bar}| {percentage}% | {found_book} | [Elapsed: {self.elapsed_ingestion_time()}] | ")
-                    sys.stdout.flush()
+                    self.progress_message = f"    Processing Books: |{bar}| {percentage}% | {found_book}"
 
                     self.cur.execute("""
                         INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s) RETURNING id;
@@ -460,8 +460,7 @@ class Translation:
                     book_map_id = self.cur.fetchone()[0]
                     Book(self, found_book, book_map_id, file_id, self.stream_file(object_name), self.conn)                    
                 if self.medium == "audio":
-                    sys.stdout.write(f"\r    Processing books: |{bar}| {percentage}% | {chapter_ref} | [Elapsed: {self.elapsed_ingestion_time()}] | ")
-                    sys.stdout.flush()
+                    self.progress_message = f"    Processing Chapters: |{bar}| {percentage}% | {chapter_ref}"
                     # Audio and eventually video don't have any connection but in serving the files themselves for consumption
                     #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
                     #   Since below are all the database references it needs.
@@ -479,8 +478,7 @@ class Translation:
         bar = '#' * progress + '-' * (50 - progress)
         percentage = int((total_books / total_books) * 100)
         
-        sys.stdout.write(f"\r    Processing Books: |{bar}| {percentage}% | COMPLETED | [Elapsed: {self.elapsed_ingestion_time()}] | ")
-        sys.stdout.flush()
+        self.progress_message = None
 
         self.conn.commit()
         
@@ -766,9 +764,8 @@ class Translation:
         hours = int(duration // 3600)
         minutes = int((duration % 3600) // 60)
         seconds = int(duration % 60)
-        milliseconds = int((duration % 1) * 1000)  # or *100 for .mm format
 
-        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
+        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
         return formatted_duration
 
     def log_ingestion_activity(self, log_message, source_class, log_level):
@@ -777,3 +774,7 @@ class Translation:
 
         with open(self.log_file, 'a', encoding="utf-8") as f:
             f.write(f"{datetime.datetime.now()} [{log_level}] [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")
+
+        if self.progress_message != None:
+            sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_ingestion_time()}] | ")
+            sys.stdout.flush()
