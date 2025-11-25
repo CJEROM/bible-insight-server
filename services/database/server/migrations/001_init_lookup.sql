@@ -144,7 +144,8 @@ VALUES
     ('strong','Strong number of Hebrew or Greek for particular word', TRUE),
     ('loc','reference to chapter or verse (could include spread)', TRUE),
     ('encoding','text encoding type for the file', FALSE),
-    ('text', 'the actual text', TRUE); -- maps to node_text column
+    ('text', 'the actual text', TRUE),
+    ('align', 'how a cell should be aligned in a table', TRUE); -- maps to node_text column
 
 INSERT INTO lookup.node_types (node, description, active) 
 VALUES
