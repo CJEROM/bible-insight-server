@@ -130,7 +130,7 @@ class Chapter:
         return new_ref
 
     def createTranslationNotes(self):
-        all_note_node_ids = self.this_book.get_book_nodes().get_paras()
+        all_note_node_ids = self.this_book.get_book_nodes().get_notes()[self.chapter_ref]
         self.this_translation.log_ingestion_activity(f"Creating [{len(all_note_node_ids)}] Translation Notes ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
 
         # Go through chapter and grab all cross references and footnotes, and write to database

@@ -52,7 +52,7 @@ class Nodes:
             "chapter": {},
             "verse": {},
             "para": [],
-            "note": []
+            "note": {}
         }
         
         self.walk_parsed_xml()
@@ -70,6 +70,8 @@ class Nodes:
         node_id_offset = self.cur.fetchone()[0]
 
         node_id_counter = 1
+
+        node_chapter_ref = None
 
         for node in self.book_soup.descendants:
             # Initialise node_id for the note we are going to create in DB
@@ -154,11 +156,17 @@ class Nodes:
                 if sid != None:
                     self.created_nodes[node_type][sid] = {}
                     self.created_nodes[node_type][sid]["sid"] = node_id
+                    if node_type == "chapter":
+                        node_chapter_ref = sid
+                        self.created_nodes["note"][node_chapter_ref] = []
                 elif eid != None:
                     self.created_nodes[node_type][eid]["eid"] = node_id
             # Add to dictionary to show node_id for para or note
-            elif node_type in ["para", "note"]:
+            elif node_type == "para":
                 self.created_nodes[node_type].append(node_id)
+            # Add to dictionary to show node_id for para or note
+            elif node_type == "note":
+                self.created_nodes[node_type][node_chapter_ref].append(node_id)
 
         # Now bulk insert all of the nodes into the database (in batches / chunks)
         CHUNK = 20000  # ideal for execute_values
