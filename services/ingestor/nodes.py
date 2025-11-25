@@ -31,8 +31,8 @@ class Nodes:
             INSERT INTO bible.nodes (node_text, node_type, code, sid, eid, vid, style, number, caller, closed, version, strong, loc, parent_node_id, index_in_parent, book_map_id, canonical_path, align) 
             VALUES %s;
         """,
-        "node_count": """
-            SELECT COUNT(*) FROM bible.nodes;
+        "max_node_count": """
+            SELECT COALESCE(MAX(id), 0) FROM bible.nodes;
         """
     }
 
@@ -66,7 +66,7 @@ class Nodes:
 
         all_new_nodes = []
 
-        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.nodes",))
+        self.cur.execute(self.SQL.get("max_node_count"))
         node_id_offset = self.cur.fetchone()[0]
 
         node_id_counter = 1
