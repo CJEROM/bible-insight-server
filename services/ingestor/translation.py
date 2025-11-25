@@ -38,6 +38,17 @@ LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
 LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
 
 class Translation:
+    default_log_level = 2 # Here I can set the level of logging I want for my application
+
+    LOG_MAPPING = {
+        "TRACE": 0,
+        "DEBUG": 1,
+        "INFO": 2,
+        "WARN": 3,
+        "ERROR": 4,
+        "FATAL": 5
+    }
+    
     def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id, dbl_id, agreement_id):
         self.client = minio_client
         self.medium = medium # Audio | Video | Text (USX)
@@ -761,16 +772,8 @@ class Translation:
         return formatted_duration
 
     def log_ingestion_activity(self, log_message, source_class, log_level):
-        default_log_level = 2 # Here I can set the level of logging I want for my application
-        LOG_MAPPING = {
-            "TRACE": 0,
-            "DEBUG": 1,
-            "INFO": 2,
-            "WARN": 3,
-            "ERROR": 4,
-            "FATAL": 5
-        }
+        if self.LOG_MAPPING[log_level] < self.default_log_level:
+            return
 
-        if LOG_MAPPING[log_level] > default_log_level:
-            with open(self.log_file, 'a', encoding="utf-8") as f:
-                f.write(f"{datetime.datetime.now()} [{log_level}] [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")
+        with open(self.log_file, 'a', encoding="utf-8") as f:
+            f.write(f"{datetime.datetime.now()} [{log_level}] [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")
