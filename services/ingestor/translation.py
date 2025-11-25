@@ -761,5 +761,16 @@ class Translation:
         return formatted_duration
 
     def log_ingestion_activity(self, log_message, source_class, log_level):
-        with open(self.log_file, 'a', encoding="utf-8") as f:
-            f.write(f"{datetime.datetime.now()} {log_level} [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")
+        default_log_level = 2 # Here I can set the level of logging I want for my application
+        LOG_MAPPING = {
+            "TRACE": 0,
+            "DEBUG": 1,
+            "INFO": 2,
+            "WARN": 3,
+            "ERROR": 4,
+            "FATAL": 5
+        }
+        
+        if LOG_MAPPING[log_level] > default_log_level:
+            with open(self.log_file, 'a', encoding="utf-8") as f:
+                f.write(f"{datetime.datetime.now()} {log_level} [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")
