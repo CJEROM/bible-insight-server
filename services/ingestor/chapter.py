@@ -76,8 +76,7 @@ class Chapter:
             book_code, chapter_num = self.chapter_ref.split(" ")
             self.cur.execute("""
                 INSERT INTO bible.chapters (book_code, chapter_num, chapter_ref, standard) 
-                VALUES (%s, %s, %s, %s)
-                RETURNING id;
+                VALUES (%s, %s, %s, %s);
             """, (book_code, int(chapter_num), self.chapter_ref, False))
             # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))
             print(f"     Non-Standard Chapter Created: {self.chapter_ref}")
@@ -105,7 +104,7 @@ class Chapter:
         additions = 0
         all_verses = self.chapter_xml.find_all("verse")
 
-         # Translation Notes aren't guaranteed to be created, so don't create them if they don't exist
+        # Translation Notes aren't guaranteed to be created, so don't create them if they don't exist
         if len(all_verses) == None:
             self.this_translation.log_ingestion_activity(f"No Verse Occurences for this Chapter!", f"CHAPTER: {self.chapter_ref}", "WARN")
             return
