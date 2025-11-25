@@ -66,7 +66,7 @@ class Nodes:
 
         all_new_nodes = []
 
-        self.cur.execute(self.SQL.get("node_count"))
+        self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.nodes",))
         node_id_offset = self.cur.fetchone()[0]
 
         node_id_counter = 1
