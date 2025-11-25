@@ -180,16 +180,24 @@ class Nodes:
             execute_values(self.cur, sql_query, all_new_nodes[i:i+CHUNK])
 
     def get_chapters(self):
-        return self.created_nodes["chapter"]
+        nodes = self.created_nodes["chapter"]
+        self.this_translation.log_ingestion_activity(f"Requested Chapter Nodes: {nodes}", f"[NODE]", "DEBUG")
+        return nodes
     
     def get_paras(self):
-        return self.created_nodes["para"]
+        nodes = self.created_nodes["para"]
+        self.this_translation.log_ingestion_activity(f"Requested Para Nodes: {nodes}", f"[NODE]", "DEBUG")
+        return nodes
     
     def get_verses(self):
-        return self.created_nodes["verse"]
+        nodes = self.created_nodes["verse"]
+        self.this_translation.log_ingestion_activity(f"Requested Verse Nodes: {nodes}", f"[NODE]", "DEBUG")
+        return nodes
     
     def get_notes(self):
-        return self.created_nodes["note"]
+        nodes = self.created_nodes["note"]
+        self.this_translation.log_ingestion_activity(f"Requested Note Nodes: {nodes}", f"[NODE]", "DEBUG")
+        return nodes
     
     # May remove if I choose to initialise it in a different way e.g. init script
     def createStrongs(self, strong_code):
