@@ -131,7 +131,13 @@ class Chapter:
         return new_ref
 
     def createTranslationNotes(self):
-        all_note_node_ids = self.this_book.get_book_nodes().get_notes()[self.chapter_ref]
+        all_note_node_ids = self.this_book.get_book_nodes().get_notes().get(self.chapter_ref)
+
+        # Translation Notes aren't guaranteed to be created, so don't create them if they don't exist
+        if all_note_node_ids == None:
+            self.this_translation.log_ingestion_activity(f"No Translation Notes for this Chapter!", f"[CHAPTER: {self.chapter_ref}]", "INFO")
+            return
+        
         self.this_translation.log_ingestion_activity(f"Creating [{len(all_note_node_ids)}] Translation Notes ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
         self.this_translation.log_ingestion_activity(f"Creating Translation Notes Node Ids => {all_note_node_ids}", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
 
