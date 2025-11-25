@@ -84,7 +84,7 @@ class Book:
             self.this_translation.log_ingestion_activity(chapter_ref, f"[BOOK: {self.book_code}]", "INFO")
         
         if additions > 0:
-            print(f"    [{additions}] Chapters added for {self.book_code[0]}")
+            # print(f"    [{additions}] Chapters added for {self.book_code}")
             self.this_translation.log_ingestion_activity(f"Created {additions} Chapter Occurences!", f"[BOOK: {self.book_code}]", "DEBUG")
             pass # Ignore this printing for now to just test what translations are robust enough to work in here and which aren't
    
