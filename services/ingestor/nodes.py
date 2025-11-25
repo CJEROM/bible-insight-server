@@ -28,7 +28,7 @@ POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 class Nodes:
     SQL = {
         "new_node": """
-            INSERT INTO bible.nodes (node_text, node_type, code, sid, eid, vid, style, number, caller, closed, version, strong, loc, parent_node_id, index_in_parent, book_map_id, canonical_path) 
+            INSERT INTO bible.nodes (node_text, node_type, code, sid, eid, vid, style, number, caller, closed, version, strong, loc, parent_node_id, index_in_parent, book_map_id, canonical_path, align) 
             VALUES %s;
         """,
         "node_count": """
@@ -78,7 +78,7 @@ class Nodes:
             node_id = node_id_counter + node_id_offset # since i will be 0, want to start at 1 instead + offset from database to say this new node is
             node_type = None
             
-            this_node = [None] * 17 # create mutable list of length 17
+            this_node = [None] * 18 # create mutable list of length 17
 
             if isinstance(node, Tag):
                 node_type =     node.name
@@ -98,6 +98,7 @@ class Nodes:
                 strong =        node.get("strong")
                 this_node[11] = strong # strong, 11
                 this_node[12] = node.get("loc") # loc, 12
+                this_node[17] = node.get("align") # align, 17 
 
                 # Consider creating init for all strongs numbers instead
                 if strong != None:
@@ -110,7 +111,7 @@ class Nodes:
                 this_node[1] = node_type # node_type, 1
 
             # ------ Skip empty nodes
-            if all(x is None for x in this_node):
+            if all(x is None for x in this_node) and node_type != "table":
                 continue
 
             # ------ Parent & child index tracking
