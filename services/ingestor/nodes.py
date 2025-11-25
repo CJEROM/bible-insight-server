@@ -164,7 +164,6 @@ class Nodes:
                     self.created_nodes[node_type][eid]["eid"] = node_id
             # Add to dictionary to show node_id for para or note
             elif node_type in ["para", "note"]:
-                print(node_type, self.created_nodes[node_type])
                 # Check if need to inialise for chapter
                 if self.created_nodes[node_type] == {}:
                     self.created_nodes[node_type][node_chapter_ref] = []

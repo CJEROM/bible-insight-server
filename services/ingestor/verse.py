@@ -103,4 +103,4 @@ class Verse:
         """, (self.chapter_occurence_id, self.verse_ref, self.start_node, self.end_node))
         self.verse_occurence_id = self.cur.fetchone()[0]
 
-        self.this_translation.log_ingestion_activity(f"Created New Verse Occurence [ID: {self.verse_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.start_node}]", f"[VERSE: {self.verse_ref}]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Created New Verse Occurence [ID: {self.verse_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.end_node}]", f"[VERSE: {self.verse_ref}]", "DEBUG")

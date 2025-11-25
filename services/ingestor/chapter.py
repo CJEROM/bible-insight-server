@@ -42,7 +42,7 @@ class Chapter:
         """, (self.chapter_ref, self.book_map_id, self.start_node, self.end_node))
         self.chapter_occurence_id = self.cur.fetchone()[0]
 
-        self.this_translation.log_ingestion_activity(f"Created Chapter Occurence [ID: {self.chapter_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.start_node}]", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Created Chapter Occurence [ID: {self.chapter_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.end_node}]", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
 
         self.conn.commit()
 
@@ -89,6 +89,7 @@ class Chapter:
         para_node_ids = self.this_book.get_book_nodes().get_paras()[self.chapter_ref]
 
         self.this_translation.log_ingestion_activity(f"Creating [{len(para_node_ids)}] Paragraphs ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
+        self.this_translation.log_ingestion_activity(f"Creating With Paragraph Node Ids => {para_node_ids}", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
 
         for i, (para) in enumerate(all_paragraphs):
             Paragraph(self.this_translation, self.this_book, self, para_node_ids[i], para, self.conn)
@@ -132,6 +133,7 @@ class Chapter:
     def createTranslationNotes(self):
         all_note_node_ids = self.this_book.get_book_nodes().get_notes()[self.chapter_ref]
         self.this_translation.log_ingestion_activity(f"Creating [{len(all_note_node_ids)}] Translation Notes ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
+        self.this_translation.log_ingestion_activity(f"Creating Translation Notes Node Ids => {all_note_node_ids}", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
 
         # Go through chapter and grab all cross references and footnotes, and write to database
         for i, this_note in enumerate(self.chapter_xml.find_all("note")):
