@@ -151,7 +151,7 @@ class Nodes:
             all_new_nodes.append(tuple(this_node))
             node_id_counter += 1
 
-            self.this_translation.log_ingestion_activity(f"Created New Node: {this_node}", f"[NODE:{node_type}]", "INFO")
+            self.this_translation.log_ingestion_activity(f"Created New Node: {this_node}", f"NODE:{node_type}", "TRACE")
 
             # Add to dictionary to show start and end nodes for chapters or verse
             if node_type in ["chapter", "verse"]:
@@ -181,22 +181,22 @@ class Nodes:
 
     def get_chapters(self):
         nodes = self.created_nodes["chapter"]
-        self.this_translation.log_ingestion_activity(f"Requested Chapter Nodes: {nodes}", f"[NODE]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Requested Chapter Nodes: {nodes}", f"NODE", "DEBUG")
         return nodes
     
     def get_paras(self):
         nodes = self.created_nodes["para"]
-        self.this_translation.log_ingestion_activity(f"Requested Para Nodes: {nodes}", f"[NODE]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Requested Para Nodes: {nodes}", f"NODE", "DEBUG")
         return nodes
     
     def get_verses(self):
         nodes = self.created_nodes["verse"]
-        self.this_translation.log_ingestion_activity(f"Requested Verse Nodes: {nodes}", f"[NODE]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Requested Verse Nodes: {nodes}", f"NODE", "DEBUG")
         return nodes
     
     def get_notes(self):
         nodes = self.created_nodes["note"]
-        self.this_translation.log_ingestion_activity(f"Requested Note Nodes: {nodes}", f"[NODE]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Requested Note Nodes: {nodes}", f"NODE", "DEBUG")
         return nodes
     
     # May remove if I choose to initialise it in a different way e.g. init script

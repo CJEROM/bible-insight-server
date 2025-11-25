@@ -52,4 +52,4 @@ class Paragraph:
             RETURNING id;
         """, (self.paragraph_node_id, self.style_id, None, self.versetext))
         self.paragraph_id = self.cur.fetchone()[0]
-        self.this_translation.log_ingestion_activity(f"Created New Paragraph [ID: {self.paragraph_id}] [Verse_Text: {str(self.versetext).capitalize()}]", f"[PARAGRAPH]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Created New Paragraph [ID: {self.paragraph_id}] [Verse_Text: {str(self.versetext).capitalize()}]", f"PARAGRAPH", "DEBUG")

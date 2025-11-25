@@ -65,7 +65,7 @@ class Verse:
                     VALUES (%s, %s, %s, %s)
                 """, (chapter_ref, self.verse_ref, False, verse_suffix))
 
-                self.this_translation.log_ingestion_activity(f"Created New Verse", f"[VERSE: {self.verse_ref}]", "DEBUG")
+                self.this_translation.log_ingestion_activity(f"Created New Verse", f"VERSE: {self.verse_ref}", "DEBUG")
 
                 start_verse = int(verse_num)
                 end_verse = int(verse_splits[1]) + 1 # because range is non inclusive
@@ -75,7 +75,7 @@ class Verse:
                         INSERT INTO bible.verse_correction (non_standard_verse_ref, verse_ref) 
                         VALUES (%s, %s)
                     """, (self.verse_ref, new_verse_ref))
-                    self.this_translation.log_ingestion_activity(f"Created Verse Correction [{new_verse_ref}]", f"[VERSE: {self.verse_ref}]", "DEBUG")
+                    self.this_translation.log_ingestion_activity(f"Created Verse Correction [{new_verse_ref}]", f"VERSE: {self.verse_ref}", "DEBUG")
             
             # Taking account of secondary non standard verse
             if self.verse_ref[-1].isalpha(): # e.g. EXO 28:29a
@@ -83,14 +83,14 @@ class Verse:
                     INSERT INTO bible.verses (chapter_ref, verse_ref, standard, verse) 
                     VALUES (%s, %s, %s, %s)
                 """, (chapter_ref, self.verse_ref, False, verse_suffix))
-                self.this_translation.log_ingestion_activity(f"Created New Verse", f"[VERSE: {self.verse_ref}]", "DEBUG")
+                self.this_translation.log_ingestion_activity(f"Created New Verse", f"VERSE: {self.verse_ref}", "DEBUG")
                 
                 new_verse_ref = self.verse_ref[:-1]
                 self.cur.execute("""
                     INSERT INTO bible.verse_correction (non_standard_verse_ref, verse_ref) 
                     VALUES (%s, %s)
                 """, (self.verse_ref, new_verse_ref))
-                self.this_translation.log_ingestion_activity(f"Created Verse Correction [{new_verse_ref}]", f"[VERSE: {self.verse_ref}]", "DEBUG")
+                self.this_translation.log_ingestion_activity(f"Created Verse Correction [{new_verse_ref}]", f"VERSE: {self.verse_ref}", "DEBUG")
 
     def createVerseOccurence(self):
         all_vesre_nodes = self.this_book.get_book_nodes().get_verses()[self.verse_ref]
@@ -104,4 +104,4 @@ class Verse:
         """, (self.chapter_occurence_id, self.verse_ref, self.start_node, self.end_node))
         self.verse_occurence_id = self.cur.fetchone()[0]
 
-        self.this_translation.log_ingestion_activity(f"Created New Verse Occurence [ID: {self.verse_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.end_node}]", f"[VERSE: {self.verse_ref}]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Created New Verse Occurence [ID: {self.verse_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.end_node}]", f"VERSE: {self.verse_ref}", "TRACE")

@@ -25,7 +25,7 @@ class Book:
 
         self.book_code =        book_code
 
-        self.this_translation.log_ingestion_activity(f"Created with [book_map_id:{self.book_map_id}]", f"[BOOK: {self.book_code}]", "INFO")
+        self.this_translation.log_ingestion_activity(f"Created with [book_map_id:{self.book_map_id}]", f"BOOK: {self.book_code}", "INFO")
 
         self.book_nodes =       Nodes(self.this_translation, self, db_conn, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
         
@@ -54,7 +54,7 @@ class Book:
         """, (self.book_code,))
         all_chapters = self.cur.fetchall()
 
-        self.this_translation.log_ingestion_activity(f"Checking {len(all_chapters)} Chapters", f"[BOOK: {self.book_code}]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Creating {len(all_chapters)} Chapters", f"BOOK: {self.book_code}", "DEBUG")
 
         for chapter in all_chapters:
             chapter_ref = chapter[0]
@@ -68,7 +68,7 @@ class Book:
             #       if it doesn't exist for this book.
             # Should also account for upper range increased due to non standard chapters (skip over them)
             if chapter_found == None:
-                self.this_translation.log_ingestion_activity(f"Chapter {chapter_ref} invalid, skipping...", f"[BOOK: {self.book_code}]", "DEBUG")
+                self.this_translation.log_ingestion_activity(f"Chapter {chapter_ref} invalid, skipping...", f"BOOK: {self.book_code}", "WARN")
                 continue
 
             # Have to add encapsulating tags, since otherwise only first chapter tag, 
@@ -81,10 +81,10 @@ class Book:
             Chapter(self.this_translation, self, chapter_ref, chapter_text, self.conn)
             additions += 1
 
-            self.this_translation.log_ingestion_activity(chapter_ref, f"[BOOK: {self.book_code}]", "INFO")
+            self.this_translation.log_ingestion_activity(chapter_ref, f"BOOK: {self.book_code}", "TRACE")
         
         if additions > 0:
             # print(f"    [{additions}] Chapters added for {self.book_code}")
-            self.this_translation.log_ingestion_activity(f"Created {additions} Chapter Occurences!", f"[BOOK: {self.book_code}]", "DEBUG")
+            self.this_translation.log_ingestion_activity(f"Created {additions} Chapter Occurences!", f"BOOK: {self.book_code}", "INFO")
             pass # Ignore this printing for now to just test what translations are robust enough to work in here and which aren't
    

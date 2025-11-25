@@ -161,7 +161,7 @@ class TranslationNote:
         elif self.note_type == "x":
             for i, ref in enumerate(self.note_xml.find_all("ref")):
                 crossreference_id = self.create_destination_ref(ref, self.node_id)
-                self.this_translation.log_ingestion_activity(f"Created Cross Reference [ID: {crossreference_id}]", "[NOTE:CROSSREF]", "DEBUG")
+                self.this_translation.log_ingestion_activity(f"Created Cross Reference [ID: {crossreference_id}]", "NOTE:CROSSREF", "DEBUG")
 
         self.conn.commit()
 
@@ -232,7 +232,7 @@ class TranslationNote:
         if source_type == "verse":
             Verse(self.this_translation, self.this_book, self.this_chapter, verse_ref=source_ref, db_conn=self.conn, is_special_case=True)
 
-        self.this_translation.log_ingestion_activity(f"Created [{source_type}] Source Ref: [{note_ref}] -> [{cleaned_ref}] -> [{source_ref}] <=> [Format: {format}] [Format_Name: {format_name}] ", "[NOTE]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Created [{source_type}] Source Ref: [{note_ref}] -> [{cleaned_ref}] -> [{source_ref}] <=> [Format: {format}] [Format_Name: {format_name}] ", "NOTE", "DEBUG")
         
         return source_ref, source_type
     
@@ -310,7 +310,7 @@ class TranslationNote:
 
         self.parent_note = None
 
-        self.this_translation.log_ingestion_activity(f"Created [{destination_type}] Source Ref: [{original_ref}] -> [{cleaned_ref}] -> [{destination_ref}] <=> [Format: {format_types}] [Format_Name: {format_name}] ", "[NOTE]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Created [{destination_type}] Source Ref: [{original_ref}] -> [{cleaned_ref}] -> [{destination_ref}] <=> [Format: {format_types}] [Format_Name: {format_name}] ", "NOTE", "DEBUG")
 
         # only first fragment is returned, since the others link to first fragment as parent
         return main_note
@@ -325,11 +325,11 @@ class TranslationNote:
         elif self.source_type == "chapter":
             footnote_id = self.execute_and_get_id(self.SQL.get("translation_foot_note"), (self.node_id, self.source_ref, None))
 
-        self.this_translation.log_ingestion_activity(f"Created Footnote [ID: {footnote_id}] ", "[NOTE:FOOTNOTE]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Created Footnote [ID: {footnote_id}] ", "NOTE:FOOTNOTE", "DEBUG")
 
         for i, ref in enumerate(self.note_xml.find_all("ref")):
             cross_reference_id = self.create_destination_ref(ref, self.node_id)
-            self.this_translation.log_ingestion_activity(f"Created Cross Reference [ID: {cross_reference_id}] [From:FOOTNOTE]", "[NOTE:FOOTNOTE]", "DEBUG")
+            self.this_translation.log_ingestion_activity(f"Created Cross Reference [ID: {cross_reference_id}] [From:FOOTNOTE]", "NOTE:FOOTNOTE", "DEBUG")
 
     def create_cross_reference(self, node_id, destination_ref, destination_type):
         this_ref = [None] * 5

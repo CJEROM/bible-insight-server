@@ -81,7 +81,7 @@ class Chapter:
             """, (book_code, int(chapter_num), self.chapter_ref, False))
             # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))
             print(f"     Non-Standard Chapter Created: {self.chapter_ref}")
-            self.this_translation.log_ingestion_activity(f"Created Non-Standard Chapter: {self.chapter_ref}", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
+            self.this_translation.log_ingestion_activity(f"Created Non-Standard Chapter: {self.chapter_ref}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
 
     def createParagraphs(self):
         additions = 0
@@ -89,8 +89,8 @@ class Chapter:
         all_paragraphs = self.chapter_xml.find_all("para")
         para_node_ids = self.this_book.get_book_nodes().get_paras()[self.chapter_ref]
 
-        self.this_translation.log_ingestion_activity(f"Creating [{len(para_node_ids)}] Paragraphs ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
-        self.this_translation.log_ingestion_activity(f"Creating With Paragraph Node Ids => {para_node_ids}", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Creating [{len(para_node_ids)}] Paragraphs ...", f"CHAPTER: {self.chapter_ref}", "INFO")
+        self.this_translation.log_ingestion_activity(f"Creating With Paragraph Node Ids => {para_node_ids}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
 
         for i, (para) in enumerate(all_paragraphs):
             Paragraph(self.this_translation, self.this_book, self, para_node_ids[i], para, self.conn)
@@ -98,7 +98,7 @@ class Chapter:
         
         if additions > 0:
             # print(f"    [{additions}] Paragraphs added to database")
-            self.this_translation.log_ingestion_activity(f"Created [{additions}] out of [{len(para_node_ids)}] Paragraphs!", f"[CHAPTER: {self.chapter_ref}]", "INFO")
+            self.this_translation.log_ingestion_activity(f"Created [{additions}] out of [{len(para_node_ids)}] Paragraphs!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
             pass
 
     def createVerseOccurences(self):
@@ -107,10 +107,10 @@ class Chapter:
 
          # Translation Notes aren't guaranteed to be created, so don't create them if they don't exist
         if len(all_verses) == None:
-            self.this_translation.log_ingestion_activity(f"No Verse Occurences for this Chapter!", f"[CHAPTER: {self.chapter_ref}]", "INFO")
+            self.this_translation.log_ingestion_activity(f"No Verse Occurences for this Chapter!", f"CHAPTER: {self.chapter_ref}", "WARN")
             return
 
-        self.this_translation.log_ingestion_activity(f"Creating [{len(all_verses)}] Verse Occurences ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
+        self.this_translation.log_ingestion_activity(f"Creating [{len(all_verses)}] Verse Occurences ...", f"CHAPTER: {self.chapter_ref}", "INFO")
 
         latest_ref = None
 
@@ -141,11 +141,11 @@ class Chapter:
 
         # Translation Notes aren't guaranteed to be created, so don't create them if they don't exist
         if all_note_node_ids == None:
-            self.this_translation.log_ingestion_activity(f"No Translation Notes for this Chapter!", f"[CHAPTER: {self.chapter_ref}]", "INFO")
+            self.this_translation.log_ingestion_activity(f"No Translation Notes for this Chapter!", f"CHAPTER: {self.chapter_ref}", "WARN")
             return
         
-        self.this_translation.log_ingestion_activity(f"Creating [{len(all_note_node_ids)}] Translation Notes ...", f"[CHAPTER: {self.chapter_ref}]", "INFO")
-        self.this_translation.log_ingestion_activity(f"Creating Translation Notes Node Ids => {all_note_node_ids}", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
+        self.this_translation.log_ingestion_activity(f"Creating [{len(all_note_node_ids)}] Translation Notes ...", f"CHAPTER: {self.chapter_ref}", "INFO")
+        self.this_translation.log_ingestion_activity(f"Creating Translation Notes Node Ids => {all_note_node_ids}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
 
         # Go through chapter and grab all cross references and footnotes, and write to database
         for i, this_note in enumerate(self.chapter_xml.find_all("note")):
