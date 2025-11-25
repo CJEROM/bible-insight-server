@@ -31,8 +31,9 @@ class Chapter:
         
         self.createChapter()
 
-        self.start_node = self.this_book.get_book_nodes().get_chapters()[self.chapter_ref]["sid"]
-        self.end_node = self.this_book.get_book_nodes().get_chapters()[self.chapter_ref]["eid"]
+        all_chapter_nodes = self.this_book.get_book_nodes().get_chapters()[self.chapter_ref]
+        self.start_node = all_chapter_nodes["sid"]
+        self.end_node = all_chapter_nodes["eid"]
 
         # Create a Chapter Occurence
         self.cur.execute("""

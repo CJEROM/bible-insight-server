@@ -93,8 +93,9 @@ class Verse:
                 self.this_translation.log_ingestion_activity(f"Created Verse Correction [{new_verse_ref}]", f"[VERSE: {self.verse_ref}]", "DEBUG")
 
     def createVerseOccurence(self):
-        self.start_node = self.this_book.get_book_nodes().get_verses()[self.verse_ref]["sid"]
-        self.end_node = self.this_book.get_book_nodes().get_verses()[self.verse_ref]["eid"]
+        all_vesre_nodes = self.this_book.get_book_nodes().get_verses()[self.verse_ref]
+        self.start_node = all_vesre_nodes["sid"]
+        self.end_node = all_vesre_nodes["eid"]
 
         self.cur.execute("""
             INSERT INTO bible.verseoccurences (chapter_id, verse_ref, start_node, end_node) 
