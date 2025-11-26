@@ -106,7 +106,7 @@ class Chapter:
 
         # Translation Notes aren't guaranteed to be created, so don't create them if they don't exist
         if len(all_verses) == None:
-            self.this_translation.log_ingestion_activity(f"No Verse Occurences for this Chapter!", f"CHAPTER: {self.chapter_ref}", "WARN")
+            self.this_translation.log_ingestion_activity(f"No Verse Occurences for this Chapter!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
             return
 
         self.this_translation.log_ingestion_activity(f"Creating [{len(all_verses)}] Verse Occurences ...", f"CHAPTER: {self.chapter_ref}", "INFO")
@@ -140,7 +140,7 @@ class Chapter:
 
         # Translation Notes aren't guaranteed to be created, so don't create them if they don't exist
         if all_note_node_ids == None:
-            self.this_translation.log_ingestion_activity(f"No Translation Notes for this Chapter!", f"CHAPTER: {self.chapter_ref}", "WARN")
+            self.this_translation.log_ingestion_activity(f"No Translation Notes for this Chapter!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
             return
         
         self.this_translation.log_ingestion_activity(f"Creating [{len(all_note_node_ids)}] Translation Notes ...", f"CHAPTER: {self.chapter_ref}", "INFO")

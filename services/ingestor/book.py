@@ -68,7 +68,7 @@ class Book:
             #       if it doesn't exist for this book.
             # Should also account for upper range increased due to non standard chapters (skip over them)
             if chapter_found == None:
-                self.this_translation.log_ingestion_activity(f"Chapter {chapter_ref} invalid, skipping...", f"BOOK: {self.book_code}", "WARN")
+                self.this_translation.log_ingestion_activity(f"Chapter {chapter_ref} invalid, skipping...", f"BOOK: {self.book_code}", "DEBUG")
                 continue
 
             # Have to add encapsulating tags, since otherwise only first chapter tag, 
