@@ -1,5 +1,6 @@
 import spacy
 from spacy.tokens import Doc
+from minio import Minio
 
 import psycopg2
 import os
@@ -18,6 +19,10 @@ POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 POSTGRES_DB = os.getenv("POSTGRES_DB")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
+MINIO_USERNAME = os.getenv("MINIO_USERNAME")
+MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
 
 # Decided I need to better tokenise so first will load all verses and then update the data for them later, I want tokens afterall in my database.
 
@@ -191,6 +196,14 @@ class Tokenisation:
         )
         self.cur = self.conn.cursor()
 
+        # Passes Minio client connection on to the MinioUSXUpload class
+        self.client = Minio(
+            MINIO_ENDPOINT,
+            access_key=MINIO_USERNAME,
+            secret_key=MINIO_PASSWORD,
+            secure=False
+        )
+
         self.cur.execute(self.SQL.get("get_language"), (self.translation_id,))
         self.language_id = self.cur.fetchone()[0]
 
@@ -306,7 +319,23 @@ class Tokenisation:
                     head_db_id = token_mapping[head_idx][0]
                     self.cur.execute(self.SQL.get("update_token_head"), (head_db_id, token_db_id))
 
-                print(f"Created {len(doc)} tokens.")                
+                print(f"Created {len(doc)} tokens.")         
+
+    def stream_file(self, object_name):
+        # Get file
+        response = None 
+        try:
+            response = self.client.get_object(
+                bucket_name=self.bucket,
+                object_name=object_name,
+            )
+            # Read the data as bytes, then decode as UTF-8
+            data = response.read().decode("utf-8")
+            return data
+        finally:
+            if response:
+                response.close()
+                response.release_conn()       
 
 
 if __name__ == "__main__":
