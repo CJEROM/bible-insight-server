@@ -31,7 +31,11 @@ class Chapter:
         
         self.createChapter()
 
-        all_chapter_nodes = self.this_book.get_book_nodes().get_chapters()[self.chapter_ref]
+        all_chapter_nodes = self.this_book.get_book_nodes().get_chapters().get(self.chapter_ref)
+        if all_chapter_nodes == None:
+            self.this_translation.log_ingestion_activity(f"Chapter {chapter_ref} invalid, skipping...", f"CHAPTER: {self.chapter_ref}", "DEBUG")
+            return
+        
         self.start_node = all_chapter_nodes["sid"]
         self.end_node = all_chapter_nodes["eid"]
 
@@ -86,12 +90,11 @@ class Chapter:
         additions = 0
         # Have to be created here since not all paragraphs fit inside a chapter
         all_paragraphs = self.chapter_xml.find_all("para")
+        para_node_ids = self.this_book.get_book_nodes().get_paras().get(self.chapter_ref)
 
-        if len(all_paragraphs) == None:
+        if all_paragraphs == None or para_node_ids == None:
             self.this_translation.log_ingestion_activity(f"No Paragraphs for this Chapter!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
             return
-
-        para_node_ids = self.this_book.get_book_nodes().get_paras()[self.chapter_ref]
 
         self.this_translation.log_ingestion_activity(f"Creating [{len(para_node_ids)}] Paragraphs ...", f"CHAPTER: {self.chapter_ref}", "INFO")
         self.this_translation.log_ingestion_activity(f"Creating With Paragraph Node Ids => {para_node_ids}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
