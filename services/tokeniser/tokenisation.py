@@ -53,7 +53,7 @@ NLP_MAPPING = {
 # Will create tokens for one translation at a time, to preprocess it all, then carry on with the rest before moving onto others.
 
 class Tokenisation:
-    default_log_level = 2 # Here I can set the level of logging I want for my application
+    default_log_level = 0 # Here I can set the level of logging I want for my application
 
     LOG_MAPPING = {
         "TRACE": 0,
@@ -77,7 +77,7 @@ class Tokenisation:
             SELECT id FROM bible.booktofile WHERE translation_id = %s
         """,
         "get_book_chapters": """
-            SELECT id, reconstructed_text FROM bible.chapteroccurences WHERE book_map_id = %s
+            SELECT id, reconstructed_text, chapter_ref FROM bible.chapteroccurences WHERE book_map_id = %s
         """,
         "get_chapter_verses": """
             SELECT id FROM bible.verseoccurences WHERE chapter_id = %s
@@ -230,6 +230,9 @@ class Tokenisation:
             print("Log File Path Already Exists!")
         print(f"See Log File at: {self.log_file}!")
 
+        with open(self.log_file, 'w', encoding="utf-8") as f:
+            f.write(f"Starting Tokenisation ...\n")
+
         self.cur.execute(self.SQL.get("get_language"), (self.translation_id,))
         self.language_id = self.cur.fetchone()[0]
 
@@ -237,7 +240,7 @@ class Tokenisation:
 
         self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
 
-        self.log_ingestion_activity(f"Initialised Tokenisable Nodes: {self.language_id}", "INIT", "INFO")
+        self.log_ingestion_activity(f"Initialised Tokenisable Nodes!", "INIT", "INFO")
 
         self.reconstruct_chapter_nodes()
 
@@ -262,10 +265,11 @@ class Tokenisation:
             self.cur.execute(self.SQL.get("get_book_chapters"), (book_map_id,))
             all_chapters = self.cur.fetchall()
 
-            for chapter_occurence_id,_ in all_chapters:
+            for chapter_occurence_id,_,chapter_ref in all_chapters:
                 # Get all tokenisable nodes for this chapter.
                 self.cur.execute(self.SQL.get("get_chapter_tokenisable_nodes"), (chapter_occurence_id,))
                 tokenisable_nodes = self.cur.fetchall()
+                self.log_ingestion_activity(f"Nodes found to be tokenisable for [{chapter_ref}]: [{tokenisable_nodes}]", "NODE", "DEBUG")
 
                 chapter_text = ""
 
@@ -281,6 +285,7 @@ class Tokenisation:
                 #       update chapter_occurences with reconstructed chapter_text
                 self.cur.execute(self.SQL.get("update_chapter_occurence_text"), (chapter_text, chapter_occurence_id))
                 # print(chapter_text)
+                self.log_ingestion_activity(f"Reconstructed Chapter [{chapter_ref}] Occurence [{chapter_occurence_id}]: \n[{chapter_text}\n]", "NODE", "TRACE")
     
     def create_tokens(self):
         # Init spacy pipeline used for training
@@ -304,21 +309,24 @@ class Tokenisation:
             self.cur.execute(self.SQL.get("get_book_chapters"), (book_map_id,))
             all_chapters = self.cur.fetchall()
 
-            start_token_count = token_count
+            # ✅ Proper loading bar (50 characters wide)
+            progress = int((i / total_books) * 50)
+            bar = '#' * progress + '-' * (50 - progress)
+            percentage = int((i / total_books) * 100)
 
-            for chapter_occurence_id, chapter_text in all_chapters:
+            self.progress_message = f"\r    Processing Books: |{bar}| {percentage}%"
+
+            for chapter_occurence_id, chapter_text, chapter_ref in all_chapters:
                 # Start NLP on reconstructed chapter text
                 doc = nlp(chapter_text)
 
-                # ✅ Proper loading bar (50 characters wide)
-                progress = int((i / total_books) * 50)
-                bar = '#' * progress + '-' * (50 - progress)
-                percentage = int((i / total_books) * 100)
-
-                self.progress_message = f"    Processing Books: |{bar}| {percentage}%"
-
                 token_mapping = {}
-                head_token_mapping = {}
+
+                temp_tokens = []
+
+                self.log_ingestion_activity(f"Creating {len(doc)} Tokens for [{chapter_ref}]...", "TOKEN", "DEBUG")
+
+                self.progress_message = f"\r    Processing Books: |{bar}| {percentage}% | {chapter_ref} / {len(all_chapters)}"
 
                 for i, token in enumerate(doc):
                     pos = token.pos_
@@ -356,19 +364,32 @@ class Tokenisation:
                         None # will be updated with head_token_id (i -> 18)
                     ]
 
-                    token_db_id = token_count + token_id_offset # self.cur.fetchone()[0]
-                    token_mapping[token.idx] = [token_db_id, token.head.idx]
+                    self.log_ingestion_activity(f"Creating Temp Token [{i}] [{token.idx}]: {this_token}", "TOKEN", "TRACE")
 
+                    token_db_id = token_count + token_id_offset # self.cur.fetchone()[0]
+                    token_mapping[i] = [token_db_id, token.head.idx]
+
+                    # Prepare for next node, and add for bulk insert
+                    temp_tokens.append(this_token)
                     token_count += 1
 
                 # print(token_mapping)
+                self.log_ingestion_activity(f"Current Temp Tokens => {temp_tokens}", "TOKEN", "TRACE")
 
-                for token_idx, [token_db_id, head_idx] in token_mapping.items():
-                    # update_token_head
-                    head_db_id = token_mapping[head_idx][0]
-                    all_new_tokens[token_idx][18] = head_db_id
+                for i, token in enumerate(temp_tokens):
+                    temp_token = token_mapping.get(i)
 
-                print(f"Created {len(doc)} tokens.")       
+                    if temp_token == None:
+                        continue
+
+                    head_db_id = token_mapping[i][0]
+                    self.log_ingestion_activity(f"Updating Temp Token at [{i}] with head_db_id {head_db_id}", "TOKEN", "TRACE")
+
+                    temp_tokens[i][18] = head_db_id
+                    all_new_tokens.append(tuple(temp_tokens[i]))
+
+                self.log_ingestion_activity(f"Finished Token Creation for [{chapter_ref}]", "TOKEN", "DEBUG")
+                self.log_ingestion_activity(f"Current Tokens => {all_new_tokens}", "TOKEN", "TRACE")
 
         # Now bulk insert all of the nodes into the database (in batches / chunks)
         CHUNK = 20000  # ideal for execute_values
