@@ -71,6 +71,8 @@ class Book:
                 self.this_translation.log_ingestion_activity(f"Chapter {chapter_ref} invalid, skipping...", f"BOOK: {self.book_code}", "DEBUG")
                 continue
 
+            self.this_translation.log_ingestion_activity(f"Creating {chapter_ref} as Chapter Found in book: {chapter_found.group(0)}", f"BOOK: {self.book_code}", "TRACE")
+
             # Have to add encapsulating tags, since otherwise only first chapter tag, 
             #       will be included when parsed as xml, ignoring the rest of the text
             chapter_text = """<usx version="3.0">\n"""
