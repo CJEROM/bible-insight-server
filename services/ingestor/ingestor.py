@@ -167,11 +167,16 @@ class Ingestor:
             """)
 
             translations = self.cur.fetchall()
-            translations = (
-                "32664dc3288a28df-265137".split("-"),
-                "6bab4d6c61b31b80-252265".split("-")
-                
-            )
+            # translations = (
+            #     "6bab4d6c61b31b80-252265".split("-"), # introduces PSA151
+            #     "32664dc3288a28df-265137".split("-"),
+            #     "f72b840c855f362c-240017".split("-"),
+            #     # "65bfdebd704a8324-250819".split("-"),
+            #     "06125adad2d5898a-240014".split("-"),
+            #     "04da588535d2f823-240018".split("-"),
+            #     "72f4e6dc683324df-278101".split("-")
+            #     # "c114c33098c4fef1-252266".split("-")
+            # )
 
             for dbl_id, agreement_id in translations:
 

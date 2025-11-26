@@ -478,7 +478,7 @@ class Translation:
         bar = '#' * progress + '-' * (50 - progress)
         percentage = int((total_books / total_books) * 100)
         
-        self.progress_message = None
+        self.progress_message = f"\r   |{bar}| {percentage}%"
 
         self.conn.commit()
         
@@ -769,12 +769,13 @@ class Translation:
         return formatted_duration
 
     def log_ingestion_activity(self, log_message, source_class, log_level):
+        # Always update CLI progress bar, just only conditionally log
+        if self.progress_message != None and hasattr(sys.stdout, "write"):
+            sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_ingestion_time()}] | ")
+            sys.stdout.flush()
+
         if self.LOG_MAPPING[log_level] < self.default_log_level:
             return
 
         with open(self.log_file, 'a', encoding="utf-8") as f:
             f.write(f"{datetime.datetime.now()} [{log_level}] [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")
-
-        if self.progress_message != None:
-            sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_ingestion_time()}] | ")
-            sys.stdout.flush()
