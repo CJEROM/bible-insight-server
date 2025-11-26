@@ -2,6 +2,8 @@ import spacy
 from spacy.tokens import Doc
 from minio import Minio
 
+from psycopg2.extras import execute_values
+
 import psycopg2
 import os
 from pathlib import Path
@@ -171,15 +173,12 @@ class Tokenisation:
         """,
         # --------------------------------- Token Types ---------------------------------
         "create_token": """
-            INSERT INTO bible.tokens (text, chapter_start_offset, chapter_end_offset, pos, tag, dep, lemma_id, trailing_space, is_alpha, is_punct, is_space, is_quote, is_left_punct, is_right_punct, like_num, language_id, translation_id, chapter_occurence_id)
-            VALUES 
-                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO bible.tokens (text, chapter_start_offset, chapter_end_offset, pos, tag, dep, lemma_id, trailing_space, is_alpha, is_punct, is_space, is_quote, is_left_punct, is_right_punct, like_num, language_id, translation_id, chapter_occurence_id, head_token_id)
+            VALUES %s
             RETURNING id;
         """,
-        "update_token_head": """
-            UPDATE bible.tokens 
-            SET head_token_id = %s
-            WHERE id = %s;
+        "max_token_count": """
+            SELECT COALESCE(MAX(id), 0) FROM bible.tokens;
         """
     }
 
@@ -258,6 +257,12 @@ class Tokenisation:
         self.cur.execute(self.SQL.get("get_translation_books"), (self.translation_id,))
         all_books = self.cur.fetchall()
 
+        all_new_tokens = []
+        token_count = 1
+        
+        self.cur.execute(self.SQL.get("max_token_count"))
+        token_id_offset = self.cur.fetchone()[0]
+
         for book_map_id in all_books:
             # Get all Chapters for this Book
             self.cur.execute(self.SQL.get("get_book_chapters"), (book_map_id,))
@@ -284,41 +289,48 @@ class Tokenisation:
                     lemma = token.lemma_
                     lemma_id = lemma
 
-                    self.cur.execute(
-                        self.SQL.get("create_token"), 
-                        (
-                            token.text, 
-                            token.idx,
-                            token.idx + len(token.text),
-                            pos,
-                            tag,
-                            dep,
-                            lemma_id,
-                            len(token.whitespace_) > 0,
-                            token.is_alpha,
-                            token.is_punct,
-                            token.is_space,
-                            token.is_quote,
-                            token.is_left_punct,
-                            token.is_right_punct,
-                            token.like_num,
-                            self.language_id,
-                            self.translation_id,
-                            chapter_occurence_id
-                        )
-                    )
+                    this_token = [
+                        token.text, 
+                        token.idx,
+                        token.idx + len(token.text),
+                        pos,
+                        tag,
+                        dep,
+                        lemma_id,
+                        len(token.whitespace_) > 0,
+                        token.is_alpha,
+                        token.is_punct,
+                        token.is_space,
+                        token.is_quote,
+                        token.is_left_punct,
+                        token.is_right_punct,
+                        token.like_num,
+                        self.language_id,
+                        self.translation_id,
+                        chapter_occurence_id,
+                        None # will be updated with head_token_id (i -> 18)
+                    ]
 
-                    token_db_id = self.cur.fetchone()[0]
+                    token_db_id = token_count + token_id_offset # self.cur.fetchone()[0]
                     token_mapping[token.idx] = [token_db_id, token.head.idx]
 
-                print(token_mapping)
+                    token_count += 1
+
+                # print(token_mapping)
 
                 for token_idx, [token_db_id, head_idx] in token_mapping.items():
                     # update_token_head
                     head_db_id = token_mapping[head_idx][0]
-                    self.cur.execute(self.SQL.get("update_token_head"), (head_db_id, token_db_id))
+                    all_new_tokens[token_idx][18] = head_db_id
 
-                print(f"Created {len(doc)} tokens.")         
+                print(f"Created {len(doc)} tokens.")       
+
+        # Now bulk insert all of the nodes into the database (in batches / chunks)
+        CHUNK = 20000  # ideal for execute_values
+
+        sql_query = self.SQL.get("create_token")
+        for i in range(0, len(all_new_tokens), CHUNK):
+            execute_values(self.cur, sql_query, all_new_tokens[i:i+CHUNK])  
 
     def stream_file(self, object_name):
         # Get file
