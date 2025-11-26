@@ -3,6 +3,9 @@ from spacy.tokens import Doc
 from minio import Minio
 
 from psycopg2.extras import execute_values
+import time
+import datetime
+import sys
 
 import psycopg2
 import os
@@ -50,6 +53,17 @@ NLP_MAPPING = {
 # Will create tokens for one translation at a time, to preprocess it all, then carry on with the rest before moving onto others.
 
 class Tokenisation:
+    default_log_level = 2 # Here I can set the level of logging I want for my application
+
+    LOG_MAPPING = {
+        "TRACE": 0,
+        "DEBUG": 1,
+        "INFO": 2,
+        "WARN": 3,
+        "ERROR": 4,
+        "FATAL": 5
+    }
+
     SQL = {
         # --------------------------------- Fetch Types ---------------------------------
         "get_language": """
@@ -203,12 +217,32 @@ class Tokenisation:
             secure=False
         )
 
+        self.start_time = time.time()
+        self.progress_message = None
+
+        # Initialise logfile
+        log_path = Path(__file__).parents[2] / "logs"
+        self.log_file = log_path / f"_TOKENS-{self.translation_id}.log"
+
+        try:
+            os.makedirs(log_path)
+        except Exception as e:
+            print("Log File Path Already Exists!")
+        print(f"See Log File at: {self.log_file}!")
+
         self.cur.execute(self.SQL.get("get_language"), (self.translation_id,))
         self.language_id = self.cur.fetchone()[0]
 
+        self.log_ingestion_activity(f"Linked to Language with ID: {self.language_id}", "INIT", "INFO")
+
         self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
 
+        self.log_ingestion_activity(f"Initialised Tokenisable Nodes: {self.language_id}", "INIT", "INFO")
+
         self.reconstruct_chapter_nodes()
+
+        self.log_ingestion_activity(f"Finished Constructing Tokens: {self.language_id}", "INIT", "INFO")
+
         self.create_tokens()
 
         # Then run a part that will run in a lopp like semi-supervised learning for tokeniser 
@@ -246,7 +280,7 @@ class Tokenisation:
                 # When finished iterating through nodes
                 #       update chapter_occurences with reconstructed chapter_text
                 self.cur.execute(self.SQL.get("update_chapter_occurence_text"), (chapter_text, chapter_occurence_id))
-                print(chapter_text)
+                # print(chapter_text)
     
     def create_tokens(self):
         # Init spacy pipeline used for training
@@ -259,18 +293,29 @@ class Tokenisation:
 
         all_new_tokens = []
         token_count = 1
+
+        total_books = len(all_books)
         
         self.cur.execute(self.SQL.get("max_token_count"))
         token_id_offset = self.cur.fetchone()[0]
 
-        for book_map_id in all_books:
+        for i, book_map_id in enumerate(all_books):
             # Get all Chapters for this Book
             self.cur.execute(self.SQL.get("get_book_chapters"), (book_map_id,))
             all_chapters = self.cur.fetchall()
 
+            start_token_count = token_count
+
             for chapter_occurence_id, chapter_text in all_chapters:
                 # Start NLP on reconstructed chapter text
                 doc = nlp(chapter_text)
+
+                # ✅ Proper loading bar (50 characters wide)
+                progress = int((i / total_books) * 50)
+                bar = '#' * progress + '-' * (50 - progress)
+                percentage = int((i / total_books) * 100)
+
+                self.progress_message = f"    Processing Books: |{bar}| {percentage}%"
 
                 token_mapping = {}
                 head_token_mapping = {}
@@ -346,7 +391,28 @@ class Tokenisation:
         finally:
             if response:
                 response.close()
-                response.release_conn()       
+                response.release_conn()   
+
+    def elapsed_ingestion_time(self):
+        duration = time.time() - self.start_time
+        hours = int(duration // 3600)
+        minutes = int((duration % 3600) // 60)
+        seconds = int(duration % 60)
+
+        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
+        return formatted_duration
+
+    def log_ingestion_activity(self, log_message, source_class, log_level):
+        # Always update CLI progress bar, just only conditionally log
+        if self.progress_message != None and hasattr(sys.stdout, "write"):
+            sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_ingestion_time()}] | ")
+            sys.stdout.flush()
+
+        if self.LOG_MAPPING[log_level] < self.default_log_level:
+            return
+
+        with open(self.log_file, 'a', encoding="utf-8") as f:
+            f.write(f"{datetime.datetime.now()} [{log_level}] [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")
 
 if __name__ == "__main__":
     # conn = psycopg2.connect(
