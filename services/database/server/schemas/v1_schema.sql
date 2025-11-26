@@ -462,6 +462,7 @@ CREATE TABLE IF NOT EXISTS lookup.word_tags (
 CREATE TABLE IF NOT EXISTS bible.tokens (
     id                      SERIAL PRIMARY KEY,
     text                    TEXT,
+    chappter_occurence_id   TEXT,
     chapter_start_offset    INTEGER,
     chapter_end_offset      INTEGER, 
     pos                     TEXT, -- Info that is populate later
@@ -479,6 +480,7 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     like_num                BOOLEAN,
     language_id             INTEGER,
     translation_id          INTEGER,
+    FOREIGN KEY (chappter_occurence_id) REFERENCES bible.chapteroccurences (id),
     FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id),
     FOREIGN KEY (pos) REFERENCES lookup.nlp_pos_types (pos_tag),
     FOREIGN KEY (tag) REFERENCES lookup.nlp_tag_types (tag),

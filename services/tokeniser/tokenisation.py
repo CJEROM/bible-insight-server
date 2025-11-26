@@ -171,9 +171,9 @@ class Tokenisation:
         """,
         # --------------------------------- Token Types ---------------------------------
         "create_token": """
-            INSERT INTO bible.tokens (text, chapter_start_offset, chapter_end_offset, pos, tag, dep, lemma_id, trailing_space, is_alpha, is_punct, is_space, is_quote, is_left_punct, is_right_punct, like_num, language_id, translation_id)
+            INSERT INTO bible.tokens (text, chapter_start_offset, chapter_end_offset, pos, tag, dep, lemma_id, trailing_space, is_alpha, is_punct, is_space, is_quote, is_left_punct, is_right_punct, like_num, language_id, translation_id, chapter_occurence_id)
             VALUES 
-                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """,
         "update_token_head": """
@@ -303,11 +303,10 @@ class Tokenisation:
                             token.is_right_punct,
                             token.like_num,
                             self.language_id,
-                            self.translation_id
+                            self.translation_id,
+                            chapter_occurence_id
                         )
                     )
-
-                    token.head.i
 
                     token_db_id = self.cur.fetchone()[0]
                     token_mapping[token.idx] = [token_db_id, token.head.idx]
@@ -336,7 +335,6 @@ class Tokenisation:
             if response:
                 response.close()
                 response.release_conn()       
-
 
 if __name__ == "__main__":
     # conn = psycopg2.connect(
