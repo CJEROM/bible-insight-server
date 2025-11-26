@@ -12,6 +12,7 @@ CREATE EXTENSION pgcrypto;
 CREATE SCHEMA bible;
 CREATE SCHEMA lookup;
 CREATE SCHEMA users;
+CREATE SCHEMA nlp;
 
 -- ================================================== Reference Data ==================================================
 
@@ -265,18 +266,20 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     eid                     TEXT,
     vid                     TEXT,
     style                   TEXT,
-    number                  INTEGER,
+    number                  TEXT,
     caller                  TEXT,
     closed                  TEXT,
     version                 TEXT,
-    -- encoding                TEXT,
     strong                  TEXT,
     loc                     TEXT,
-    state                   TEXT,
-    parent_node_id          INTEGER,
+    align                   TEXT,
+    parent_node_id          INTEGER, -- Can be null due to usx root node
     index_in_parent         INTEGER,
     book_map_id             INTEGER,
     canonical_path          TEXT,
+    is_tokenisable          BOOLEAN,
+    chapter_start_offset    INTEGER,
+    chapter_end_offset      INTEGER,
     FOREIGN KEY (parent_node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
     FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE,
@@ -291,13 +294,6 @@ CREATE TABLE IF Not EXISTS bible.nodes_attributes (
     value                   TEXT,
     FOREIGN KEY (node_id) REFERENCES bible.nodes (id),
     FOREIGN KEY (node_attribute) REFERENCES lookup.node_attribute_types (attribute)
-);
-
--- Derived links to nodes as intermediary to tokens
-CREATE TABLE IF NOT EXISTS bible.text_nodes (
-    id                      SERIAL PRIMARY KEY,
-    node_id                 INTEGER UNIQUE,
-    FOREIGN KEY (node_id) REFERENCES bible.nodes (id)
 );
 
 -- ================================================== bible.chapters ==================================================
@@ -319,6 +315,7 @@ CREATE TABLE IF NOT EXISTS bible.chapteroccurences (
     book_map_id             INTEGER, -- usx_file
     start_node              INTEGER, -- usx_file
     end_node                INTEGER, -- usx_file
+    reconstructed_text      TEXT,
     FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref),
@@ -409,20 +406,35 @@ CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
 
 CREATE TABLE lookup.nlp_pos_types (
     id SERIAL PRIMARY KEY,
-    pos_tag VARCHAR(10) NOT NULL UNIQUE,  -- e.g. 'NOUN', 'VERB'
-    description TEXT NOT NULL             -- e.g. 'Noun, a person, place, or thing'
+    pos_tag VARCHAR(10) NOT NULL UNIQUE,    -- e.g. 'NOUN', 'VERB'
+    description TEXT                        -- e.g. 'Noun, a person, place, or thing'
 );
 
 CREATE TABLE lookup.nlp_tag_types (
     id SERIAL PRIMARY KEY,
     tag VARCHAR(10) NOT NULL UNIQUE,
-    description TEXT NOT NULL
+    description TEXT
 );
 
 CREATE TABLE lookup.nlp_dep_types (
     id SERIAL PRIMARY KEY,
     dep VARCHAR(20) NOT NULL UNIQUE,
-    description TEXT NOT NULL
+    description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS nlp.spacy_modules (
+    id                  SERIAL PRIMARY KEY,
+    language_iso        TEXT,               -- The code I use for language (iso)
+    spacy_code          TEXT,                  -- The code spacy uses for a language
+    spacy_model         TEXT,                  -- en_core_web_sm
+    supports_pos        BOOLEAN DEFAULT FALSE, -- Model capabilities supported?
+    supports_ner        BOOLEAN DEFAULT FALSE,
+    supports_dep        BOOLEAN DEFAULT FALSE,
+    supports_vectors    BOOLEAN DEFAULT FALSE,
+    supports_lemma      BOOLEAN DEFAULT FALSE,
+    version             TEXT,
+    notes               TEXT,
+    FOREIGN KEY (language_iso) REFERENCES bible.languages (iso)
 );
 
 -- ================================================== Token & Word Occurences ==================================================
@@ -448,25 +460,31 @@ CREATE TABLE IF NOT EXISTS lookup.word_tags (
 
 -- Only storing important bible.tokens
 CREATE TABLE IF NOT EXISTS bible.tokens (
-    id                  SERIAL PRIMARY KEY,
-    text                TEXT,
-    node_id             INTEGER,
-    start_offset        INTEGER,
-    end_offset          INTEGER, 
-    pos                 TEXT, -- Info that is populate later
-    tag                 TEXT,
-    dep                 TEXT,
-    head_token_id       INTEGER,
-    llema_id            INTEGER,
-    trailing_space      BOOLEAN,
-    is_alpha            BOOLEAN,
-    is_punct            BOOLEAN,
-    like_num            BOOLEAN,
+    id                      SERIAL PRIMARY KEY,
+    text                    TEXT,
+    chapter_start_offset    INTEGER,
+    chapter_end_offset      INTEGER, 
+    pos                     TEXT, -- Info that is populate later
+    tag                     TEXT,
+    dep                     TEXT,
+    head_token_id           INTEGER,
+    lemma_id                TEXT,
+    trailing_space          BOOLEAN,
+    is_alpha                BOOLEAN,
+    is_punct                BOOLEAN,
+    is_space                BOOLEAN,
+    is_quote                BOOLEAN,
+    is_left_punct           BOOLEAN,
+    is_right_punct          BOOLEAN,
+    like_num                BOOLEAN,
+    language_id             INTEGER,
+    translation_id          INTEGER,
     FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id),
-    FOREIGN KEY (node_id) REFERENCES bible.text_nodes (node_id),
     FOREIGN KEY (pos) REFERENCES lookup.nlp_pos_types (pos_tag),
     FOREIGN KEY (tag) REFERENCES lookup.nlp_tag_types (tag),
-    FOREIGN KEY (dep) REFERENCES lookup.nlp_dep_types (dep)
+    FOREIGN KEY (dep) REFERENCES lookup.nlp_dep_types (dep),
+    FOREIGN KEY (language_id) REFERENCES bible.languages (id),
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id)
 );
 
 -- ================================================== Entities ==================================================

@@ -1,5 +1,6 @@
 -- ================================================== Spacy Look up Tables ==================================================
 
+-- Source: https://github.com/explosion/spaCy/blob/master/spacy/glossary.py
 INSERT INTO lookup.nlp_pos_types (pos_tag, description) 
 VALUES
     ('ADJ',  'Adjective – modifies a noun (e.g. beautiful, large)'),
@@ -143,7 +144,8 @@ VALUES
     ('strong','Strong number of Hebrew or Greek for particular word', TRUE),
     ('loc','reference to chapter or verse (could include spread)', TRUE),
     ('encoding','text encoding type for the file', FALSE),
-    ('text', 'the actual text', TRUE); -- maps to node_text column
+    ('text', 'the actual text', TRUE),
+    ('align', 'how a cell should be aligned in a table', TRUE); -- maps to node_text column
 
 INSERT INTO lookup.node_types (node, description, active) 
 VALUES
@@ -156,7 +158,10 @@ VALUES
     ('ref','tag representing a reference to other parts of scripture', TRUE),
     ('note','tag representing a footnote or crossreference', TRUE),
     ('book','tag representing a book', TRUE),
-    ('text','not a tag but represents text in the parsed xml structure', TRUE);
+    ('text','not a tag but represents text in the parsed xml structure', TRUE),
+    ('table', 'tag representing a table', TRUE),
+    ('row', 'tag representing a row in a table', TRUE),
+    ('cell', 'tag representing a cell in a row in a table (forms colums in row)', TRUE);
 
 -- maps each node type to the attributes it uses
 INSERT INTO lookup.node_map (node_type, node_attribute) 
@@ -192,7 +197,14 @@ VALUES
     ('book','code'),
     ('book','style'),
     -- text
-    ('text','text');
+    ('text','text'),
+    -- table (no attributes)
+    -- row
+    ('row','style'),
+    -- cell
+    ('cell','style'),
+    ('cell','align'),
+    ('cell','text');
 
 -- INSERT INTO lookup.node_options (relationship_types, description) 
 -- VALUES
@@ -214,7 +226,11 @@ VALUES
     ('book', 'text'),
     ('note', 'text'),
     ('char', 'ref'),
-    ('ref', 'text');
+    ('ref', 'text'),
+    ('usx', 'table'),
+    ('table', 'row'),
+    ('row', 'cell'),
+    ('cell', 'text');
 
 -- ================================================== Quote Look up Tables ==================================================
 

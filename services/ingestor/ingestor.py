@@ -9,7 +9,7 @@ import time
 from minio import Minio
 from pathlib import Path
 
-from miniousxupload import MinioUSXUpload
+from translation import Translation
 
 from dotenv import load_dotenv
 
@@ -41,7 +41,7 @@ class Ingestor:
         self.start_time = time.time()
 
         # Folder where you want downloads to go
-        self.download_path = "C:/Users/CephJ/Documents/git/bible-insight-server/downloads"
+        self.download_path = Path(__file__).parents[2] / "downloads"
         os.makedirs(self.download_path, exist_ok=True)
 
         # Passes Minio client connection on to the MinioUSXUpload class
@@ -136,7 +136,7 @@ class Ingestor:
     def get_downloads(self):
         with sync_playwright() as p:
             # Launch browser
-            browser = p.chromium.launch(headless=False)  # headless=False shows the browser
+            browser = p.chromium.launch(headless=False, timeout=999999)  # headless=False shows the browser
             context = browser.new_context(accept_downloads=True)  # Important to handle downloads
 
             page = context.new_page()
@@ -167,11 +167,16 @@ class Ingestor:
             """)
 
             translations = self.cur.fetchall()
-            translations = (
-                "04da588535d2f823-240018".split("-"),
-                "32339cf2f720ff8e-265856".split("-"),
-                "7644de2e4c5188e5-265855".split("-")
-            )
+            # translations = (
+            #     "6bab4d6c61b31b80-252265".split("-"), # introduces PSA151
+            #     "32664dc3288a28df-265137".split("-"),
+            #     "f72b840c855f362c-240017".split("-"),
+            #     # "65bfdebd704a8324-250819".split("-"),
+            #     "06125adad2d5898a-240014".split("-"),
+            #     "04da588535d2f823-240018".split("-"),
+            #     "72f4e6dc683324df-278101".split("-")
+            #     # "c114c33098c4fef1-252266".split("-")
+            # )
 
             for dbl_id, agreement_id in translations:
 
@@ -209,7 +214,7 @@ class Ingestor:
                     download.save_as(os.path.join(self.download_path, download.suggested_filename))
                     print(f"✅ Downloaded ZIP: {new_path}")
 
-                    MinioUSXUpload(self.client, "text", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
+                    Translation(self.client, "text", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
                 else:
                     print("⚠️ No ZIP button found, assuming audio download instead")
                     # Expand all folders
@@ -244,7 +249,7 @@ class Ingestor:
                     
                     print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
 
-                    MinioUSXUpload(self.client, "audio", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
+                    Translation(self.client, "audio", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
 
                 # break
 

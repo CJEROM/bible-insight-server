@@ -44,6 +44,12 @@ def run_script(file_name):
     base = Path(__file__).parent
     scripts_dir = base
 
+    file_path = scripts_dir
+    for file_part in file_name.split("/"):
+        file_path = file_path / file_part
+
+    print(file_path)
+
     subprocess.run(
         ["python3", file_name], 
         cwd=scripts_dir
@@ -89,7 +95,7 @@ if __name__ == "__main__":
         initialise_script("init_minio.py", 0)
         initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
         # # start_api_server() 
-        run_script(".\ingestor\ingestor.py")
+        run_script("ingestor/ingestor.py")
         # create_database_backup()
         # run_script(".\labeller\labeller.py")
         # print("FINISHED Script")

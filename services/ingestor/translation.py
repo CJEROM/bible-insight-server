@@ -11,6 +11,7 @@ from label_studio_sdk import LabelStudio
 import json
 import traceback
 import sys
+import datetime
 
 from book import Book
 
@@ -36,7 +37,18 @@ MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
 LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
 LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
 
-class MinioUSXUpload:
+class Translation:
+    default_log_level = 2 # Here I can set the level of logging I want for my application
+
+    LOG_MAPPING = {
+        "TRACE": 0,
+        "DEBUG": 1,
+        "INFO": 2,
+        "WARN": 3,
+        "ERROR": 4,
+        "FATAL": 5
+    }
+    
     def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id, dbl_id, agreement_id):
         self.client = minio_client
         self.medium = medium # Audio | Video | Text (USX)
@@ -60,8 +72,7 @@ class MinioUSXUpload:
         self.cur = self.conn.cursor()
 
         self.start_time = time.time()
-
-        self.source_id = self.get_source(source_url)
+        self.progress_message = None
 
         print("✅ Starting Upload ...")
 
@@ -74,38 +85,45 @@ class MinioUSXUpload:
         self.translation_name = None
         self.bible_structure_info = None
 
-        log_file = Path(__file__).parents[2] / "downloads" / f"translation-{self.translation_id}-log.txt"
-        with open(log_file, 'w', encoding="utf-8") as f:
+        self.style_file_id = None
+        self.style_dict = {}
+
+        # Initialise logfile
+        log_path = Path(__file__).parents[2] / "logs"
+        self.log_file = log_path / f"{self.translation_id}-{self.translation_title}-LOG.log"
+
+        try:
+            os.makedirs(log_path)
+        except Exception as e:
+            print("Log File Path Already Exists!")
+        print(f"See Log File at: {self.log_file}!")
+        
+        with open(self.log_file, 'w', encoding="utf-8") as f:
             f.write(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]\n")
-            try:
-                # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
-                match medium:
-                    case "text": # USX Files e.g. for deeper analysis
-                        # unzip first
-                        self.unzip_folder(self.process_location)
-                    case "video": # Videos e.g. for the deaf (sign language)
-                        # self.check_files(self.process_location)
-                        pass
-                    case "audio": # Audio e.g. for the blind or preference
-                        self.check_files(self.process_location)
-            except Exception as e:
-                error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
-                f.write(f"\nERROR\n\n{error_message}\n")
-                print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
-                self.conn.rollback()
 
-            self.conn.commit()
+        self.source_id = self.get_source(source_url)
 
-            duration = time.time() - self.start_time
-            hours = int(duration // 3600)
-            minutes = int((duration % 3600) // 60)
-            seconds = int(duration % 60)
-            milliseconds = int((duration % 1) * 1000)  # or *100 for .mm format
+        try:
+            # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
+            match medium:
+                case "text": # USX Files e.g. for deeper analysis
+                    # unzip first
+                    self.unzip_folder(self.process_location)
+                case "video": # Videos e.g. for the deaf (sign language)
+                    # self.check_files(self.process_location)
+                    pass
+                case "audio": # Audio e.g. for the blind or preference
+                    self.check_files(self.process_location)
+        except Exception as e:
+            error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            self.log_ingestion_activity(error_message, "TRANSLATION", "ERROR")
+            print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
+            self.conn.rollback()
 
-            formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
+        self.conn.commit()
 
-            print(f"✅ Completed Translation Import in [{formatted_duration}]!\n")
-            f.write(f"✅ Completed Translation Import in [{formatted_duration}]!\n")
+        print(f"✅ Completed Translation Import in [{self.elapsed_ingestion_time()}]!\n")
+        self.log_ingestion_activity("Completed Translation Ingestion!", "TRANSLATION", "INFO")
 
         # Create Label Studio Project for this specific translation of the bible
         label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
@@ -133,7 +151,7 @@ class MinioUSXUpload:
         </View>
         """
 
-        translation_project = label_studio_client.projects.create(
+        self.translation_project = label_studio_client.projects.create(
             title=self.translation_title,
             description=self.translation_name,
             label_config=project_label_config
@@ -144,7 +162,7 @@ class MinioUSXUpload:
             s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
             aws_access_key_id=MINIO_USERNAME,
             aws_secret_access_key=MINIO_PASSWORD,
-            project=translation_project.id,
+            project=self.translation_project.id,
             bucket="bible-nlp",
             prefix=f"{self.translation_title}/exports/",
             title="TEST Export"
@@ -155,7 +173,7 @@ class MinioUSXUpload:
             VALUES (%s)
             RETURNING id;
         """, (
-            translation_project.id,
+            self.translation_project.id,
         ))
 
         self.cur.execute("""
@@ -164,11 +182,52 @@ class MinioUSXUpload:
             RETURNING id;
         """, (
             self.translation_id,
-            translation_project.id
+            self.translation_project.id
         ))
+
+        self.log_ingestion_activity(f"Created New Label Studio Project [Project_ID: {self.translation_project.id}] [URL: {source_url}]", "TRANSLATION", "INFO")
 
         self.conn.commit()
         self.conn.close()
+
+    def get_translation_id(self):
+        return self.translation_id
+    
+    def get_dbl_id(self):
+        return self.dbl_id
+    
+    def get_agreement_id(self):
+        return self.agreement_id
+    
+    def get_translation_id(self):
+        return self.translation_id
+    
+    def get_translation_project_id(self):
+        return self.translation_project.id
+    
+    def get_translation_title(self):
+        return self.translation_title
+    
+    def get_language_id(self):
+        return self.language_id
+    
+    def get_style_dict(self):
+        return self.style_dict
+    
+    def get_bible_structure_info(self):
+        structure = self.bible_structure_info
+        # Go through bible versification
+        chapter_dict = {}
+        for line in structure.splitlines():
+            parts = line.split()
+            book = parts[0]
+            chapters = parts[1:]
+            
+            for ch in chapters:
+                chapter_num, verse_count = ch.split(':')
+                chapter_dict[f"{book} {chapter_num}"] = int(verse_count)
+
+        return chapter_dict
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
@@ -184,7 +243,10 @@ class MinioUSXUpload:
             RETURNING id;
         """, (source_url,))
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.sources",))
-        return self.cur.fetchone()[0]
+        new_source_id = self.cur.fetchone()[0]
+
+        self.log_ingestion_activity(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "TRANSLATION", "INFO")
+        return new_source_id
 
     def unzip_folder(self, zip_path):
         # This will unzip the zip folder, and then delete the original and replace process location with new path name
@@ -203,6 +265,7 @@ class MinioUSXUpload:
 
             # Saves the new location for the usx files to be ran in next part of pipeline
             new_location = downloads_location / top_folder
+            self.log_ingestion_activity(f"Unzipping [{len(all_files)}] files from {zip_path} in {new_location}", "TRANSLATION", "INFO")
             self.check_files(new_location)
 
         # After unzipping delete the old zip file
@@ -230,6 +293,7 @@ class MinioUSXUpload:
         if language_id != None:
             return language_id[0]
         
+        language_name = language_xml.find("nameLocal").text
         self.cur.execute("""
             INSERT INTO bible.languages (iso, name, namelocal, scriptdirection) 
             VALUES (%s, %s, %s, %s)
@@ -240,11 +304,18 @@ class MinioUSXUpload:
             language_xml.find("nameLocal").text,
             language_xml.find("scriptDirection").text
         ))
+        new_language_id = self.cur.fetchone()[0]
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.languages",))
-        return self.cur.fetchone()[0]
+        self.log_ingestion_activity(f"Created New Language [ID: {new_language_id}] [Name: {language_name}]", "TRANSLATION", "INFO")
+
+        return new_language_id
     
     def update_translationinfo_db(self, metadata_xml):
         self.language_id = self.check_language(metadata_xml.find("language"))
+
+        abbreviation = metadata_xml.find("identification").find("abbreviationLocal").text
+        translation_name = metadata_xml.find("identification").find("name").text
+
         self.cur.execute("""
             UPDATE bible.translationinfo
             SET medium = %s,
@@ -263,6 +334,7 @@ class MinioUSXUpload:
             self.language_id,
             self.dbl_id
         ))
+        self.log_ingestion_activity(f"Created Translation Info: [abbreviationLocal: {abbreviation}] [name: {translation_name}]", "TRANSLATION", "DEBUG")
 
         self.create_translation_relationships(metadata_xml)
 
@@ -277,6 +349,7 @@ class MinioUSXUpload:
                 INSERT INTO bible.translationrelationships (from_translation, from_revision, to_translation, to_revision, type) 
                 VALUES (%s, %s, %s, %s, %s)
             """, (self.translation_id, self.revision, relation_dbl_id, relation_revision, relation_type))
+            self.log_ingestion_activity(f"Created Translation Relationship with [ID: {relation_dbl_id}] [Revision: {relation_revision}] [medium: {relation_type}]", "TRANSLATION", "DEBUG")
 
     def check_files(self, file_location):
         top_folder = str(file_location).split("\\")[-1]
@@ -328,6 +401,7 @@ class MinioUSXUpload:
             self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml"),
             self.translation_id
         ))
+        self.log_ingestion_activity(f"Updated Translation Entry File IDs", "TRANSLATION", "TRACE")
 
         self.conn.commit() # Commit all changes to database
 
@@ -356,6 +430,7 @@ class MinioUSXUpload:
             found_book = self.cur.fetchone()
 
             if found_book != None:
+                found_book = found_book[0]
                 # If this is text and the book is among ones we are interested in, take the file and upload it to minio
                 object_name = f"{top_folder}/{self.revision}/{file_name}"
                 content_type = metadata_xml.find("resource", uri=content.get("src")).get("mimeType")
@@ -366,8 +441,8 @@ class MinioUSXUpload:
                 long_name = book_info.find("long").text
 
                 # Skip any that are not 3 John book (used when testing = shortest book in the bible)
-                if found_book[0] != "3JN":
-                    continue
+                # if found_book != "3JN":
+                #     continue
 
                 # ✅ Proper loading bar (50 characters wide)
                 progress = int((i / total_books) * 50)
@@ -376,18 +451,16 @@ class MinioUSXUpload:
                 
                 # Then update the database linking to them
                 if self.medium == "text":
-                    sys.stdout.write(f"\r    Processing books: |{bar}| {percentage}% | {found_book[0]} | ")
-                    sys.stdout.flush()
+                    self.progress_message = f"    Processing Books: |{bar}| {percentage}% | {found_book}"
 
                     self.cur.execute("""
                         INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s) RETURNING id;
                     """, (book, self.translation_id, file_id, short_name, long_name))
                     # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
                     book_map_id = self.cur.fetchone()[0]
-                    Book(self.language_id, self.translation_id, book_map_id, file_id, self.stream_file(object_name), self.conn, self.bible_structure_info)                    
+                    Book(self, found_book, book_map_id, file_id, self.stream_file(object_name), self.conn)                    
                 if self.medium == "audio":
-                    sys.stdout.write(f"\r    Processing books: |{bar}| {percentage}% | {chapter_ref} | ")
-                    sys.stdout.flush()
+                    self.progress_message = f"    Processing Chapters: |{bar}| {percentage}% | {chapter_ref}"
                     # Audio and eventually video don't have any connection but in serving the files themselves for consumption
                     #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
                     #   Since below are all the database references it needs.
@@ -405,8 +478,7 @@ class MinioUSXUpload:
         bar = '#' * progress + '-' * (50 - progress)
         percentage = int((total_books / total_books) * 100)
         
-        sys.stdout.write(f"\r    Processing books: |{bar}| {percentage}% | COMPLETED | ")
-        sys.stdout.flush()
+        self.progress_message = f"\r   |{bar}| {percentage}%"
 
         self.conn.commit()
         
@@ -462,6 +534,7 @@ class MinioUSXUpload:
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.files",))
 
         file_id = self.cur.fetchone()[0]
+        self.log_ingestion_activity(f"Created New File: [{info.object_name}] [File ID:{file_id}] [Bucket: {info.bucket_name}] [etag: {info.etag}]", "TRANSLATION", "DEBUG")
 
         if "versification" in object_name:
             self.createVersification(self.stream_file(object_name))
@@ -491,13 +564,7 @@ class MinioUSXUpload:
     def createStylesAndProperties(self, styles_string, styles_file_id):
         style_additions = 0
         property_additions = 0
-        # We only set styles and properties once, since it is duplicated across all translations, just usx formatting.
-        self.cur.execute("""SELECT last_value FROM bible.styles_id_seq;""")
-        styles = self.cur.fetchone()[0]
 
-        if styles > 1:
-            return
-        
         styles_xml = BeautifulSoup(styles_string, "xml")
         properties = styles_xml.find_all("property")
 
@@ -540,8 +607,11 @@ class MinioUSXUpload:
                     RETURNING id;
                 """, (style, style_name, style_description, style_versetext, style_publishable, styles_file_id))
 
-                # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.styles",))
                 style_id = self.cur.fetchone()[0]
+
+                self.style_dict[style] = {}
+                self.style_dict[style]["id"] = style_id
+                self.style_dict[style]["versetext"] = style_versetext
 
                 previous_style_parent = style_parent
 
@@ -561,6 +631,9 @@ class MinioUSXUpload:
 
         if property_additions > 0:
             print(f"    [{property_additions}] Properties loaded into database")
+
+        self.log_ingestion_activity(f"Initialised {style_additions} Styles!", "TRANSLATION", "INFO")
+        self.log_ingestion_activity(f"Initialised {property_additions} Properties!", "TRANSLATION", "INFO")
 
     def createVersification(self, file_string):
         # file_xml = BeautifulSoup(file_string, "xml")
@@ -613,13 +686,20 @@ class MinioUSXUpload:
                     INSERT INTO bible.excludedverses (verse_ref, translation_id) 
                     VALUES (%s, %s)
                 """, (verse_ref, self.translation_id))
-                additions += 1
+                additions+=1
+                
+                self.log_ingestion_activity(f"Created Excluded Verse: {verse_ref}", "TRANSLATION", "INFO")
 
         if additions > 0:
             print(f"    [{additions}] Excluded Verses added to database")
+
+        self.log_ingestion_activity(f"Created {additions} excluded verses", "TRANSLATION", "INFO")
     
     def createVerses(self, section_text):
-        additions = 0
+        verse_additions = 0
+        chapter_additions = 0
+
+        self.log_ingestion_activity(f"Initializing Verses...", "TRANSLATION", "INFO")
         # Create all Verses Tables instances - different from VerseOccurences, just chceck they all exist
         for line in section_text.splitlines():
             sections = line.split(" ")
@@ -650,8 +730,11 @@ class MinioUSXUpload:
                             VALUES (%s, %s, %s, %s);
                         """, (book_code, int(chapter_num), chapter_ref, False))
                         print(f"     Non-Standard Chapter Created: {chapter_ref}")
+                        self.log_ingestion_activity(f"Created Non-Standard Chapter: {chapter_ref}", "TRANSLATION", "INFO")
+                        chapter_additions+=1
                     except Exception as e:
                         print(f"❌ Skipped Chapter Creation of [{chapter_ref}] because of {e}")
+                        self.log_ingestion_activity(f"Skipped Chapter Creation of [{chapter_ref}] because of {e}", "TRANSLATION", "ERROR")
                         # In the case it can't seem to create a new chapter then skip the chapter (won't take it as important)
 
                 for verse in range(1, (int(verse_count)+1)):
@@ -667,7 +750,32 @@ class MinioUSXUpload:
                             INSERT INTO bible.verses (chapter_ref, verse_ref, verse) 
                             VALUES (%s, %s, %s)
                         """, (chapter_ref, verse_ref, str(verse)))
-                        additions += 1
+                        verse_additions += 1
+                        self.log_ingestion_activity(f"Created Verse: {verse_ref}", "TRANSLATION", "TRACE")
         
-        if additions > 0:
-            print(f"    [{additions}] Verses Initialized into database")
+        if verse_additions > 0:
+            print(f"    [{verse_additions}] Verses Initialized into database")
+            
+        self.log_ingestion_activity(f"Initialised {verse_additions} Verses!", "TRANSLATION", "INFO")
+        self.log_ingestion_activity(f"Initialised {chapter_additions} Chapters (Non Standard)!", "TRANSLATION", "INFO")
+
+    def elapsed_ingestion_time(self):
+        duration = time.time() - self.start_time
+        hours = int(duration // 3600)
+        minutes = int((duration % 3600) // 60)
+        seconds = int(duration % 60)
+
+        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
+        return formatted_duration
+
+    def log_ingestion_activity(self, log_message, source_class, log_level):
+        # Always update CLI progress bar, just only conditionally log
+        if self.progress_message != None and hasattr(sys.stdout, "write"):
+            sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_ingestion_time()}] | ")
+            sys.stdout.flush()
+
+        if self.LOG_MAPPING[log_level] < self.default_log_level:
+            return
+
+        with open(self.log_file, 'a', encoding="utf-8") as f:
+            f.write(f"{datetime.datetime.now()} [{log_level}] [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")

@@ -1,18 +1,20 @@
-from bs4 import BeautifulSoup, Tag, NavigableString
-import re
-
-from pathlib import Path
-import os
-import json
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from translation import Translation
+    from book import Book
+    from chapter import Chapter
 
 class Verse:
-    def __init__(self, chapter_xml, verse_ref, chapter_occurence_id, db_conn, is_special_case=False):
+    def __init__(self, this_translation: "Translation", this_book: "Book", this_chapter: "Chapter", verse_ref, db_conn, is_special_case=False):
+        self.this_translation = this_translation
+        self.this_book = this_book
+        self.this_chapter = this_chapter
+
         # Adds a database connection
         self.conn = db_conn
         self.cur = self.conn.cursor()
 
-        self.chapter_xml = chapter_xml
-        self.chapter_occurence_id = chapter_occurence_id
+        self.chapter_occurence_id = self.this_chapter.chapter_occurence_id
         self.verse_ref = verse_ref
         self.is_special_case = is_special_case
 
@@ -21,11 +23,27 @@ class Verse:
         self.conn.commit()
 
         if self.is_special_case == False:
-            self.xml = self.getVerseAndNoteXML()
-            self.text = self.getVerseText(self.xml)
             self.createVerseOccurence()
 
         self.conn.commit()
+
+    def get_verse_ref(self):
+        return self.verse_ref
+    
+    def get_start_node(self):
+        return self.start_node
+    
+    def get_end_node(self):
+        return self.end_node
+    
+    def get_verse_occurence_id(self):
+        return self.verse_occurence_id
+    
+    def get_start_node_id(self):
+        return self.start_node
+    
+    def get_end_node_id(self):
+        return self.end_note
     
     def createVerse(self):
         # Check whether non-standard verse has been added or not
@@ -37,14 +55,17 @@ class Verse:
         if verse_found == None:
             verse_splits = self.verse_ref.split("-")
             chapter_ref, verse_num = verse_splits[0].split(":")
+            verse_suffix = self.verse_ref.split(":")[1]
 
             # Check whether verse_ref is non standard e.g. GEN 1:1-2
             if len(verse_splits) > 1:
                 # Create new non standard verse first (to preseve foreign key constraint in db as well before verse occurence created)
                 self.cur.execute("""
-                    INSERT INTO bible.verses (chapter_ref, verse_ref, standard) 
-                    VALUES (%s, %s, %s)
-                """, (chapter_ref, self.verse_ref, False))
+                    INSERT INTO bible.verses (chapter_ref, verse_ref, standard, verse) 
+                    VALUES (%s, %s, %s, %s)
+                """, (chapter_ref, self.verse_ref, False, verse_suffix))
+
+                self.this_translation.log_ingestion_activity(f"Created New Verse", f"VERSE: {self.verse_ref}", "DEBUG")
 
                 start_verse = int(verse_num)
                 end_verse = int(verse_splits[1]) + 1 # because range is non inclusive
@@ -54,89 +75,33 @@ class Verse:
                         INSERT INTO bible.verse_correction (non_standard_verse_ref, verse_ref) 
                         VALUES (%s, %s)
                     """, (self.verse_ref, new_verse_ref))
+                    self.this_translation.log_ingestion_activity(f"Created Verse Correction [{new_verse_ref}]", f"VERSE: {self.verse_ref}", "DEBUG")
             
             # Taking account of secondary non standard verse
             if self.verse_ref[-1].isalpha(): # e.g. EXO 28:29a
                 self.cur.execute("""
                     INSERT INTO bible.verses (chapter_ref, verse_ref, standard, verse) 
                     VALUES (%s, %s, %s, %s)
-                """, (chapter_ref, self.verse_ref, False, verse_num))
+                """, (chapter_ref, self.verse_ref, False, verse_suffix))
+                self.this_translation.log_ingestion_activity(f"Created New Verse", f"VERSE: {self.verse_ref}", "DEBUG")
                 
                 new_verse_ref = self.verse_ref[:-1]
                 self.cur.execute("""
                     INSERT INTO bible.verse_correction (non_standard_verse_ref, verse_ref) 
                     VALUES (%s, %s)
                 """, (self.verse_ref, new_verse_ref))
+                self.this_translation.log_ingestion_activity(f"Created Verse Correction [{new_verse_ref}]", f"VERSE: {self.verse_ref}", "DEBUG")
 
     def createVerseOccurence(self):
-        self.cur.execute("""
-            SELECT start_node, end_node FROM bible.chapteroccurences WHERE id = %s;
-        """, (self.chapter_occurence_id,))
-        chapter_start_node, chapter_end_node = self.cur.fetchone()
-
-        self.cur.execute("""
-            SELECT id FROM bible.nodes 
-            WHERE (sid = %s OR eid = %s) 
-                AND node_type = 'verse' 
-                AND id BETWEEN %s AND %s;
-        """, (self.verse_ref, self.verse_ref, chapter_start_node, chapter_end_node))
-        start_node, end_note = self.cur.fetchall()
+        all_vesre_nodes = self.this_book.get_book_nodes().get_verses()[self.verse_ref]
+        self.start_node = all_vesre_nodes["sid"]
+        self.end_node = all_vesre_nodes["eid"]
 
         self.cur.execute("""
             INSERT INTO bible.verseoccurences (chapter_id, verse_ref, start_node, end_node) 
             VALUES (%s, %s, %s, %s)
-        """, (self.chapter_occurence_id, self.verse_ref, start_node, end_note))
+            RETURNING id;
+        """, (self.chapter_occurence_id, self.verse_ref, self.start_node, self.end_node))
+        self.verse_occurence_id = self.cur.fetchone()[0]
 
-    def getVerseAndNoteXML(self):
-        # Regex to get everything between opening and closing paragraph tag
-        start_tag = self.chapter_xml.find("verse", sid=self.verse_ref)
-        end_tag = self.chapter_xml.find("verse", eid=self.verse_ref)
-        para_tag = "<usx>" + str(start_tag.find_parent("para")).split(">")[0] + ">"
-
-        search_string = f"{start_tag}.*{end_tag}"
-        verse_xml = para_tag + "\n"
-        verse_found = re.search(search_string, str(self.chapter_xml), re.DOTALL)
-        
-        verse_xml += verse_found.group(0) if verse_found != None else ""
-        verse_xml += "\n</para></usx>"
-        
-        return verse_xml
-
-    def getVerseText(self, verse_xml):
-        temp_verse_xml = BeautifulSoup(str(verse_xml), "xml")
-
-        verse_sub_paras = temp_verse_xml.find_all("para")
-
-        # Check for para tags
-        for para in verse_sub_paras:
-            # print(para)
-            para_style = para.get("style")
-
-            if para_style != None:
-                # Get latest translation (the one we are currently working on)
-                translation_id = None
-                try:
-                    self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
-                    translation_id = self.cur.fetchone()[0]
-                except Exception as e:
-                    self.conn.rollback()
-                    translation_id = 1
-
-                self.cur.execute("""
-                    SELECT versetext FROM bible.styles WHERE style = %s AND source_file_id = (SELECT style_file FROM bible.translations WHERE id = %s);
-                """, (para_style,translation_id))
-                result = self.cur.fetchone()[0]
-
-                is_versetext = True if result else False
-
-                if is_versetext == False:
-                    para.decompose()
-
-                # Remove <note> tags completely
-                all_notes = para.find_all("note")
-                if len(all_notes) > 0:
-                    for note in para.find_all("note"):
-                        note.decompose()
-
-        final_text = temp_verse_xml.get_text().strip()
-        return final_text
+        self.this_translation.log_ingestion_activity(f"Created New Verse Occurence [ID: {self.verse_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.end_node}]", f"VERSE: {self.verse_ref}", "TRACE")
