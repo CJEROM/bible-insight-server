@@ -233,20 +233,20 @@ class Tokenisation:
         with open(self.log_file, 'w', encoding="utf-8") as f:
             f.write(f"Starting Tokenisation ...\n")
 
-        # self.cur.execute(self.SQL.get("get_language"), (self.translation_id,))
-        # self.language_id = self.cur.fetchone()[0]
+        self.cur.execute(self.SQL.get("get_language"), (self.translation_id,))
+        self.language_id = self.cur.fetchone()[0]
 
-        # self.log_ingestion_activity(f"Linked to Language with ID: {self.language_id}", "INIT", "INFO")
+        self.log_ingestion_activity(f"Linked to Language with ID: {self.language_id}", "INIT", "INFO")
 
-        # self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
+        self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
 
-        # self.log_ingestion_activity(f"Initialised Tokenisable Nodes!", "INIT", "INFO")
+        self.log_ingestion_activity(f"Initialised Tokenisable Nodes!", "INIT", "INFO")
 
-        # self.reconstruct_chapter_nodes()
+        self.reconstruct_chapter_nodes()
 
-        # self.log_ingestion_activity(f"Finished Constructing Tokens: {self.language_id}", "INIT", "INFO")
+        self.log_ingestion_activity(f"Finished Constructing Tokens: {self.language_id}", "INIT", "INFO")
 
-        # self.create_tokens()
+        self.create_tokens()
 
         # print(self.loadLanguageLDML())
 
