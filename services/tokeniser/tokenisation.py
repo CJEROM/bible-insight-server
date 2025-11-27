@@ -1,6 +1,7 @@
 import spacy
 from spacy.tokens import Doc
 from minio import Minio
+from bs4 import BeautifulSoup
 
 from psycopg2.extras import execute_values
 import time
@@ -232,20 +233,22 @@ class Tokenisation:
         with open(self.log_file, 'w', encoding="utf-8") as f:
             f.write(f"Starting Tokenisation ...\n")
 
-        self.cur.execute(self.SQL.get("get_language"), (self.translation_id,))
-        self.language_id = self.cur.fetchone()[0]
+        # self.cur.execute(self.SQL.get("get_language"), (self.translation_id,))
+        # self.language_id = self.cur.fetchone()[0]
 
-        self.log_ingestion_activity(f"Linked to Language with ID: {self.language_id}", "INIT", "INFO")
+        # self.log_ingestion_activity(f"Linked to Language with ID: {self.language_id}", "INIT", "INFO")
 
-        self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
+        # self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
 
-        self.log_ingestion_activity(f"Initialised Tokenisable Nodes!", "INIT", "INFO")
+        # self.log_ingestion_activity(f"Initialised Tokenisable Nodes!", "INIT", "INFO")
 
-        self.reconstruct_chapter_nodes()
+        # self.reconstruct_chapter_nodes()
 
-        self.log_ingestion_activity(f"Finished Constructing Tokens: {self.language_id}", "INIT", "INFO")
+        # self.log_ingestion_activity(f"Finished Constructing Tokens: {self.language_id}", "INIT", "INFO")
 
-        self.create_tokens()
+        # self.create_tokens()
+
+        print(self.loadLanguageLDML())
 
         # Then run a part that will run in a lopp like semi-supervised learning for tokeniser 
         #     to figure out if it has done it correctly by just doing distinct query and looking for weird cases
@@ -419,12 +422,12 @@ class Tokenisation:
         for i in range(0, len(all_new_tokens), CHUNK):
             execute_values(self.cur, sql_query, all_new_tokens[i:i+CHUNK])  
 
-    def stream_file(self, object_name):
+    def stream_file(self, object_name, bucket):
         # Get file
         response = None 
         try:
             response = self.client.get_object(
-                bucket_name=self.bucket,
+                bucket_name=bucket,
                 object_name=object_name,
             )
             # Read the data as bytes, then decode as UTF-8
@@ -456,23 +459,34 @@ class Tokenisation:
         with open(self.log_file, 'a', encoding="utf-8") as f:
             f.write(f"{datetime.datetime.now()} [{log_level}] [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")
 
+    def loadLanguageLDML(self):
+        self.cur.execute("""
+            SELECT file_path, bucket FROM bible.files WHERE id = (SELECT ldml_file FROM bible.translations WHERE id = %s);
+        """, (self.translation_id,))
+        ldml_file_object, ldml_file_bucket = self.cur.fetchone()
+        ldml_content = self.stream_file(ldml_file_object, ldml_file_bucket)[1:]
+
+        ldml_file = Path(__file__).parents[2] / "logs" / "tests" / f"{self.translation_id}-ldml.xml"
+
+        return ldml_content
+
 if __name__ == "__main__":
-    # conn = psycopg2.connect(
-    #     host=POSTGRES_HOST,
-    #     port=POSTGRES_PORT,
-    #     dbname=POSTGRES_DB,
-    #     user=POSTGRES_USERNAME,
-    #     password=POSTGRES_PASSWORD
-    # )
-    # cur = conn.cursor()
+    conn = psycopg2.connect(
+        host=POSTGRES_HOST,
+        port=POSTGRES_PORT,
+        dbname=POSTGRES_DB,
+        user=POSTGRES_USERNAME,
+        password=POSTGRES_PASSWORD
+    )
+    cur = conn.cursor()
 
-    # cur.execute("""
-    #     SELECT id FROM bible.translations;            
-    # """)
-    # all_translations = cur.fetchall()
+    cur.execute("""
+        SELECT id FROM bible.translations;            
+    """)
+    all_translations = cur.fetchall()
 
-    # for translation in all_translations:
-    #     Tokenisation(translation)
+    for translation in all_translations:
+        Tokenisation(translation[0])
     
-    Tokenisation(1)
+    # Tokenisation(1)
     pass
