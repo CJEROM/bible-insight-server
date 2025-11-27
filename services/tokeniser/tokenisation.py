@@ -53,7 +53,7 @@ NLP_MAPPING = {
 # Will create tokens for one translation at a time, to preprocess it all, then carry on with the rest before moving onto others.
 
 class Tokenisation:
-    default_log_level = 0 # Here I can set the level of logging I want for my application
+    default_log_level = 1 # Here I can set the level of logging I want for my application
 
     LOG_MAPPING = {
         "TRACE": 0,
@@ -74,23 +74,23 @@ class Tokenisation:
             WHERE t.id = %s;
         """,
         "get_translation_books": """
-            SELECT id FROM bible.booktofile WHERE translation_id = %s
+            SELECT id FROM bible.booktofile WHERE translation_id = %s ORDER BY id;
         """,
         "get_book_chapters": """
-            SELECT id, reconstructed_text, chapter_ref FROM bible.chapteroccurences WHERE book_map_id = %s
+            SELECT id, reconstructed_text, chapter_ref FROM bible.chapteroccurences WHERE book_map_id = %s ORDER BY id;
         """,
         "get_chapter_verses": """
-            SELECT id FROM bible.verseoccurences WHERE chapter_id = %s
+            SELECT id FROM bible.verseoccurences WHERE chapter_id = %s ORDER BY id;
         """,
         # --------------------------------- NLP Lookup Types ---------------------------------
         "create_pos_lookup": """
-            INSERT INTO lookup.nlp_pos_types (pos_tag) VALUES (%s) ON CONFLICT DO NOTHING
+            INSERT INTO lookup.nlp_pos_types (pos_tag) VALUES %s ON CONFLICT DO NOTHING;
         """,
         "create_dep_lookup": """
-            INSERT INTO lookup.nlp_dep_types (dep) VALUES (%s) ON CONFLICT DO NOTHING
+            INSERT INTO lookup.nlp_dep_types (dep) VALUES %s ON CONFLICT DO NOTHING;
         """,
         "create_tag_lookup": """
-            INSERT INTO lookup.nlp_tag_types (tag) VALUES (%s) ON CONFLICT DO NOTHING
+            INSERT INTO lookup.nlp_tag_types (tag) VALUES %s ON CONFLICT DO NOTHING;
         """,
         # --------------------------------- Node Types ---------------------------------
         "init_tokenisable_nodes": """
@@ -108,7 +108,6 @@ class Tokenisation:
                     WHERE translation_id = %s
                 )
             ),
-            --SELECT * FROM text_nodes;
             ancestor_chain AS (
                 -- seed: start at the text node's parent
                 SELECT
@@ -304,6 +303,10 @@ class Tokenisation:
         self.cur.execute(self.SQL.get("max_token_count"))
         token_id_offset = self.cur.fetchone()[0]
 
+        unique_pos = set()
+        unique_tag = set()
+        unique_dep = set()
+
         for i, book_map_id in enumerate(all_books):
             # Get all Chapters for this Book
             self.cur.execute(self.SQL.get("get_book_chapters"), (book_map_id,))
@@ -334,9 +337,9 @@ class Tokenisation:
                     dep = token.dep_
 
                     # Makes sure they exist in lookup tables
-                    self.cur.execute(self.SQL.get("create_pos_lookup"), (pos,))
-                    self.cur.execute(self.SQL.get("create_tag_lookup"), (tag,))
-                    self.cur.execute(self.SQL.get("create_dep_lookup"), (dep,))
+                    unique_pos.add((pos,))
+                    unique_tag.add((tag,))
+                    unique_dep.add((dep,))
 
                     # You may want a lemma lookup table; for now store lemma text directly
                     lemma = token.lemma_
@@ -394,6 +397,24 @@ class Tokenisation:
         # Now bulk insert all of the nodes into the database (in batches / chunks)
         CHUNK = 20000  # ideal for execute_values
 
+        unique_pos = list(unique_pos)
+        unique_tag = list(unique_tag)
+        unique_dep = list(unique_dep)
+
+        # Bulk insert lookup values
+        sql_query = self.SQL.get("create_pos_lookup")
+        for i in range(0, len(unique_pos), CHUNK):
+            execute_values(self.cur, sql_query, unique_pos[i:i+CHUNK])  
+
+        sql_query = self.SQL.get("create_tag_lookup")
+        for i in range(0, len(unique_tag), CHUNK):
+            execute_values(self.cur, sql_query, unique_tag[i:i+CHUNK])  
+
+        sql_query = self.SQL.get("create_dep_lookup")
+        for i in range(0, len(unique_dep), CHUNK):
+            execute_values(self.cur, sql_query, unique_dep[i:i+CHUNK])  
+
+        # Bulk Insert Tokens
         sql_query = self.SQL.get("create_token")
         for i in range(0, len(all_new_tokens), CHUNK):
             execute_values(self.cur, sql_query, all_new_tokens[i:i+CHUNK])  
