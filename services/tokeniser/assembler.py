@@ -116,15 +116,15 @@ class Assembler:
         """,
         "get_chapter_for_node_path": """
             WITH node_found AS (
-                SELECT id 
+                SELECT id AS node_id
                 FROM bible.nodes 
                 WHERE canonical_path = %s AND translation_id = %s
             ),
             chapter_found AS (
                 SELECT id, start_node, end_node
-                FROM bible.chapteroccurences
-                WHERE start_node <= (SELECT id FROM node_found)
-                    AND end_node >= (SELECT id FROM node_found)
+                FROM bible.chapteroccurences cf
+                JOIN node_found nf
+                  ON nf.node_id BETWEEN cf.start_node AND cf.end_node
                 LIMIT 1
             )
             SELECT n.id, n.node_text
@@ -136,15 +136,15 @@ class Assembler:
         """,
         "get_verse_for_node_path": """
             WITH node_found AS (
-                SELECT id 
+                SELECT id AS node_id
                 FROM bible.nodes 
                 WHERE canonical_path = %s AND translation_id = %s
             ),
             verse_found AS (
                 SELECT id, start_node, end_node
-                FROM bible.verseoccurences
-                WHERE start_node <= (SELECT id FROM node_found)
-                    AND end_node >= (SELECT id FROM node_found)
+                FROM bible.verseoccurences vf
+                JOIN node_found nf
+                  ON nf.node_id BETWEEN vf.start_node AND vf.end_node
                 LIMIT 1
             )
             SELECT n.id, n.node_text
