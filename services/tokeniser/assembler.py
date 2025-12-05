@@ -156,24 +156,41 @@ class Assembler:
         """,
         # Reconstruct from REF
         "get_book_from_ref": """
-            SELECT book_map_id
-            FROM book.nodes
-            WHERE canonical_path = %s
+            SELECT id, node_text
+            FROM bible.nodes
+            WHERE book_map_id = (
+                SELECT id 
+                FROM book.booktofile
+                WHERE book_code = %s AND translation_id = %s
+            )
+            AND is_tokenisable = TRUE
+            ORDER BY id;
         """,
         "get_chapter_from_ref": """
-            WITH chapter_found AS (
-                SELECT id
-                FROM book.nodes
-                WHERE canonical_path = %s
+            WITH chapter_bounds AS (
+                SELECT start_node, end_node
+                FROM bible.chapteroccurences
+                WHERE chapter_ref = %s AND translation_id = %s
             )
-            SELECT id
-            FROM bible.chapteroccurences
-            WHERE start_node <= %s AND end_node >= %s
+            SELECT n.id, n.node_text
+            FROM chapter_bounds cb
+            JOIN bible.nodes n 
+                ON n.id BETWEEN cb.start_node AND cb.end_node
+            WHERE n.is_tokenisable = TRUE
+            ORDER BY n.id;
         """,
         "get_verse_from_ref": """
-            SELECT id
-            FROM bible.verseoccurences
-            WHERE start_node <= %s AND end_node >= %s
+            WITH verse_bounds AS (
+                SELECT start_node, end_node
+                FROM bible.verseoccurences
+                WHERE verse_ref = %s AND translation_id = %s
+            )
+            SELECT n.id, n.node_text
+            FROM verse_bounds vb
+            JOIN bible.nodes n 
+                ON n.id BETWEEN vb.start_node AND vb.end_node
+            WHERE n.is_tokenisable = TRUE
+            ORDER BY n.id;
         """,
         # NOT IN USE YET
         "get_ref_all_verseoccurences": """
@@ -275,13 +292,13 @@ class Assembler:
         query = ""
         match scope:
             case "book":
-                query = self.SQL.get("get_book_tokenisable_nodes")
+                query = self.SQL.get("get_book_from_ref")
             case "chapter":
-                query = self.SQL.get("get_chapter_tokenisable_nodes")
+                query = self.SQL.get("get_chapter_from_ref")
             case "verse":
-                query = self.SQL.get("get_verse_tokenisable_nodes")
+                query = self.SQL.get("get_verse_from_ref")
 
-        self.cur.execute(query, (translation_id, ref))
+        self.cur.execute(query, (ref, translation_id))
         tokenisable_nodes_results = self.cur.fetchall()
         for id, node_text in tokenisable_nodes_results:
             self.nodes.append(id)
