@@ -41,10 +41,10 @@ class Chapter:
 
         # Create a Chapter Occurence
         self.cur.execute("""
-            INSERT INTO bible.chapteroccurences (chapter_ref, book_map_id, start_node, end_node) 
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO bible.chapteroccurences (chapter_ref, book_map_id, translation_id, start_node, end_node) 
+            VALUES (%s, %s, %s, %s, %s)
             RETURNING id;
-        """, (self.chapter_ref, self.book_map_id, self.start_node, self.end_node))
+        """, (self.chapter_ref, self.book_map_id, self.translation_id, self.start_node, self.end_node))
         self.chapter_occurence_id = self.cur.fetchone()[0]
 
         self.this_translation.log_ingestion_activity(f"Created Chapter Occurence [ID: {self.chapter_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.end_node}]", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
