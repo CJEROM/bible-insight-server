@@ -363,11 +363,13 @@ CREATE TABLE IF NOT EXISTS bible.verse_correction (
 CREATE TABLE IF NOT EXISTS bible.verseoccurences (
     id                      SERIAL PRIMARY KEY,
     verse_ref               TEXT,
-    translation_id          INTEGER,
     chapter_id              INTEGER, --Chapter Occurence this is under
+    book_map_id             INTEGER,
+    translation_id          INTEGER,
     start_node              INTEGER,
     end_node                INTEGER,
     FOREIGN KEY (chapter_id) REFERENCES bible.chapteroccurences (id) ON DELETE CASCADE,
+    FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
