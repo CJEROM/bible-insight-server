@@ -55,11 +55,11 @@ class Assembler:
             ORDER BY n.id;
         """,
         "get_book_tokenisable_nodes": """
-            SELECT n.id, n.node_text
+            SELECT id, node_text
             FROM bible.nodes
             WHERE is_tokenisable = TRUE
                 AND book_map_id = %s
-            ORDER BY n.id;
+            ORDER BY id;
         """,
         # NOT IN USE YET
         "get_ref_all_verseoccurences": """
@@ -119,6 +119,6 @@ class Assembler:
     # Perhaps function to help build on nodes, to display strongs if available?
 
 if __name__ == "__main__":
-    chapter = Assembler("chapter", 1)
+    chapter = Assembler("book", 1)
     print(chapter.get_nodes())
     print(chapter.get_reconstructed_text())
