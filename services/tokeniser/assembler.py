@@ -104,24 +104,55 @@ class Assembler:
         """,
         # Reconstruct from NODE -> CANONICAL PATH
         "get_book_for_node_path": """
-            SELECT book_map_id
-            FROM book.nodes
-            WHERE canonical_path = %s
+            SELECT n.id, n.node_text
+            FROM bible.nodes n
+            WHERE n.book_map_id = (
+                SELECT book_map_id
+                FROM book.nodes
+                WHERE canonical_path = %s AND translation_id = %s
+            )
+            AND n.is_tokenisable = TRUE
+            ORDER BY n.id;
         """,
         "get_chapter_for_node_path": """
-            WITH chapter_found AS (
-                SELECT id
-                FROM book.nodes
-                WHERE canonical_path = %s
+            WITH node_found AS (
+                SELECT id 
+                FROM bible.nodes 
+                WHERE canonical_path = %s AND translation_id = %s
+            ),
+            chapter_found AS (
+                SELECT id, start_node, end_node
+                FROM bible.chapteroccurences
+                WHERE start_node <= (SELECT id FROM node_found)
+                    AND end_node >= (SELECT id FROM node_found)
+                LIMIT 1
             )
-            SELECT id
-            FROM bible.chapteroccurences
-            WHERE start_node <= %s AND end_node >= %s
+            SELECT n.id, n.node_text
+            FROM bible.nodes n 
+            JOIN chapter_found cf
+                ON n.id BETWEEN cf.start_node AND cf.end_node
+            WHERE n.is_tokenisable = TRUE
+            ORDER BY n.id;
         """,
         "get_verse_for_node_path": """
-            SELECT id
-            FROM bible.verseoccurences
-            WHERE start_node <= %s AND end_node >= %s
+            WITH node_found AS (
+                SELECT id 
+                FROM bible.nodes 
+                WHERE canonical_path = %s AND translation_id = %s
+            ),
+            verse_found AS (
+                SELECT id, start_node, end_node
+                FROM bible.verseoccurences
+                WHERE start_node <= (SELECT id FROM node_found)
+                    AND end_node >= (SELECT id FROM node_found)
+                LIMIT 1
+            )
+            SELECT n.id, n.node_text
+            FROM bible.nodes n 
+            JOIN verse_found vf
+                ON n.id BETWEEN vf.start_node AND vf.end_node
+            WHERE n.is_tokenisable = TRUE
+            ORDER BY n.id;
         """,
         # Reconstruct from REF
         "get_book_from_ref": """
@@ -201,13 +232,13 @@ class Assembler:
         query = ""
         match scope:
             case "book":
-                query = self.SQL.get("get_book_tokenisable_nodes")
+                query = self.SQL.get("get_book_for_node_id")
                 self.cur.execute(query, (node_id,))
             case "chapter":
-                query = self.SQL.get("get_chapter_tokenisable_nodes")
+                query = self.SQL.get("get_chapter_for_node_id")
                 self.cur.execute(query, (node_id,node_id))
             case "verse":
-                query = self.SQL.get("get_verse_tokenisable_nodes")
+                query = self.SQL.get("get_verse_for_node_id")
                 self.cur.execute(query, (node_id,node_id))
         
         tokenisable_nodes_results = self.cur.fetchall()
