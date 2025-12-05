@@ -250,13 +250,13 @@ class Assembler:
         query = ""
         match self.scope:
             case "book":
-                query = self.SQL.get("get_book_tokenisable_nodes")
+                query = self.SQL.get("get_book_for_node_path")
             case "chapter":
-                query = self.SQL.get("get_chapter_tokenisable_nodes")
+                query = self.SQL.get("get_chapter_for_node_path")
             case "verse":
-                query = self.SQL.get("get_verse_tokenisable_nodes")
+                query = self.SQL.get("get_verse_for_node_path")
 
-        self.cur.execute(query, (self.occurence_id,))
+        self.cur.execute(query, (canonical_path,translation_id))
         tokenisable_nodes_results = self.cur.fetchall()
         for id, node_text in tokenisable_nodes_results:
             self.nodes.append(id)
