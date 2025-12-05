@@ -276,12 +276,14 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     parent_node_id          INTEGER, -- Can be null due to usx root node
     index_in_parent         INTEGER,
     book_map_id             INTEGER,
+    translation_id          INTEGER,
     canonical_path          TEXT,
     is_tokenisable          BOOLEAN,
     chapter_start_offset    INTEGER,
     chapter_end_offset      INTEGER,
     FOREIGN KEY (parent_node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE,
     FOREIGN KEY (strong) REFERENCES bible.strongs (code) ON DELETE SET NULL
 );
