@@ -205,7 +205,15 @@ class Assembler:
         """
     }
 
-    def __init__(self, ):
+    def __init__(self, occurence_id=None, node_id=None, canonical_path=None, ref=None, scope=None, translation_id=None):
+        self.occurence_id = occurence_id
+        self.node_id = node_id
+        self.canonical_path = canonical_path
+        self.ref = ref
+        self.scope = scope
+
+        self.translation_id = translation_id
+        
         # Adds a database connection
         self.conn = psycopg2.connect(
             host=POSTGRES_HOST,
@@ -216,18 +224,32 @@ class Assembler:
         )
         self.cur = self.conn.cursor()
 
-        # What context are we reconstructing: book OR chapter (already exists) OR verse       [heading? (future feature)]
-
         self.nodes = [] # Represents all (tokenisable) nodes used to reconstruct context
         self.text = ""
 
-        self.reconstruct_occurence()
+        self.assemble()
 
     def get_nodes(self):
         return self.nodes
     
     def get_reconstructed_text(self):
         return self.text
+    
+    def assemble(self):
+        # Attempt to automatically determine what reconstruction method to use
+        if self.scope != None:
+            if self.occurence_id != None:
+                self.reconstruct_occurence(self.scope, self.occurence_id)
+            elif self.node_id != None:
+                self.reconstruct_from_node_id(self.scope, self.node_id)
+            elif self.canonical_path != None and self.translation_id != None:
+                self.reconstruct_from_node_path(self.scope, self.translation_id, self.canonical_path)
+            else:
+                raise ValueError("Insufficient parameters provided for reconstruction.")
+        elif self.ref != None:
+            self.reconstruct_from_ref(self.translation_id, self.ref)
+        else:
+            raise ValueError("Insufficient parameters provided for reconstruction.")
     
     def reconstruct_occurence(self, scope, occurence_id):
         query = ""
@@ -263,9 +285,9 @@ class Assembler:
             self.nodes.append(id)
             self.text += node_text
 
-    def reconstruct_from_node_path(self, translation_id, canonical_path):
+    def reconstruct_from_node_path(self, scope, translation_id, canonical_path):
         query = ""
-        match self.scope:
+        match scope:
             case "book":
                 query = self.SQL.get("get_book_for_node_path")
             case "chapter":
