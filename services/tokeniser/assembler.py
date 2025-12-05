@@ -28,6 +28,7 @@ POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
 class Assembler:
     SQL = {
+        # Reconstruct from OCCURENCE -> ID
         "get_chapter_tokenisable_nodes": """
             WITH chapter_bounds AS (
                 SELECT start_node, end_node
@@ -61,6 +62,64 @@ class Assembler:
                 AND book_map_id = %s
             ORDER BY id;
         """,
+        # Reconstruct from NODE -> ID
+        "get_book_for_node_id": """
+            SELECT book_map_id
+            FROM book.nodes
+            WHERE id = %s
+        """,
+        "get_chapter_for_node_id": """
+            SELECT id
+            FROM bible.chapteroccurences
+            WHERE start_node <= %s AND end_node >= %s
+        """,
+        "get_verse_for_node_id": """
+            SELECT id
+            FROM bible.verseoccurences
+            WHERE start_node <= %s AND end_node >= %s
+        """,
+        # Reconstruct from NODE -> CANONICAL PATH
+        "get_book_for_node_path": """
+            SELECT book_map_id
+            FROM book.nodes
+            WHERE canonical_path = %s
+        """,
+        "get_chapter_for_node_path": """
+            WITH chapter_found AS (
+                SELECT id
+                FROM book.nodes
+                WHERE canonical_path = %s
+            )
+            SELECT id
+            FROM bible.chapteroccurences
+            WHERE start_node <= %s AND end_node >= %s
+        """,
+        "get_verse_for_node_path": """
+            SELECT id
+            FROM bible.verseoccurences
+            WHERE start_node <= %s AND end_node >= %s
+        """,
+        # Reconstruct from REF
+        "get_book_from_ref": """
+            SELECT book_map_id
+            FROM book.nodes
+            WHERE canonical_path = %s
+        """,
+        "get_chapter_from_ref": """
+            WITH chapter_found AS (
+                SELECT id
+                FROM book.nodes
+                WHERE canonical_path = %s
+            )
+            SELECT id
+            FROM bible.chapteroccurences
+            WHERE start_node <= %s AND end_node >= %s
+        """,
+        "get_verse_from_ref": """
+            SELECT id
+            FROM bible.verseoccurences
+            WHERE start_node <= %s AND end_node >= %s
+        """,
         # NOT IN USE YET
         "get_ref_all_verseoccurences": """
             SELECT * 
@@ -74,7 +133,7 @@ class Assembler:
         """
     }
 
-    def __init__(self, scope, occurence_id):
+    def __init__(self, ):
         # Adds a database connection
         self.conn = psycopg2.connect(
             host=POSTGRES_HOST,
@@ -86,8 +145,6 @@ class Assembler:
         self.cur = self.conn.cursor()
 
         # What context are we reconstructing: book OR chapter (already exists) OR verse       [heading? (future feature)]
-        self.scope = scope
-        self.occurence_id = occurence_id
 
         self.nodes = [] # Represents all (tokenisable) nodes used to reconstruct context
         self.text = ""
@@ -100,7 +157,23 @@ class Assembler:
     def get_reconstructed_text(self):
         return self.text
     
-    def reconstruct_occurence(self):
+    def reconstruct_occurence(self, scope, occurence_id):
+        query = ""
+        match scope:
+            case "book":
+                query = self.SQL.get("get_book_tokenisable_nodes")
+            case "chapter":
+                query = self.SQL.get("get_chapter_tokenisable_nodes")
+            case "verse":
+                query = self.SQL.get("get_verse_tokenisable_nodes")
+
+        self.cur.execute(query, (occurence_id,))
+        tokenisable_nodes_results = self.cur.fetchall()
+        for id, node_text in tokenisable_nodes_results:
+            self.nodes.append(id)
+            self.text += node_text
+
+    def reconstruct_from_node_id(self):
         query = ""
         match self.scope:
             case "book":
@@ -111,6 +184,47 @@ class Assembler:
                 query = self.SQL.get("get_verse_tokenisable_nodes")
 
         self.cur.execute(query, (self.occurence_id,))
+        tokenisable_nodes_results = self.cur.fetchall()
+        for id, node_text in tokenisable_nodes_results:
+            self.nodes.append(id)
+            self.text += node_text
+
+    def reconstruct_from_node_path(self, translation_id, canonical_path):
+        query = ""
+        match self.scope:
+            case "book":
+                query = self.SQL.get("get_book_tokenisable_nodes")
+            case "chapter":
+                query = self.SQL.get("get_chapter_tokenisable_nodes")
+            case "verse":
+                query = self.SQL.get("get_verse_tokenisable_nodes")
+
+        self.cur.execute(query, (self.occurence_id,))
+        tokenisable_nodes_results = self.cur.fetchall()
+        for id, node_text in tokenisable_nodes_results:
+            self.nodes.append(id)
+            self.text += node_text
+
+    def reconstruct_from_ref(self, translation_id, ref):
+        # Find if GEN, GEN 1, GEN 1:1 => Based on that change query
+        scope = None
+        if len(ref.split(" ")) == 1: # No space so book
+            scope = "book"
+        elif len(ref.split(":")) == 1: # no verse so chapter
+            scope = "chapter"
+        else:
+            scope = "verse"
+
+        query = ""
+        match scope:
+            case "book":
+                query = self.SQL.get("get_book_tokenisable_nodes")
+            case "chapter":
+                query = self.SQL.get("get_chapter_tokenisable_nodes")
+            case "verse":
+                query = self.SQL.get("get_verse_tokenisable_nodes")
+
+        self.cur.execute(query, (translation_id, ref))
         tokenisable_nodes_results = self.cur.fetchall()
         for id, node_text in tokenisable_nodes_results:
             self.nodes.append(id)
