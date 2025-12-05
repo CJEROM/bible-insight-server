@@ -14,9 +14,11 @@ class Verse:
         self.conn = db_conn
         self.cur = self.conn.cursor()
 
+        self.translation_id =       self.this_translation.get_translation_id()
+        self.book_map_id =          self.this_book.get_book_map_id()
         self.chapter_occurence_id = self.this_chapter.chapter_occurence_id
-        self.verse_ref = verse_ref
-        self.is_special_case = is_special_case
+        self.verse_ref =            verse_ref
+        self.is_special_case =      is_special_case
 
         self.createVerse()
 
@@ -98,10 +100,10 @@ class Verse:
         self.end_node = all_vesre_nodes["eid"]
 
         self.cur.execute("""
-            INSERT INTO bible.verseoccurences (chapter_id, verse_ref, start_node, end_node) 
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO bible.verseoccurences (chapter_id, book_map_id, translation_id, verse_ref, start_node, end_node) 
+            VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id;
-        """, (self.chapter_occurence_id, self.verse_ref, self.start_node, self.end_node))
+        """, (self.chapter_occurence_id, self.book_map_id, self.translation_id, self.verse_ref, self.start_node, self.end_node))
         self.verse_occurence_id = self.cur.fetchone()[0]
 
         self.this_translation.log_ingestion_activity(f"Created New Verse Occurence [ID: {self.verse_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.end_node}]", f"VERSE: {self.verse_ref}", "TRACE")
