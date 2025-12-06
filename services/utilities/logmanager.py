@@ -18,16 +18,16 @@ class LogManager():
         "FATAL": 5
     }
 
-    def __init__(self, manager: ManagerHandler, default_log_path=None, log_folder=None, log_file_name=None, log_file_extension=".log"):
+    def __init__(self, manager: ManagerHandler, default_log_path=None, default_log_folder=None, log_file_name=None, log_file_extension=".log"):
         self.main_manager = manager
 
         self.log_path = None
         if default_log_path != None:
-            self.log_path = self.set_default_log_path(default_log_path)
-        elif log_folder != None:
-            self.log_path = self.set_default_log_folder(log_folder)
+            self.set_default_log_path(default_log_path)
+        elif default_log_folder != None:
+            self.set_default_log_folder(default_log_folder)
         else:
-            self.log_path = self.set_default_log_folder("logs")
+            self.set_default_log_folder("logs")
 
         self.log_file_extension = log_file_extension
         self.log_file_name = log_file_name
@@ -57,7 +57,8 @@ class LogManager():
             os.makedirs(default_log_path)
         except Exception as e:
             print("Log File Path Already Exists! Skipping Creation ...")
-        return default_log_path
+        self.log_path = default_log_path
+        self.update_log_file()
 
     def set_default_log_folder(self, log_folder):
         default_log_path = Path(__file__).parents[2] / log_folder
@@ -65,14 +66,19 @@ class LogManager():
             os.makedirs(default_log_path)
         except Exception as e:
             print("Log File Path Already Exists! Skipping Creation ...")
-        return default_log_path
+        self.log_path = default_log_path
+        self.update_log_file()
+    
+    def update_log_file(self):
+        self.log_file = self.log_path / f"{self.log_file_name}.{self.log_file_extension}"
     
     def set_default_log_extension(self, extension):
         self.log_file_extension = extension
-        self.log_file = self.log_path / f"{self.log_file_name}.{self.log_file_extension}"
+        self.update_log_file()
 
-    def set_log_file_name(self):
-        pass
+    def set_log_file_name(self, new_log_file_name):
+        self.log_file_name = new_log_file_name
+        self.update_log_file()
 
     def delete_log_file(self):
         pass
