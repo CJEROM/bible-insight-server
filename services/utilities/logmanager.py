@@ -4,6 +4,8 @@ import sys
 import time
 import datetime
 
+from managerhandler import ManagerHandler
+
 class LogManager():
     default_log_level = 2 # Here I can set the level of logging I want for my application
 
@@ -16,7 +18,9 @@ class LogManager():
         "FATAL": 5
     }
 
-    def __init__(self, default_log_path=None, log_folder=None, log_file_name=None, log_file_extension=".log"):
+    def __init__(self, manager: ManagerHandler, default_log_path=None, log_folder=None, log_file_name=None, log_file_extension=".log"):
+        self.main_manager = manager
+
         self.log_path = None
         if default_log_path != None:
             self.log_path = self.set_default_log_path(default_log_path)
