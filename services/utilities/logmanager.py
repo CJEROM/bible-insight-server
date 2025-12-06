@@ -7,8 +7,6 @@ import datetime
 from managerhandler import ManagerHandler
 
 class LogManager():
-    default_log_level = 2 # Here I can set the level of logging I want for my application
-
     LOG_MAPPING = {
         "TRACE": 0,
         "DEBUG": 1,
@@ -18,8 +16,11 @@ class LogManager():
         "FATAL": 5
     }
 
-    def __init__(self, manager: ManagerHandler, default_log_path=None, default_log_folder=None, log_file_name=None, log_file_extension=".log"):
+    def __init__(self, manager: ManagerHandler, default_log_path=None, default_log_folder=None, log_file_name=None, log_file_extension=".log", log_level=2):
         self.main_manager = manager
+
+        # ====================== Log Initialisation ======================
+        self.default_log_level = log_level # Here I can set the level of logging I want for my application
 
         self.log_path = None
         if default_log_path != None:
@@ -40,6 +41,7 @@ class LogManager():
 
         self.clear_log_file() # Creates Log File Ready for writing
 
+        # ====================== CLI Progress Bar Initialisation ======================
         self.start_time = time.time()
         self.progress_message = None
 
@@ -93,11 +95,12 @@ class LogManager():
         with open(self.log_file, 'w', encoding="utf-8") as f:
             f.write("")
 
-    def create_log_file(self):
-        pass
-
-    def set_logging_level(self):
-        pass
+    def set_logging_level(self, new_level):
+        max_logging_level = (len(self.LOG_MAPPING) - 1)
+        if new_level > max_logging_level or new_level < 0:
+            print(f"Invalid Logging Level! Choose level between 0 and {max_logging_level}.")
+        else:
+            self.default_log_level = new_level
 
     def update_progress_bar(self):
         pass
