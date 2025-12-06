@@ -22,6 +22,8 @@ class LogManager():
             self.log_path = self.set_default_log_path(default_log_path)
         elif log_folder != None:
             self.log_path = self.set_default_log_folder(log_folder)
+        else:
+            self.log_path = self.set_default_log_folder("logs")
 
         self.log_file_extension = log_file_extension
         self.log_file_name = log_file_name
