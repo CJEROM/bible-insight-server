@@ -16,7 +16,7 @@ class LogManager():
         "FATAL": 5
     }
 
-    def __init__(self, manager: ManagerHandler, default_log_path=None, default_log_folder=None, log_file_name=None, log_file_extension=".log", log_level=2):
+    def __init__(self, manager: ManagerHandler = None, default_log_path=None, default_log_folder=None, log_file_name=None, log_file_extension=".log", log_level=2):
         self.main_manager = manager
 
         # ====================== Log Initialisation ======================
