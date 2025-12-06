@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 
 class EnvManager:
     def __init__(self):
-        pass
+        self._load_env()
 
-    def load_env(self):
+    def _load_env(self):
         # Find the project root containing .env
         current = Path(__file__).resolve()
         for parent in current.parents:
