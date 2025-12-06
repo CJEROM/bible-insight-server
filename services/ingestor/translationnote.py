@@ -3,12 +3,10 @@ import re
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from translation import Translation
-    from book import Book
-    from chapter import Chapter
+    from ingestor.chapter import Chapter
     from utilities.logmanager import LogManager
 
-from verse import Verse
+from ingestor.verse import Verse
 
 #region Cases To Handle (both from source and for destination for both cross references and footnotes)
 # 2KI 6:31-7:20

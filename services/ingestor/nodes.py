@@ -2,8 +2,8 @@ from bs4 import BeautifulSoup, Tag, NavigableString
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from translation import Translation
-    from book import Book
+    from ingestor.translation import Translation
+    from ingestor.book import Book
     from utilities.logmanager import LogManager
 
 # Will be created from books class

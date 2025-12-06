@@ -1,8 +1,6 @@
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from translation import Translation
-    from book import Book
-    from chapter import Chapter
+    from ingestor.chapter import Chapter
     from utilities.logmanager import LogManager
 
 class Paragraph:

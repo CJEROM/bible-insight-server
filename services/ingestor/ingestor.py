@@ -5,7 +5,7 @@ import os
 import time
 from pathlib import Path
 
-from translation import Translation
+from ingestor.translation import Translation
 from utilities.managerhandler import ManagerHandler
 
 class Ingestor:
