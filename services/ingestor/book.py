@@ -81,7 +81,7 @@ class Book:
             chapter_text += "\n</usx>"
 
             # Create Chapter Classes
-            Chapter(self.this_translation, self, chapter_ref, chapter_text, self.conn)
+            Chapter(self.this_translation, self, chapter_ref, chapter_text, self.log)
             additions += 1
 
             self.log.log_to_file(chapter_ref, f"BOOK: {self.book_code}", "TRACE")
