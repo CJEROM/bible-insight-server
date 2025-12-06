@@ -74,27 +74,23 @@ class Ingestor:
 
     def get_translation(self, dbl_id, agreement_id):
         agreement_id = str(agreement_id)
-        self.cur.execute("""
+        translation_id = self.db.fetch_one("""
             SELECT id FROM bible.translations WHERE dbl_id = %s AND agreement_id = %s;
         """, (dbl_id, agreement_id))
 
         # If the translation already exists, then quit processing this translation
-        translation_id = self.cur.fetchone()
         if translation_id != None:
             return -1
         
         # If not create a new entry and pass along the new id        
-        self.cur.execute("""
+        self.db.execute("""
             INSERT INTO bible.translationinfo (dbl_id) VALUES(%s)
             ON CONFLICT (dbl_id) DO NOTHING;
         """, (dbl_id,))
 
-        self.cur.execute("""
+        return self.db.fetch_clean_one("""
             INSERT INTO bible.translations (dbl_id, agreement_id) VALUES(%s, %s) RETURNING id;
         """, (dbl_id, agreement_id))
-
-        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
-        return self.cur.fetchone()[0] # Return file_id to link to
 
     def get_downloads(self):
         with sync_playwright() as p:
@@ -126,11 +122,7 @@ class Ingestor:
             else:
                 print("     Already logged in") # Assumes that we couldn't find email field in link means we are logged in already
 
-            self.cur.execute("""
-                SELECT dbl_id, agreement_id FROM bible.DBLInfo;
-            """)
-
-            translations = self.cur.fetchall()
+            translations = self.db.fetch_all("""SELECT dbl_id, agreement_id FROM bible.DBLInfo;""")
             # translations = (
             #     "6bab4d6c61b31b80-252265".split("-"), # introduces PSA151
             #     "32664dc3288a28df-265137".split("-"),
