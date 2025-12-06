@@ -2,8 +2,11 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
+from managerhandler import ManagerHandler
+
 class EnvManager:
-    def __init__(self):
+    def __init__(self, this_manager: ManagerHandler = None):
+        self.this_manager = this_manager
         self._load_env()
 
     def _load_env(self):
