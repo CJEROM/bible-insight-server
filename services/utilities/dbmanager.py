@@ -65,7 +65,7 @@ class DBManager:
                 sql_script = file.read()
                 self.execute(sql_script)
 
-        self.db_commit()
+        self.commit()
 
         print("Database Init Success")
 
