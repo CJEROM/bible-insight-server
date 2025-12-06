@@ -18,7 +18,14 @@ class LogManager():
         "FATAL": 5
     }
 
-    def __init__(self, manager: "ManagerHandler" = None, default_log_path=None, default_log_folder=None, log_file_name=None, log_file_extension=".log", log_level=2):
+    def __init__(
+            self, manager: "ManagerHandler" = None, 
+            default_log_path=None, 
+            default_log_folder=None, 
+            log_file_name=None, 
+            log_file_extension=".log", 
+            log_level=2
+        ):
         self.main_manager = manager
 
         # ====================== Log Initialisation ======================
@@ -131,12 +138,22 @@ class LogManager():
             sys.stdout.flush()
 
     def increment_progress(self, new_message, increment=1):
-        self.progress_count += increment
-        if self.progress_count < self.progress_total:
-            self.set_progress_message()
-        else:
-            self.set_progress_message(is_complete=True, message=new_message)
-        self.update_progress_bar()
+        if self.progress_total != None:
+            self.progress_count += increment
+            if self.progress_count < self.progress_total:
+                self.set_progress_message()
+            else:
+                self.set_progress_message(is_complete=True, message=new_message)
+            self.update_progress_bar()
+
+    def set_progress(self, new_message, progress):
+        if self.progress_total != None:
+            self.progress_count = progress
+            if self.progress_count < self.progress_total:
+                self.set_progress_message()
+            else:
+                self.set_progress_message(is_complete=True, message=new_message)
+            self.update_progress_bar()
     
     def elapsed_time(self, is_accurate=False):
         if is_accurate == False:
