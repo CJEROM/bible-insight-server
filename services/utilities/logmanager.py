@@ -54,7 +54,7 @@ class LogManager():
         percentage = int((i / self.progress_total) * 100)
         
         self.progress_message = f"    Processing Books: |{bar}| {percentage}% | {found_book}"
-        self.progress_message = f"\r   |{bar}| {percentage}%"
+        self.progress_message = f"    |{bar}| {percentage}%"
 
     # For choosing either setting the full log_path or just the root folder that we want to store it in
     def set_default_log_path(self, default_log_path):
@@ -109,8 +109,13 @@ class LogManager():
     def set_progress_bar_size(self, new_size):
         self.bar_size = new_size
 
-    def update_progress_bar(self):
+    def set_progress_message(self, message, ):
         pass
+
+    def update_progress_bar(self):
+        if self.progress_total != None and self.progress_message != None and hasattr(sys.stdout, "write"):
+            sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_time()}] | ")
+            sys.stdout.flush()
 
     def complete_progress_bar(self):
         pass
@@ -139,10 +144,9 @@ class LogManager():
 
     def log_to_file(self, log_message, source_class, log_level):
         # Always update CLI progress bar, just only conditionally log
-        if self.progress_total != None and self.progress_message != None and hasattr(sys.stdout, "write"):
-            sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_time()}] | ")
-            sys.stdout.flush()
-
+        self.update_progress_bar()
+        
+        # Only log to file if log_level higher than set default
         if self.LOG_MAPPING[log_level] < self.default_log_level:
             return
 
