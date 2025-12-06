@@ -10,19 +10,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from translation import Translation
     from book import Book
-
-# Automatically find the project root (folder containing .env)
-current = Path(__file__).resolve()
-for parent in current.parents:
-    if (parent / ".env").exists():
-        load_dotenv(parent / ".env")
-        break
-
-POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+    from utilities.logmanager import LogManager
+    from utilities.envmanager import EnvManager
 
 # Will be created from books class
 class Nodes:
@@ -36,13 +25,14 @@ class Nodes:
         """
     }
 
-    def __init__(self, this_translation: "Translation", this_book: "Book", db_conn, book_xml):
+    def __init__(self, this_translation: "Translation", this_book: "Book", log: "LogManager", book_xml):
         self.this_translation = this_translation
         self.this_book = this_book
 
         # Adds a database connection
-        self.conn = db_conn
-        self.cur = self.conn.cursor()
+        self.log = log
+        self.manager = self.log.get_manager_handler()
+        self.db = self.manager.get_db()
 
         # Initialise variables 
         self.book_soup = BeautifulSoup(book_xml, "xml")
@@ -57,7 +47,7 @@ class Nodes:
         
         self.walk_parsed_xml()
             
-        self.conn.commit()
+        self.db.commit()
     
     def walk_parsed_xml(self):
         node_id_map = {}    # maps bs4 node → SQL node_id
@@ -66,8 +56,7 @@ class Nodes:
 
         all_new_nodes = []
 
-        self.cur.execute(self.SQL.get("max_node_count"))
-        node_id_offset = self.cur.fetchone()[0]
+        node_id_offset = self.db.fetch_clean_one(self.SQL.get("max_node_count"))
 
         node_id_counter = 1
 
@@ -152,7 +141,7 @@ class Nodes:
             all_new_nodes.append(tuple(this_node))
             node_id_counter += 1
 
-            self.this_translation.log_ingestion_activity(f"Created New Node: {this_node}", f"NODE:{node_type}", "TRACE")
+            self.log.log_to_file(f"Created New Node: {this_node}", f"NODE:{node_type}", "TRACE")
 
             # Add to dictionary to show start and end nodes for chapters or verse
             if node_type in ["chapter", "verse"]:
@@ -174,74 +163,70 @@ class Nodes:
                 self.created_nodes[node_type][node_chapter_ref].append(node_id)
 
         # Now bulk insert all of the nodes into the database (in batches / chunks)
-        CHUNK = 20000  # ideal for execute_values
-
-        sql_query = self.SQL.get("new_node")
-        for i in range(0, len(all_new_nodes), CHUNK):
-            execute_values(self.cur, sql_query, all_new_nodes[i:i+CHUNK])
+        self.db.bulk_insert(self.SQL.get("new_node"), all_new_nodes)
 
     def get_chapters(self):
         nodes = self.created_nodes["chapter"]
-        self.this_translation.log_ingestion_activity(f"Requested Chapter Nodes: {nodes}", f"NODE", "DEBUG")
+        self.log.log_to_file(f"Requested Chapter Nodes: {nodes}", f"NODE", "DEBUG")
         return nodes
     
     def get_paras(self):
         nodes = self.created_nodes["para"]
-        self.this_translation.log_ingestion_activity(f"Requested Para Nodes: {nodes}", f"NODE", "DEBUG")
+        self.log.log_to_file(f"Requested Para Nodes: {nodes}", f"NODE", "DEBUG")
         return nodes
     
     def get_verses(self):
         nodes = self.created_nodes["verse"]
-        self.this_translation.log_ingestion_activity(f"Requested Verse Nodes: {nodes}", f"NODE", "DEBUG")
+        self.log.log_to_file(f"Requested Verse Nodes: {nodes}", f"NODE", "DEBUG")
         return nodes
     
     def get_notes(self):
         nodes = self.created_nodes["note"]
-        self.this_translation.log_ingestion_activity(f"Requested Note Nodes: {nodes}", f"NODE", "DEBUG")
+        self.log.log_to_file(f"Requested Note Nodes: {nodes}", f"NODE", "DEBUG")
         return nodes
     
     # May remove if I choose to initialise it in a different way e.g. init script
     def createStrongs(self, strong_code):
         # Write any new unique strongs that haven't been added to database yet
-        self.cur.execute("""
+        strong_id = self.db.fetch_one("""
             SELECT id FROM bible.strongs WHERE code=%s
         """, (strong_code,))
-        strong_id = self.cur.fetchone()
 
         if strong_id == None:
             # check what language the code belongs to 
             language_id = None
             if strong_code[0:1] == "G": # Greek
-                self.cur.execute("""
+                language_id = self.db.fetch_clean_one("""
                     SELECT id FROM bible.languages WHERE name LIKE 'Greek%'
                 """)
-                language_id = self.cur.fetchone()[0]
             elif strong_code[0:1] == "H": # Hebrew
-                self.cur.execute("""
+                language_id = self.db.fetch_clean_one("""
                     SELECT id FROM bible.languages WHERE name LIKE 'Hebrew%'
                 """)
-                language_id = self.cur.fetchone()[0]
 
-            self.cur.execute("""
+            self.db.execute("""
                 INSERT INTO bible.strongs (code, language_id) 
                 VALUES (%s, %s)
             """, (strong_code, language_id))
 
-if __name__ == "__main__":
-    test_book_xml = None
-    # test_book_path = Path(__file__).parents[2] / "downloads" / "1CH - WMBBE.usx"
-    # test_book_path = Path(__file__).parents[2] / "downloads" / "PSA - WMBBE.usx"
-    test_book_path = Path(__file__).parents[2] / "downloads" / "3JN - FBV.usx"
-    with open(test_book_path, "r", encoding="utf-8") as f:
-        test_book_xml = f.read()
+# if __name__ == "__main__":
+#     test_book_xml = None
+#     # test_book_path = Path(__file__).parents[2] / "downloads" / "1CH - WMBBE.usx"
+#     # test_book_path = Path(__file__).parents[2] / "downloads" / "PSA - WMBBE.usx"
+#     test_book_path = Path(__file__).parents[2] / "downloads" / "3JN - FBV.usx"
+#     with open(test_book_path, "r", encoding="utf-8") as f:
+#         test_book_xml = f.read()
 
-    conn = psycopg2.connect(
-        host=POSTGRES_HOST,
-        port=POSTGRES_PORT,
-        dbname=POSTGRES_DB,
-        user=POSTGRES_USERNAME,
-        password=POSTGRES_PASSWORD
-    )
+#     db_config = EnvManager().get_postgres_config()
 
-    new_nodes = Nodes(None, conn, test_book_xml)
-    print(new_nodes.get_chapters()["3JN"])
+#     # Adds a database connection
+#     conn = psycopg2.connect(
+#         host=db_config["host"],
+#         port=db_config["port"],
+#         dbname=db_config["database"],
+#         user=db_config["username"],
+#         password=db_config["password"]
+#     )
+
+#     new_nodes = Nodes(None, conn, test_book_xml)
+#     print(new_nodes.get_chapters()["3JN"])
