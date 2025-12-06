@@ -27,6 +27,8 @@ class DBManager:
 
         self.cur = self.conn.cursor()
 
+        self.CHUNK = 20000  # ideal for execute_values
+
         self.init_database()
 
     def init_database(self):
@@ -89,6 +91,13 @@ class DBManager:
     def fetch_all(self, query, params=None):
         self.cur.execute(query, params)
         return self.cur.fetchall()
+    
+    def set_chunks(self, new_chunk):
+        self.CHUNK = new_chunk
+    
+    def bulk_insert(self, query, items):
+        for i in range(0, len(items), self.CHUNK):
+            execute_values(self.cur, query, items[i:i+self.CHUNK])
     
     def commit(self):
         self.conn.commit()
