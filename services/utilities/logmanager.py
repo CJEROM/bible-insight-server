@@ -34,9 +34,7 @@ class LogManager():
         
         self.log_file = self.log_path / f"{self.log_file_name}.{self.log_file_extension}"
 
-        with open(self.log_file, 'w', encoding="utf-8") as f:
-            f.write(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]\n")
-            self.log_ingestion_activity("error_message", "TRANSLATION", "ERROR")
+        self.clear_log_file() # Creates Log File Ready for writing
 
         self.start_time = time.time()
         self.progress_message = None
@@ -83,8 +81,9 @@ class LogManager():
     def delete_log_file(self):
         pass
 
-    def reset_log_file(self):
-        pass
+    def clear_log_file(self):
+        with open(self.log_file, 'w', encoding="utf-8") as f:
+            f.write("")
 
     def create_log_file(self):
         pass
