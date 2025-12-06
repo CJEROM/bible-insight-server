@@ -18,9 +18,9 @@ class Nodes:
         """
     }
 
-    def __init__(self, this_translation: "Translation", this_book: "Book", log: "LogManager", book_xml):
-        self.this_translation = this_translation
-        self.this_book = this_book
+    def __init__(self, this_book: "Book", log: "LogManager", book_xml):
+        self.this_book =            this_book
+        self.this_translation =     self.this_book.get_this_translation()
 
         # Adds a database connection
         self.log = log

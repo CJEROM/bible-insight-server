@@ -6,10 +6,10 @@ if TYPE_CHECKING:
     from utilities.logmanager import LogManager
 
 class Paragraph:
-    def __init__(self, this_translation: "Translation", this_book: "Book", this_chapter: "Chapter", paragraph_node_id, para_xml, log: "LogManager"):
-        self.this_translation = this_translation
-        self.this_book = this_book
-        self.this_chapter = this_chapter
+    def __init__(self, this_chapter: "Chapter", paragraph_node_id, para_xml, log: "LogManager"):
+        self.this_chapter =         this_chapter
+        self.this_book =            self.this_chapter.get_this_book()
+        self.this_translation =     self.this_book.get_this_translation()
 
         self.translation_id = self.this_translation.get_translation_id()
         self.paragraph_node_id = paragraph_node_id

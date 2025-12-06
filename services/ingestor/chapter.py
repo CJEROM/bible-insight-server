@@ -11,9 +11,9 @@ from verse import Verse
 from translationnote import TranslationNote
 
 class Chapter:
-    def __init__(self, this_translation: "Translation", this_book: "Book", chapter_ref, chapter_text, log: "LogManager"):
-        self.this_translation = this_translation
-        self.this_book =        this_book
+    def __init__(self, this_book: "Book", chapter_ref, chapter_text, log: "LogManager"):
+        self.this_book =            this_book
+        self.this_translation =     self.this_book.get_this_translation()
 
         self.log = log
         self.manager = self.log.get_manager_handler()
@@ -57,6 +57,9 @@ class Chapter:
 
         self.db.commit()
 
+    def get_this_book(self):
+        return self.this_book
+
     def get_chapter_ref(self):
         return self.chapter_ref
     
@@ -99,7 +102,7 @@ class Chapter:
         self.log.log_to_file(f"Creating With Paragraph Node Ids => {para_node_ids}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
 
         for i, (para) in enumerate(all_paragraphs):
-            Paragraph(self.this_translation, self.this_book, self, para_node_ids[i], para, self.conn)
+            Paragraph(self, para_node_ids[i], para, self.log)
             additions += 1
         
         if additions > 0:
@@ -123,7 +126,7 @@ class Chapter:
         for verse in all_verses:
             verse_ref = verse.get("sid")
             if verse_ref:
-                Verse(self.this_translation, self.this_book, self, verse_ref, self.conn)
+                Verse(self, verse_ref, self.log)
                 additions += 1
 
             latest_ref = verse_ref
@@ -155,4 +158,4 @@ class Chapter:
 
         # Go through chapter and grab all cross references and footnotes, and write to database
         for i, this_note in enumerate(self.chapter_xml.find_all("note")):
-            TranslationNote(self.this_translation, self.this_book, self, this_note, all_note_node_ids[i], self.conn)
+            TranslationNote(self, this_note, all_note_node_ids[i], self.log)

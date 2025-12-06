@@ -6,10 +6,10 @@ if TYPE_CHECKING:
     from utilities.logmanager import LogManager
 
 class Verse:
-    def __init__(self, this_translation: "Translation", this_book: "Book", this_chapter: "Chapter", verse_ref: str, log: "LogManager", is_special_case=False):
-        self.this_translation = this_translation
-        self.this_book = this_book
-        self.this_chapter = this_chapter
+    def __init__(self, this_chapter: "Chapter", verse_ref: str, log: "LogManager", is_special_case=False):
+        self.this_chapter =         this_chapter
+        self.this_book =            self.this_chapter.get_this_book()
+        self.this_translation =     self.this_book.get_this_translation()
 
         self.log = log
         self.manager = self.log.get_manager_handler()

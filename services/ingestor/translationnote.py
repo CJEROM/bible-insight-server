@@ -113,10 +113,10 @@ class TranslationNote:
 
         return (options[0]), None
 
-    def __init__(self, this_translation: "Translation", this_book: "Book", this_chapter: "Chapter", note_xml, node_id, log: "LogManager"):
-        self.this_translation = this_translation
-        self.this_book = this_book
-        self.this_chapter = this_chapter
+    def __init__(self, this_chapter: "Chapter", note_xml, node_id, log: "LogManager"):
+        self.this_chapter =         this_chapter
+        self.this_book =            self.this_chapter.get_this_book()
+        self.this_translation =     self.this_book.get_this_translation()
 
         self.book_map_id = self.this_book.get_book_map_id()
         self.translation_id = self.this_translation.get_translation_id()
@@ -210,7 +210,7 @@ class TranslationNote:
                 source_ref = partial_ref
         
         if source_type == "verse":
-            Verse(self.this_translation, self.this_book, self.this_chapter, verse_ref=source_ref, log=self.log, is_special_case=True)
+            Verse(self.this_chapter, verse_ref=source_ref, log=self.log, is_special_case=True)
 
         self.log.log_to_file(f"Created [{source_type}] Source Ref: [{note_ref}] -> [{cleaned_ref}] -> [{source_ref}] <=> [Format: {format}] [Format_Name: {format_name}] ", "NOTE", "DEBUG")
         
@@ -307,7 +307,7 @@ class TranslationNote:
 
         self.log.log_to_file(f"Created Footnote [ID: {footnote_id}] ", "NOTE:FOOTNOTE", "DEBUG")
 
-        for i, ref in enumerate(self.note_xml.find_all("ref")):
+        for ref in self.note_xml.find_all("ref"):
             cross_reference_id = self.create_destination_ref(ref, self.node_id)
             self.log.log_to_file(f"Created Cross Reference [ID: {cross_reference_id}] [From:FOOTNOTE]", "NOTE:FOOTNOTE", "DEBUG")
 

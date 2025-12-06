@@ -29,11 +29,14 @@ class Book:
 
         self.log.log_to_file(f"Created with [book_map_id:{self.book_map_id}]", f"BOOK: {self.book_code}", "INFO")
 
-        self.book_nodes =       Nodes(self.this_translation, self, self.log, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
+        self.book_nodes =       Nodes(self, self.log, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
         
         self.createTextChapters()
 
         self.db.commit()
+
+    def get_this_translation(self):
+        return self.this_translation
 
     def get_book_xml(self):
         return self.book_xml
@@ -81,7 +84,7 @@ class Book:
             chapter_text += "\n</usx>"
 
             # Create Chapter Classes
-            Chapter(self.this_translation, self, chapter_ref, chapter_text, self.log)
+            Chapter(self, chapter_ref, chapter_text, self.log)
             additions += 1
 
             self.log.log_to_file(chapter_ref, f"BOOK: {self.book_code}", "TRACE")
