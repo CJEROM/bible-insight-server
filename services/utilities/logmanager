@@ -43,14 +43,6 @@ class LogManager():
         self.progress_message = f"    Processing Books: |{bar}| {percentage}% | {found_book}"
         self.progress_message = f"\r   |{bar}| {percentage}%"
 
-        duration = time.time() - self.start_time
-        hours = int(duration // 3600)
-        minutes = int((duration % 3600) // 60)
-        seconds = int(duration % 60)
-        milliseconds = int((duration % 1) * 1000)  # or *100 for .mm format
-
-        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
-
     def create_log_path(self):
         pass
 
@@ -81,14 +73,24 @@ class LogManager():
     def log_to_console(self):
         pass
     
-    def elapsed_time(self):
-        duration = time.time() - self.start_time
-        hours = int(duration // 3600)
-        minutes = int((duration % 3600) // 60)
-        seconds = int(duration % 60)
+    def elapsed_time(self, is_accurate=False):
+        if is_accurate == False:
+            duration = time.time() - self.start_time
+            hours = int(duration // 3600)
+            minutes = int((duration % 3600) // 60)
+            seconds = int(duration % 60)
 
-        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
-        return formatted_duration
+            formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
+            return formatted_duration
+        else:
+            duration = time.time() - self.start_time
+            hours = int(duration // 3600)
+            minutes = int((duration % 3600) // 60)
+            seconds = int(duration % 60)
+            milliseconds = int((duration % 1) * 1000)  # or *100 for .mm format
+
+            formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
+            return formatted_duration
 
     def log_to_file(self, log_message, source_class, log_level):
         # Always update CLI progress bar, just only conditionally log
