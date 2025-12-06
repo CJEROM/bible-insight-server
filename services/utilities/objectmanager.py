@@ -35,6 +35,9 @@ class ObjectManager:
 
     def get_configured_buckets(self):
         return self.configured_buckets
+    
+    def get_minio_object(self):
+        return self.client
 
     def init_object_storage_buckets(self):
         for bucket in self.configured_buckets:
