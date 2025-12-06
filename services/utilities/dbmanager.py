@@ -96,8 +96,8 @@ class DBManager:
     def close(self):
         self.conn.close()
 
-    def get_db_cursor(self):
+    def get_cursor(self):
         return self.cur
 
-    def get_db_connection(self):
+    def get_connection(self):
         return self.conn
