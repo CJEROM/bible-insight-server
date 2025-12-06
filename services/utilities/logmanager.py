@@ -45,12 +45,12 @@ class LogManager():
         self.start_time = time.time()
         self.progress_message = None
 
-        total_books = len(contents)
+        self.progress_total = None
 
         # ✅ Proper loading bar (50 characters wide)
-        progress = int((i / total_books) * 50)
+        progress = int((i / self.progress_total) * 50)
         bar = '#' * progress + '-' * (50 - progress)
-        percentage = int((i / total_books) * 100)
+        percentage = int((i / self.progress_total) * 100)
         
         self.progress_message = f"    Processing Books: |{bar}| {percentage}% | {found_book}"
         self.progress_message = f"\r   |{bar}| {percentage}%"
@@ -102,6 +102,9 @@ class LogManager():
         else:
             self.default_log_level = new_level
 
+    def set_progress_total(self, total):
+        self.progress_total = total
+
     def update_progress_bar(self):
         pass
 
@@ -132,7 +135,7 @@ class LogManager():
 
     def log_to_file(self, log_message, source_class, log_level):
         # Always update CLI progress bar, just only conditionally log
-        if self.progress_message != None and hasattr(sys.stdout, "write"):
+        if self.progress_total != None and self.progress_message != None and hasattr(sys.stdout, "write"):
             sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_time()}] | ")
             sys.stdout.flush()
 
