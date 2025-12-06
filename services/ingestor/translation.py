@@ -1,17 +1,11 @@
 from zipfile import ZipFile
-from minio import Minio
 from pathlib import Path
 import os
 from bs4 import BeautifulSoup
-import psycopg2
 import shutil
 import re
-import time
 from label_studio_sdk import LabelStudio
-import json
 import traceback
-import sys
-import datetime
 
 from book import Book
 

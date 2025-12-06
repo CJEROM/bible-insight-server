@@ -1,12 +1,8 @@
-import requests
-from bs4 import BeautifulSoup
-import psycopg2
 import time
 
 from playwright.sync_api import sync_playwright
 import os
 import time
-from minio import Minio
 from pathlib import Path
 
 from translation import Translation

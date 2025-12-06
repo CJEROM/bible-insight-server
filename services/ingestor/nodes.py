@@ -1,17 +1,10 @@
 from bs4 import BeautifulSoup, Tag, NavigableString
-import psycopg2
-from psycopg2.extras import execute_values
-
-from pathlib import Path
-import os
-from dotenv import load_dotenv
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from translation import Translation
     from book import Book
     from utilities.logmanager import LogManager
-    from utilities.envmanager import EnvManager
 
 # Will be created from books class
 class Nodes:
