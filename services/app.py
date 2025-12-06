@@ -5,6 +5,9 @@ import time
 import os
 import shutil
 
+from ingestor.ingestor import Ingestor
+from utilities.managerhandler import ManagerHandler
+
 def restart_docker(container):
     base = Path(__file__).parent.parent
     scripts_dir = base / "devops/docker" / container
@@ -95,7 +98,8 @@ if __name__ == "__main__":
         initialise_script("init_minio.py", 0)
         initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
         # # start_api_server() 
-        run_script("ingestor/ingestor.py")
+        manager = ManagerHandler()
+        Ingestor(manager)
         # create_database_backup()
         # run_script(".\labeller\labeller.py")
         # print("FINISHED Script")
