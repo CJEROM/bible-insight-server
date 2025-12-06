@@ -79,7 +79,11 @@ class LogManager():
         self.update_log_file()
 
     def delete_log_file(self):
-        pass
+        if self.log_file.exists():
+            self.log_file.unlink()
+            print(f"Log File at [{self.log_file}] deleted!")
+        else:
+            print("File does not exist.")
 
     def clear_log_file(self):
         with open(self.log_file, 'w', encoding="utf-8") as f:
