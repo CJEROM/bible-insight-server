@@ -31,6 +31,9 @@ class ObjectManager:
 
         self.bucket = default_bucket
 
+    def get_configured_buckets(self):
+        return self.configured_buckets
+
     def init_object_storage(self):
         for bucket in self.configured_buckets:
             if not self.client.bucket_exists(bucket):
