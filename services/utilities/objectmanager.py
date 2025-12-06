@@ -44,6 +44,8 @@ class ObjectManager:
             if not self.client.bucket_exists(bucket):
                 self.client.make_bucket(bucket)
 
+        return self.client.list_buckets()
+
     def stream_file(self, object_name):
         # Get file
         response = None 
