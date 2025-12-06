@@ -10,31 +10,14 @@ from minio import Minio
 from pathlib import Path
 
 from translation import Translation
-
-from dotenv import load_dotenv
-
-# Automatically find the project root (folder containing .env)
-current = Path(__file__).resolve()
-for parent in current.parents:
-    if (parent / ".env").exists():
-        load_dotenv(parent / ".env")
-        break
-
-POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
-
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
-MINIO_USERNAME = os.getenv("MINIO_USERNAME")
-MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
-
-DBL_USERNAME = os.getenv("DBL_USERNAME")
-DBL_PASSWORD = os.getenv("DBL_PASSWORD")
+from utilities.managerhandler import ManagerHandler
 
 class Ingestor:
-    def __init__(self):
+    def __init__(self, manager: ManagerHandler):
+        self.manager = manager
+        self.env = manager.get_env()
+        self.db = manager.get_db()
+
         # Worth adding option, that if dbl_id and agreement_id have been passed in, run just the class for that translation
         #       This would be useful when enforcing foreign key constraints with translation relationships
 
@@ -44,29 +27,10 @@ class Ingestor:
         self.download_path = Path(__file__).parents[2] / "downloads"
         os.makedirs(self.download_path, exist_ok=True)
 
-        # Passes Minio client connection on to the MinioUSXUpload class
-        self.client = Minio(
-            MINIO_ENDPOINT,
-            access_key=MINIO_USERNAME,
-            secret_key=MINIO_PASSWORD,
-            secure=False
-        )
-
-        self.conn = psycopg2.connect(
-            host=POSTGRES_HOST,
-            port=POSTGRES_PORT,
-            dbname=POSTGRES_DB,
-            user=POSTGRES_USERNAME,
-            password=POSTGRES_PASSWORD
-        )
-
-        self.cur = self.conn.cursor()
-
         self.get_downloads()
 
-        self.conn.commit()
-        self.cur.close()
-        self.conn.close()
+        self.db.commit()
+        self.db.close()
 
         duration = time.time() - self.start_time
         hours = int(duration // 3600)
@@ -128,7 +92,6 @@ class Ingestor:
         self.cur.execute("""
             INSERT INTO bible.translations (dbl_id, agreement_id) VALUES(%s, %s) RETURNING id;
         """, (dbl_id, agreement_id))
-        self.conn.commit()
 
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
         return self.cur.fetchone()[0] # Return file_id to link to
@@ -214,7 +177,7 @@ class Ingestor:
                     download.save_as(os.path.join(self.download_path, download.suggested_filename))
                     print(f"✅ Downloaded ZIP: {new_path}")
 
-                    Translation(self.client, "text", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
+                    Translation(self.manager, "text", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
                 else:
                     print("⚠️ No ZIP button found, assuming audio download instead")
                     # Expand all folders
@@ -249,7 +212,7 @@ class Ingestor:
                     
                     print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
 
-                    Translation(self.client, "audio", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
+                    Translation(self.manager, "audio", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
 
                 # break
 
