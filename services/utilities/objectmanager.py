@@ -16,7 +16,18 @@ class ObjectManager:
             secure=False
         )
 
+        self.configured_buckets = [
+            "bible-dbl-raw", 
+            "open-bible-location-data", 
+            "bible-nlp"
+        ]
+
         self.bucket = None
+
+    def init_object_storage(self):
+        for bucket in self.configured_buckets:
+            if not self.client.bucket_exists(bucket):
+                self.client.make_bucket(bucket)
 
     def stream_file(self, object_name):
         # Get file
