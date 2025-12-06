@@ -1,6 +1,5 @@
 from zipfile import ZipFile
 from pathlib import Path
-import os
 from bs4 import BeautifulSoup
 import shutil
 import re
@@ -13,18 +12,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from utilities.managerhandler import ManagerHandler
 from utilities.logmanager import LogManager
-
-from dotenv import load_dotenv
-
-# Automatically find the project root (folder containing .env)
-current = Path(__file__).resolve()
-for parent in current.parents:
-    if (parent / ".env").exists():
-        load_dotenv(parent / ".env")
-        break
-
-LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
-LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
 
 class Translation:
     def __init__(self, manager: "ManagerHandler", medium, process_location, source_url, translation_id, dbl_id, agreement_id):
