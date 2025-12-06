@@ -90,10 +90,10 @@ class DBManager:
         self.cur.execute(query, params)
         return self.cur.fetchall()
     
-    def db_commit(self):
+    def commit(self):
         self.conn.commit()
 
-    def db_close(self):
+    def close(self):
         self.conn.close()
 
     def get_db_cursor(self):
