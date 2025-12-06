@@ -6,7 +6,7 @@ import re
 from label_studio_sdk import LabelStudio
 import traceback
 
-from book import Book
+from ingestor.book import Book
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

@@ -1,7 +1,7 @@
-from dbmanager import DBManager
-from envmanager import EnvManager
-from logmanager import LogManager
-from objectmanager import ObjectManager
+from utilities.dbmanager import DBManager
+from utilities.envmanager import EnvManager
+from utilities.logmanager import LogManager
+from utilities.objectmanager import ObjectManager
 
 class ManagerHandler:
     def __init__(self):

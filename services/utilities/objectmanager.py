@@ -1,10 +1,12 @@
 from minio import Minio
 
-from managerhandler import ManagerHandler
-from envmanager import EnvManager
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utilities.managerhandler import ManagerHandler
+    from utilities.envmanager import EnvManager
 
 class ObjectManager:
-    def __init__(self, this_manager: ManagerHandler = None, default_bucket=None):
+    def __init__(self, this_manager: "ManagerHandler" = None, default_bucket=None):
         self.this_manager = this_manager
         self.env = None
         if this_manager == None:

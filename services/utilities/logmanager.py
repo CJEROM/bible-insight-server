@@ -4,7 +4,9 @@ import sys
 import time
 import datetime
 
-from managerhandler import ManagerHandler
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utilities.managerhandler import ManagerHandler
 
 class LogManager():
     LOG_MAPPING = {
@@ -16,7 +18,7 @@ class LogManager():
         "FATAL": 5
     }
 
-    def __init__(self, manager: ManagerHandler = None, default_log_path=None, default_log_folder=None, log_file_name=None, log_file_extension=".log", log_level=2):
+    def __init__(self, manager: "ManagerHandler" = None, default_log_path=None, default_log_folder=None, log_file_name=None, log_file_extension=".log", log_level=2):
         self.main_manager = manager
 
         # ====================== Log Initialisation ======================

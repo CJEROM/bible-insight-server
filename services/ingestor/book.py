@@ -1,8 +1,8 @@
 from bs4 import BeautifulSoup
 import re
 
-from chapter import Chapter
-from nodes import Nodes
+from ingestor.chapter import Chapter
+from ingestor.nodes import Nodes
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
