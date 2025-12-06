@@ -1,6 +1,7 @@
 from envmanager import EnvManager
 import psycopg2
 from psycopg2.extras import execute_values
+from pathlib import Path
 
 from managerhandler import ManagerHandler
 
@@ -25,6 +26,48 @@ class DBManager:
         )
 
         self.cur = self.conn.cursor()
+
+        self.init_database()
+
+    def init_database(self):
+        # cur.execute("SELECT version();")
+        is_init = self.fetch_clean_one("""
+            SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables 
+                WHERE table_schema = 'public'
+                AND table_name = %s
+            );
+        """, ("languages",))
+        
+        if is_init:
+            print("Database Already Initialised!")
+            return 
+
+        db_server_script_path = Path(__file__).parents[2] / "services" / "database" / "server"
+
+        # Load and execute SQL file
+        schema_path = db_server_script_path / "schemas" / "v1_schema.sql"
+        with open(schema_path, "r") as file:
+            sql_script = file.read()
+            self.execute(sql_script)
+
+        migrations = [
+            "001_init_translations.sql",
+            "001_init_bible.sql",
+            "001_init_lookup.sql"
+        ]
+
+        for init_script in migrations:
+            init_script_path = db_server_script_path / "migrations" / init_script
+            # Load and execute SQL file
+            with open(init_script_path, "r", encoding="utf-8") as file:
+                sql_script = file.read()
+                self.execute(sql_script)
+
+        self.db_commit()
+
+        print("Database Init Success")
 
     def execute(self, query, params=None):
         self.cur.execute(query, params)
