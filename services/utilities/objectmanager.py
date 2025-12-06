@@ -1,10 +1,16 @@
 from minio import Minio
 
+from managerhandler import ManagerHandler
 from envmanager import EnvManager
 
 class ObjectManager:
-    def __init__(self, default_bucket=None):
-        self.env = EnvManager()
+    def __init__(self, this_manager: ManagerHandler = None, default_bucket=None):
+        self.this_manager = this_manager
+        self.env = None
+        if this_manager == None:
+            self.env = EnvManager()
+        else:
+            self.env = self.this_manager.get_env()
 
         config = self.env.get_minio_config()
 
