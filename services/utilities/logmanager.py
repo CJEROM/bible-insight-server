@@ -48,6 +48,8 @@ class LogManager():
         self.progress_total = None
         self.bar_size = 50
 
+        self.progress_count = 0
+
     # For choosing either setting the full log_path or just the root folder that we want to store it in
     def set_default_log_path(self, default_log_path):
         try:
@@ -101,10 +103,10 @@ class LogManager():
     def set_progress_bar_size(self, new_size):
         self.bar_size = new_size
 
-    def set_progress_message(self, is_complete:bool, message=None):
-        progress = int((i / self.progress_total) * self.bar_size)
+    def set_progress_message(self, is_complete=False, message=None):
+        progress = int((self.progress_count / self.progress_total) * self.bar_size)
         bar = '#' * progress + '-' * (self.bar_size - progress)
-        percentage = int((i / self.progress_total) * 100)
+        percentage = int((self.progress_count / self.progress_total) * 100)
 
         if is_complete:
             self.progress_message = f"  |{bar}| {percentage}%"
@@ -118,8 +120,13 @@ class LogManager():
             sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_time()}] | ")
             sys.stdout.flush()
 
-    def log_to_console(self):
-        pass
+    def increment_progress(self, new_message, increment=1):
+        self.progress_count += increment
+        if self.progress_count < self.progress_total:
+            self.set_progress_message()
+        else:
+            self.set_progress_message(is_complete=True, message=new_message)
+        self.update_progress_bar()
     
     def elapsed_time(self, is_accurate=False):
         if is_accurate == False:
