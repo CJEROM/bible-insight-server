@@ -26,5 +26,26 @@ class DBManager:
 
         self.cur = self.conn.cursor()
 
+    def execute(self, query, params=None):
+        self.cur.execute(query, params)
         self.conn.commit()
+
+    def fetch_one(self, query, params=None):
+        self.cur.execute(query, params)
+        return self.cur.fetchone()
+    
+    def fetch_all(self, query, params=None):
+        self.cur.execute(query, params)
+        return self.cur.fetchall()
+    
+    def db_commit(self):
+        self.conn.commit()
+
+    def db_close(self):
         self.conn.close()
+
+    def get_cursor(self):
+        self.cur
+
+    def get_connection(self):
+        self.conn
