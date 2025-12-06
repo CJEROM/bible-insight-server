@@ -26,18 +26,18 @@ class LogManager():
 
         self.log_path = None
         if default_log_path != None:
-            self.set_default_log_path(default_log_path)
+            self.set_default_log_path(default_log_path, False)
         elif default_log_folder != None:
-            self.set_default_log_folder(default_log_folder)
+            self.set_default_log_folder(default_log_folder, False)
         else:
-            self.set_default_log_folder("logs")
+            self.set_default_log_folder("logs", False)
 
         self.log_file_extension = log_file_extension
 
+        self.log_file_name = log_file_name
+
         if log_file_name == None:
             raise ValueError("Missing required parameter: log_file_name.")
-        
-        self.log_file_name = log_file_name
         
         self.log_file = self.log_path / f"{self.log_file_name}.{self.log_file_extension}"
 
@@ -56,22 +56,27 @@ class LogManager():
         return self.main_manager
 
     # For choosing either setting the full log_path or just the root folder that we want to store it in
-    def set_default_log_path(self, default_log_path):
+    def set_default_log_path(self, default_log_path, update=True):
         try:
             os.makedirs(default_log_path)
         except Exception as e:
             print("Log File Path Already Exists! Skipping Creation ...")
         self.log_path = default_log_path
-        self.update_log_file()
 
-    def set_default_log_folder(self, log_folder):
+        if update:
+            self.update_log_file()
+
+    def set_default_log_folder(self, log_folder, update=True):
         default_log_path = Path(__file__).parents[2] / log_folder
+
         try:
             os.makedirs(default_log_path)
         except Exception as e:
             print("Log File Path Already Exists! Skipping Creation ...")
         self.log_path = default_log_path
-        self.update_log_file()
+
+        if update:
+            self.update_log_file()
     
     def update_log_file(self):
         self.log_file = self.log_path / f"{self.log_file_name}.{self.log_file_extension}"
