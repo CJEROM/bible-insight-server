@@ -28,3 +28,10 @@ class EnvManager:
                 load_dotenv(env_file)
                 break
 
+    # Generic Getter for environment variables
+    def get(self, key: str, default=None, required=False):
+        value = os.getenv(key, default)
+        if required and value is None:
+            raise ValueError(f"Missing required environment variable: {key}")
+        return value
+
