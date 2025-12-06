@@ -112,8 +112,9 @@ class Ingestor:
             # Do we need to login?
             if page.query_selector("input[name='email']"):
                 # Fill in the username/email and password
-                page.fill("input[name='email']", DBL_USERNAME)
-                page.fill("input[name='password']", DBL_PASSWORD)
+                dbl_credentials = self.env.get_dbl_credentials()
+                page.fill("input[name='email']", dbl_credentials["username"])
+                page.fill("input[name='password']", dbl_credentials["password"])
                 page.click("button#rememberMe") # Try Remember me for 30 days, to prevent excessive logging and checking
 
                 # Click the login button
