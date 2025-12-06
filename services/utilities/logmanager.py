@@ -48,14 +48,6 @@ class LogManager():
         self.progress_total = None
         self.bar_size = 50
 
-        # ✅ Proper loading bar (50 characters wide)
-        progress = int((i / self.progress_total) * self.bar_size)
-        bar = '#' * progress + '-' * (self.bar_size - progress)
-        percentage = int((i / self.progress_total) * 100)
-        
-        self.progress_message = f"    Processing Books: |{bar}| {percentage}% | {found_book}"
-        self.progress_message = f"    |{bar}| {percentage}%"
-
     # For choosing either setting the full log_path or just the root folder that we want to store it in
     def set_default_log_path(self, default_log_path):
         try:
@@ -109,16 +101,22 @@ class LogManager():
     def set_progress_bar_size(self, new_size):
         self.bar_size = new_size
 
-    def set_progress_message(self, message, ):
-        pass
+    def set_progress_message(self, is_complete:bool, message=None):
+        progress = int((i / self.progress_total) * self.bar_size)
+        bar = '#' * progress + '-' * (self.bar_size - progress)
+        percentage = int((i / self.progress_total) * 100)
+
+        if is_complete:
+            self.progress_message = f"  |{bar}| {percentage}%"
+        elif message != None:
+            self.progress_message = f"  Processing: |{bar}| {percentage}% | {message}"
+        else:
+            self.progress_message = None
 
     def update_progress_bar(self):
         if self.progress_total != None and self.progress_message != None and hasattr(sys.stdout, "write"):
             sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_time()}] | ")
             sys.stdout.flush()
-
-    def complete_progress_bar(self):
-        pass
 
     def log_to_console(self):
         pass
