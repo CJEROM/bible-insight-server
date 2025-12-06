@@ -15,7 +15,9 @@ import datetime
 
 from book import Book
 
-from utilities.managerhandler import ManagerHandler
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utilities.managerhandler import ManagerHandler
 from utilities.logmanager import LogManager
 
 from dotenv import load_dotenv
@@ -31,7 +33,7 @@ LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
 LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
 
 class Translation:
-    def __init__(self, manager: ManagerHandler, medium, process_location, source_url, translation_id, dbl_id, agreement_id):
+    def __init__(self, manager: "ManagerHandler", medium, process_location, source_url, translation_id, dbl_id, agreement_id):
         self.manager = manager
         self.env = manager.get_env()
         self.obj = manager.get_obj()
