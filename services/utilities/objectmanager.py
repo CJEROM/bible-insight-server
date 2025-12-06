@@ -22,6 +22,8 @@ class ObjectManager:
             "bible-nlp"
         ]
 
+        self.init_object_storage_buckets()
+
         self.bucket = None
 
     def set_default_bucket(self, default_bucket):
@@ -34,7 +36,7 @@ class ObjectManager:
     def get_configured_buckets(self):
         return self.configured_buckets
 
-    def init_object_storage(self):
+    def init_object_storage_buckets(self):
         for bucket in self.configured_buckets:
             if not self.client.bucket_exists(bucket):
                 self.client.make_bucket(bucket)
