@@ -107,5 +107,5 @@ class ObjectManager:
             #     is_dir=False
             # )
         #endregion
-
+        return info
     
