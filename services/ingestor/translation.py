@@ -102,10 +102,11 @@ class Translation:
         )
 
         minio_config = self.env.get_minio_config()
+        minio_endpoint = minio_config["endpoint"]
 
         # For now not sure how this works
         export_storage = label_studio_client.export_storage.s3.create(
-            s3endpoint=f"http://{minio_config["endpoint"]}", #Updated from localhost to hardcoded IP
+            s3endpoint=f"http://{minio_endpoint}", #Updated from localhost to hardcoded IP
             aws_access_key_id=minio_config["username"],
             aws_secret_access_key=minio_config["password"],
             project=self.translation_project.id,
