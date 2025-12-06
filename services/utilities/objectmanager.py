@@ -3,7 +3,7 @@ from minio import Minio
 from envmanager import EnvManager
 
 class ObjectManager:
-    def __init__(self, default_bucket):
+    def __init__(self, default_bucket=None):
         self.env = EnvManager()
 
         config = self.env.get_minio_config()
@@ -24,7 +24,7 @@ class ObjectManager:
 
         self.init_object_storage_buckets()
 
-        self.bucket = None
+        self.bucket = self.set_default_bucket(default_bucket)
 
     def set_default_bucket(self, default_bucket):
         if default_bucket not in self.configured_buckets:
