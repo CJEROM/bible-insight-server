@@ -88,7 +88,6 @@ class Translation:
         self.source_id = self.get_source(source_url)
 
         try:
-            # self.stream_file("bible-raw", "text-65eec8e0b60e656b-246069/release/USX_1/1CH.usx")
             match medium:
                 case "text": # USX Files e.g. for deeper analysis
                     # unzip first
@@ -102,15 +101,14 @@ class Translation:
             error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
             self.log_ingestion_activity(error_message, "TRANSLATION", "ERROR")
             print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
-            self.conn.rollback()
-
-        self.conn.commit()
+            self.db.get_connection().rollback()
 
         print(f"✅ Completed Translation Import in [{self.elapsed_ingestion_time()}]!\n")
         self.log_ingestion_activity("Completed Translation Ingestion!", "TRANSLATION", "INFO")
 
         # Create Label Studio Project for this specific translation of the bible
-        label_studio_client = LabelStudio(base_url=LABEL_STUDIO_URL, api_key=LABEL_STUDIO_API_TOKEN)
+        label_studio_env = self.env.get_label_studio()
+        label_studio_client = LabelStudio(base_url=label_studio_env["endpoint"], api_key=label_studio_env["api_token"])
         # me = label_studio_client.users.whoami()
 
         # Should consider how else to do this
@@ -141,18 +139,20 @@ class Translation:
             label_config=project_label_config
         )
 
+        minio_config = self.env.get_minio_config()
+
         # For now not sure how this works
         export_storage = label_studio_client.export_storage.s3.create(
-            s3endpoint=f"http://{MINIO_ENDPOINT}", #Updated from localhost to hardcoded IP
-            aws_access_key_id=MINIO_USERNAME,
-            aws_secret_access_key=MINIO_PASSWORD,
+            s3endpoint=f"http://{minio_config["endpoint"]}", #Updated from localhost to hardcoded IP
+            aws_access_key_id=minio_config["username"],
+            aws_secret_access_key=minio_config["password"],
             project=self.translation_project.id,
             bucket="bible-nlp",
             prefix=f"{self.translation_title}/exports/",
             title="TEST Export"
         )
 
-        self.cur.execute("""
+        self.db.execute("""
             INSERT INTO bible.labellingprojects (id) 
             VALUES (%s)
             RETURNING id;
@@ -160,7 +160,7 @@ class Translation:
             self.translation_project.id,
         ))
 
-        self.cur.execute("""
+        self.db.execute("""
             INSERT INTO bible.translationlabellingprojects (translation_id, project_id) 
             VALUES (%s, %s)
             RETURNING id;
@@ -170,9 +170,6 @@ class Translation:
         ))
 
         self.log_ingestion_activity(f"Created New Label Studio Project [Project_ID: {self.translation_project.id}] [URL: {source_url}]", "TRANSLATION", "INFO")
-
-        self.conn.commit()
-        self.conn.close()
 
     def get_translation_id(self):
         return self.translation_id
@@ -215,19 +212,16 @@ class Translation:
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
-        self.cur.execute("""SELECT id FROM bible.sources WHERE url = %s;""", (source_url,))
-        source_id = self.cur.fetchone()
+        source_id = self.db.fetch_clean_one("""SELECT id FROM bible.sources WHERE url = %s;""", (source_url,))
         if source_id != None:
-            return source_id[0]
+            return source_id
         
         # If not create new and return it
-        self.cur.execute("""
+        new_source_id = self.db.fetch_clean_one("""
             INSERT INTO bible.sources (url) 
             VALUES (%s)
             RETURNING id;
         """, (source_url,))
-        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.sources",))
-        new_source_id = self.cur.fetchone()[0]
 
         self.log_ingestion_activity(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "TRANSLATION", "INFO")
         return new_source_id
@@ -271,14 +265,12 @@ class Translation:
     
     def check_language(self, language_xml):
         # Check if language already added to database, if not create it and return language_id
-        self.cur.execute("""SELECT id FROM bible.languages WHERE iso = %s;""", (language_xml.find("iso").text,))
-        language_id = self.cur.fetchone()
-
+        language_id = self.db.fetch_clean_one("""SELECT id FROM bible.languages WHERE iso = %s;""", (language_xml.find("iso").text,))
         if language_id != None:
-            return language_id[0]
+            return language_id
         
         language_name = language_xml.find("nameLocal").text
-        self.cur.execute("""
+        new_language_id = self.db.fetch_clean_one("""
             INSERT INTO bible.languages (iso, name, namelocal, scriptdirection) 
             VALUES (%s, %s, %s, %s)
             RETURNING id;
@@ -288,7 +280,6 @@ class Translation:
             language_xml.find("nameLocal").text,
             language_xml.find("scriptDirection").text
         ))
-        new_language_id = self.cur.fetchone()[0]
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.languages",))
         self.log_ingestion_activity(f"Created New Language [ID: {new_language_id}] [Name: {language_name}]", "TRANSLATION", "INFO")
 
@@ -300,7 +291,7 @@ class Translation:
         abbreviation = metadata_xml.find("identification").find("abbreviationLocal").text
         translation_name = metadata_xml.find("identification").find("name").text
 
-        self.cur.execute("""
+        self.db.execute("""
             UPDATE bible.translationinfo
             SET medium = %s,
                 name = %s,
@@ -329,7 +320,7 @@ class Translation:
             relation_dbl_id = relation.get("id")
             relation_revision = relation.get("revision")
             relation_type = relation.get("relationType")
-            self.cur.execute("""
+            self.db.execute("""
                 INSERT INTO bible.translationrelationships (from_translation, from_revision, to_translation, to_revision, type) 
                 VALUES (%s, %s, %s, %s, %s)
             """, (self.translation_id, self.revision, relation_dbl_id, relation_revision, relation_type))
@@ -365,7 +356,7 @@ class Translation:
             ldml_file_id = self.get_support_files(file_location, object_start, ldml_file, "application/xml")
 
         # Update this information for translation in database
-        self.cur.execute("""
+        self.db.execute("""
             UPDATE bible.translations
             SET revision = %s,
                 revision_note = %s,
@@ -387,7 +378,7 @@ class Translation:
         ))
         self.log_ingestion_activity(f"Updated Translation Entry File IDs", "TRANSLATION", "TRACE")
 
-        self.conn.commit() # Commit all changes to database
+        self.db.commit() # Commit all changes to database
 
         publication = metadata_xml.find("publication", default="true") # Get default files for publication
         contents = publication.find_all("content")
@@ -408,13 +399,11 @@ class Translation:
             chapter_ref = content.get("role")
             book = chapter_ref.split(" ")[0]
 
-            self.cur.execute("""
+            found_book = self.db.fetch_clean_one("""
                 SELECT code FROM bible.books WHERE code = %s;
             """, (book,))
-            found_book = self.cur.fetchone()
 
             if found_book != None:
-                found_book = found_book[0]
                 # If this is text and the book is among ones we are interested in, take the file and upload it to minio
                 object_name = f"{top_folder}/{self.revision}/{file_name}"
                 content_type = metadata_xml.find("resource", uri=content.get("src")).get("mimeType")
@@ -437,24 +426,21 @@ class Translation:
                 if self.medium == "text":
                     self.progress_message = f"    Processing Books: |{bar}| {percentage}% | {found_book}"
 
-                    self.cur.execute("""
+                    book_map_id = self.db.fetch_clean_one("""
                         INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s) RETURNING id;
                     """, (book, self.translation_id, file_id, short_name, long_name))
-                    # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
-                    book_map_id = self.cur.fetchone()[0]
-                    Book(self, found_book, book_map_id, file_id, self.stream_file(object_name), self.conn)                    
+
+                    Book(self, found_book, book_map_id, file_id, self.obj.stream_file(object_name), self.conn)                    
                 if self.medium == "audio":
                     self.progress_message = f"    Processing Chapters: |{bar}| {percentage}% | {chapter_ref}"
                     # Audio and eventually video don't have any connection but in serving the files themselves for consumption
                     #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
                     #   Since below are all the database references it needs.
-                    self.cur.execute("""
+                    book_map_id = self.db.fetch_clean_one("""
                         INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s) RETURNING id;
                     """, (book, self.translation_id, None, short_name, long_name))
-                    # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.booktofile",))
-                    book_map_id = self.cur.fetchone()[0]
 
-                    self.cur.execute("""
+                    self.db.execute("""
                         INSERT INTO bible.chapteroccurences (chapter_ref, file_id, book_to_file_id) VALUES (%s, %s, %s);
                     """, (chapter_ref, file_id, book_map_id))
 
@@ -464,7 +450,7 @@ class Translation:
         
         self.progress_message = f"\r   |{bar}| {percentage}%"
 
-        self.conn.commit()
+        self.db.commit()
         
         if file_location.is_dir():
             shutil.rmtree(file_location, ignore_errors=True)  # delete folder + contents
@@ -472,78 +458,23 @@ class Translation:
             Path(file_location).unlink(missing_ok=True)
 
     def upload_file(self, object_name, file_path, content_type, bucket=None):
-        if bucket == None:
-            bucket = self.bucket
-        self.client.fput_object(bucket, object_name, str(file_path), content_type=content_type)
-        info = self.client.stat_object(self.bucket, object_name)
-        # Example
-            # Object(
-            #     bucket_name='bible-dbl-raw', 
-            #     object_name='text-65eec8e0b60e656b-246069/10/2JN.usx', 
-            #     last_modified=datetime.datetime(2025, 10, 23, 16, 43, 21, tzinfo=datetime.timezone.utc), 
-            #     etag='9b6bcda7e20ed8ffad0953711880191e', 
-            #     size=3713, 
-            #     metadata=HTTPHeaderDict(
-            #         {'Accept-Ranges': 'bytes', 
-            #          'Content-Length': '3713', 
-            #          'Content-Type': 'application/xml', 
-            #          'ETag': '"9b6bcda7e20ed8ffad0953711880191e"', 
-            #          'Last-Modified': 'Thu, 23 Oct 2025 16:43:21 GMT', 
-            #          'Server': 'MinIO', 
-            #          'Strict-Transport-Security': 'max-age=31536000; includeSubDomains', 
-            #          'Vary': 'Origin, Accept-Encoding', 
-            #          'X-Amz-Id-2': 'dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8', 
-            #          'X-Amz-Request-Id': '18712C730E5C7C9C', 
-            #          'X-Content-Type-Options': 'nosniff', 
-            #          'X-Ratelimit-Limit': '6778', 
-            #          'X-Ratelimit-Remaining': '6778', 
-            #          'X-Xss-Protection': '1; mode=block', 
-            #          'Date': 'Thu, 23 Oct 2025 16:43:21 GMT'}), 
-            #     version_id=None, 
-            #     is_latest=None, 
-            #     storage_class=None, 
-            #     owner_id=None, 
-            #     owner_name=None, 
-            #     content_type='application/xml', 
-            #     is_delete_marker=False, 
-            #     tags=None, 
-            #     is_dir=False
-            # )
+        info = self.obj.upload_file(object_name, str(file_path), content_type)
         
-        self.cur.execute("""
+        file_id = self.db.fetch_clean_one("""
             INSERT INTO bible.files (etag, type, file_path, bucket, source_id) 
             VALUES (%s, %s, %s, %s, %s)
             RETURNING id;
         """, (info.etag, info.content_type, info.object_name, info.bucket_name, self.source_id))
-        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.files",))
 
-        file_id = self.cur.fetchone()[0]
         self.log_ingestion_activity(f"Created New File: [{info.object_name}] [File ID:{file_id}] [Bucket: {info.bucket_name}] [etag: {info.etag}]", "TRANSLATION", "DEBUG")
 
         if "versification" in object_name:
-            self.createVersification(self.stream_file(object_name))
+            self.createVersification(self.obj.stream_file(object_name))
         elif "styles" in object_name:
-            self.createStylesAndProperties(self.stream_file(object_name), file_id)
+            self.createStylesAndProperties(self.obj.stream_file(object_name), file_id)
         # elif "ldml" in object_name:
 
         return file_id # Return file_id to link to
-
-    # Make use and amend below function, to feed in files for processing (e.g. Book Classes)
-    def stream_file(self, object_name):
-        # Get file
-        response = None 
-        try:
-            response = self.client.get_object(
-                bucket_name=self.bucket,
-                object_name=object_name,
-            )
-            # Read the data as bytes, then decode as UTF-8
-            data = response.read().decode("utf-8")
-            return data
-        finally:
-            if response:
-                response.close()
-                response.release_conn()
                
     def createStylesAndProperties(self, styles_string, styles_file_id):
         style_additions = 0
@@ -565,12 +496,12 @@ class Translation:
             if style_parent == None:
                 # General Properties (without a parent style in stylesheet)
                 if property_unit != None:
-                    self.cur.execute("""
+                    self.db.execute("""
                         INSERT INTO bible.properties (name, value, unit) 
                         VALUES (%s, %s, %s)
                     """, (property_name, property_value, property_unit))
                 else:
-                    self.cur.execute("""
+                    self.db.execute("""
                         INSERT INTO bible.properties (name, value) 
                         VALUES (%s, %s)
                     """, (property_name, property_value))
@@ -585,13 +516,11 @@ class Translation:
                 style_versetext = style_parent.get("versetext")
                 style_publishable = style_parent.get("publishable")
 
-                self.cur.execute("""
+                style_id = self.db.fetch_clean_one("""
                     INSERT INTO bible.styles (style, name, description, versetext, publishable, source_file_id) 
                     VALUES (%s, %s, %s, %s, %s, %s)
                     RETURNING id;
                 """, (style, style_name, style_description, style_versetext, style_publishable, styles_file_id))
-
-                style_id = self.cur.fetchone()[0]
 
                 self.style_dict[style] = {}
                 self.style_dict[style]["id"] = style_id
@@ -600,12 +529,12 @@ class Translation:
                 previous_style_parent = style_parent
 
             if property_unit != None:
-                self.cur.execute("""
+                self.db.execute("""
                     INSERT INTO bible.properties (name, value, unit, style_id) 
                     VALUES (%s, %s, %s, %s)
                 """, (property_name, property_value, property_unit, style_id))
             else:
-                self.cur.execute("""
+                self.db.execute("""
                     INSERT INTO bible.properties (name, value, style_id) 
                     VALUES (%s, %s, %s)
                 """, (property_name, property_value, style_id))
@@ -658,15 +587,14 @@ class Translation:
                 verse_ref = line[4:].strip()
                 book_code = verse_ref[0:3]
 
-                self.cur.execute("""
+                valid_book = self.db.fetch_one("""
                     SELECT id FROM bible.books WHERE code=%s
                 """, (book_code,))
-                valid_book = self.cur.fetchone()
 
                 if valid_book == None:
                     continue
 
-                self.cur.execute("""
+                self.db.execute("""
                     INSERT INTO bible.excludedverses (verse_ref, translation_id) 
                     VALUES (%s, %s)
                 """, (verse_ref, self.translation_id))
@@ -689,10 +617,9 @@ class Translation:
             sections = line.split(" ")
             book_code = sections[0]
 
-            self.cur.execute("""
+            book_id = self.db.fetch_one("""
                 SELECT id FROM bible.books WHERE code=%s
             """, (book_code,))
-            book_id = self.cur.fetchone()
 
             if book_id == None:
                 continue
@@ -701,15 +628,14 @@ class Translation:
                 chapter_num, verse_count = sections[chapter].split(":")
                 chapter_ref = book_code + " " + chapter_num
 
-                self.cur.execute("""
+                found_chapter = self.db.fetch_one("""
                     SELECT id FROM bible.chapters WHERE chapter_ref=%s
                 """, (chapter_ref,))
-                found_chapter = self.cur.fetchone()
 
                 # Validates any non standard chapters that might apear outside ones initialised originally
                 if found_chapter == None:
                     try:
-                        self.cur.execute("""
+                        self.db.execute("""
                             INSERT INTO bible.chapters (book_code, chapter_num, chapter_ref, standard) 
                             VALUES (%s, %s, %s, %s);
                         """, (book_code, int(chapter_num), chapter_ref, False))
@@ -724,13 +650,12 @@ class Translation:
                 for verse in range(1, (int(verse_count)+1)):
                     verse_ref = chapter_ref + ":" + str(verse)
 
-                    self.cur.execute("""
+                    verse_id = self.db.fetch_one("""
                         SELECT id FROM bible.verses WHERE verse_ref=%s
                     """, (verse_ref,))
-                    verse_id = self.cur.fetchone()
 
                     if verse_id == None:
-                        self.cur.execute("""
+                        self.db.execute("""
                             INSERT INTO bible.verses (chapter_ref, verse_ref, verse) 
                             VALUES (%s, %s, %s)
                         """, (chapter_ref, verse_ref, str(verse)))
