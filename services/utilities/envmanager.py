@@ -44,3 +44,11 @@ class EnvManager:
             "username": self.get("DBL_USERNAME", required=True),
             "password": self.get("DBL_PASSWORD", required=True),
         }
+    
+    def get_label_studio(self) -> dict:
+        return {
+            "endpoint": self.get("LABEL_STUDIO_URL", required=True),
+            "username": self.get("LABEL_STUDIO_USERNAME", required=True),
+            "password": self.get("LABEL_STUDIO_PASSWORD", required=True),
+            "api_token": self.get("LABEL_STUDIO_API_TOKEN", required=True),
+        }
