@@ -155,12 +155,12 @@ class Ingestor:
                 # Inspect the page and adjust the selector to match the button
                 page.wait_for_selector("button:has-text('Download')")  
 
-                zip_button = page.query_selector("button:has-text('Download ZIP')")
+                zip_button = page.query_selector("button:has-text('Download All')")
                 if zip_button:
 
                     # Trigger the download
                     with page.expect_download() as download_info:
-                        page.click("button:has-text('Download ZIP')")  # Click the download button
+                        page.click("button:has-text('Download All')")  # Click the download button
                     download = download_info.value
 
                     # Save to your folder
@@ -172,7 +172,7 @@ class Ingestor:
                 else:
                     print("⚠️ No ZIP button found, assuming audio download instead")
                     # Expand all folders
-                    self.expand_all_folders(page)
+                    # self.expand_all_folders(page)
 
                     page.wait_for_load_state("networkidle")
                     
