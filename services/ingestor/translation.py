@@ -15,6 +15,8 @@ import datetime
 
 from book import Book
 
+from utilities.managerhandler import ManagerHandler
+
 from dotenv import load_dotenv
 
 # Automatically find the project root (folder containing .env)
@@ -23,16 +25,6 @@ for parent in current.parents:
     if (parent / ".env").exists():
         load_dotenv(parent / ".env")
         break
-
-POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
-
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
-MINIO_USERNAME = os.getenv("MINIO_USERNAME")
-MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
 
 LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
 LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
@@ -49,27 +41,19 @@ class Translation:
         "FATAL": 5
     }
     
-    def __init__(self, minio_client: Minio, medium, process_location, bucket, source_url, translation_id, dbl_id, agreement_id):
-        self.client = minio_client
+    def __init__(self, manager: ManagerHandler, medium, process_location, source_url, translation_id, dbl_id, agreement_id):
+        self.manager = manager
+        self.env = manager.get_env()
+        self.obj = manager.get_obj()
+        self.db = manager.get_db()
+
         self.medium = medium # Audio | Video | Text (USX)
         self.process_location = process_location
-        self.bucket = bucket # The Minio bucket to create the files in.
         self.translation_id = translation_id
         self.dbl_id = dbl_id
         self.agreement_id = agreement_id
 
-        # Adds a database connection
-        self.conn = psycopg2.connect(
-            host=POSTGRES_HOST,
-            port=POSTGRES_PORT,
-            dbname=POSTGRES_DB,
-            user=POSTGRES_USERNAME,
-            password=POSTGRES_PASSWORD
-        )
-
         self.revision = None
-
-        self.cur = self.conn.cursor()
 
         self.start_time = time.time()
         self.progress_message = None
