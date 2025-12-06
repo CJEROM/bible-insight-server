@@ -16,15 +16,14 @@ class LogManager():
         "FATAL": 5
     }
 
-    def __init__(self):
-        log_path = Path(__file__).parents[2] / "logs"
+    def __init__(self, log_path=None, log_folder=None, log_file=None):
+        self.log_path = None
+        if log_path != None:
+            self.log_path = self.set_default_log_path(log_path)
+        elif log_folder != None:
+            self.log_path = self.set_default_log_folder(log_folder)
+        
         self.log_file = log_path / f"{self.translation_id}-{self.translation_title}-LOG.log"
-
-        try:
-            os.makedirs(log_path)
-        except Exception as e:
-            print("Log File Path Already Exists!")
-        print(f"See Log File at: {self.log_file}!")
 
         with open(self.log_file, 'w', encoding="utf-8") as f:
             f.write(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]\n")
@@ -43,11 +42,21 @@ class LogManager():
         self.progress_message = f"    Processing Books: |{bar}| {percentage}% | {found_book}"
         self.progress_message = f"\r   |{bar}| {percentage}%"
 
-    def create_log_path(self):
-        pass
+    # For choosing either setting the full log_path or just the root folder that we want to store it in
+    def set_default_log_path(self, default_log_path):
+        try:
+            os.makedirs(default_log_path)
+        except Exception as e:
+            print("Log File Path Already Exists! Skipping Creation ...")
+        return default_log_path
 
-    def set_default_log_path(self):
-        pass
+    def set_default_log_folder(self, log_folder):
+        default_log_path = Path(__file__).parents[2] / log_folder
+        try:
+            os.makedirs(default_log_path)
+        except Exception as e:
+            print("Log File Path Already Exists! Skipping Creation ...")
+        return default_log_path
 
     def set_log_file_name(self):
         pass
