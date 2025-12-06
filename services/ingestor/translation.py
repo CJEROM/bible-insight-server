@@ -16,6 +16,7 @@ import datetime
 from book import Book
 
 from utilities.managerhandler import ManagerHandler
+from utilities.logmanager import LogManager
 
 from dotenv import load_dotenv
 
@@ -30,17 +31,6 @@ LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL")
 LABEL_STUDIO_API_TOKEN = os.getenv("LABEL_STUDIO_API_TOKEN")
 
 class Translation:
-    default_log_level = 2 # Here I can set the level of logging I want for my application
-
-    LOG_MAPPING = {
-        "TRACE": 0,
-        "DEBUG": 1,
-        "INFO": 2,
-        "WARN": 3,
-        "ERROR": 4,
-        "FATAL": 5
-    }
-    
     def __init__(self, manager: ManagerHandler, medium, process_location, source_url, translation_id, dbl_id, agreement_id):
         self.manager = manager
         self.env = manager.get_env()
@@ -54,9 +44,6 @@ class Translation:
         self.agreement_id = agreement_id
 
         self.revision = None
-
-        self.start_time = time.time()
-        self.progress_message = None
 
         print("✅ Starting Upload ...")
 
@@ -73,17 +60,10 @@ class Translation:
         self.style_dict = {}
 
         # Initialise logfile
-        log_path = Path(__file__).parents[2] / "logs"
-        self.log_file = log_path / f"{self.translation_id}-{self.translation_title}-LOG.log"
+        self.log = LogManager(manager=self.manager, log_file_name=f"{self.translation_id}-{self.translation_title}")
+        self.log.set_logging_level(2)
 
-        try:
-            os.makedirs(log_path)
-        except Exception as e:
-            print("Log File Path Already Exists!")
-        print(f"See Log File at: {self.log_file}!")
-        
-        with open(self.log_file, 'w', encoding="utf-8") as f:
-            f.write(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]\n")
+        self.log.log_to_file(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]", "TRANSLATION", "INFO")
 
         self.source_id = self.get_source(source_url)
 
@@ -99,12 +79,11 @@ class Translation:
                     self.check_files(self.process_location)
         except Exception as e:
             error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
-            self.log_ingestion_activity(error_message, "TRANSLATION", "ERROR")
+            self.log.log_to_file(error_message, "TRANSLATION", "ERROR")
             print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
             self.db.get_connection().rollback()
 
-        print(f"✅ Completed Translation Import in [{self.elapsed_ingestion_time()}]!\n")
-        self.log_ingestion_activity("Completed Translation Ingestion!", "TRANSLATION", "INFO")
+        self.log.log_to_file("Completed Translation Ingestion!", "TRANSLATION", "INFO")
 
         # Create Label Studio Project for this specific translation of the bible
         label_studio_env = self.env.get_label_studio()
@@ -169,7 +148,7 @@ class Translation:
             self.translation_project.id
         ))
 
-        self.log_ingestion_activity(f"Created New Label Studio Project [Project_ID: {self.translation_project.id}] [URL: {source_url}]", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Created New Label Studio Project [Project_ID: {self.translation_project.id}] [URL: {source_url}]", "TRANSLATION", "INFO")
 
     def get_translation_id(self):
         return self.translation_id
@@ -223,7 +202,7 @@ class Translation:
             RETURNING id;
         """, (source_url,))
 
-        self.log_ingestion_activity(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "TRANSLATION", "INFO")
         return new_source_id
 
     def unzip_folder(self, zip_path):
@@ -243,7 +222,7 @@ class Translation:
 
             # Saves the new location for the usx files to be ran in next part of pipeline
             new_location = downloads_location / top_folder
-            self.log_ingestion_activity(f"Unzipping [{len(all_files)}] files from {zip_path} in {new_location}", "TRANSLATION", "INFO")
+            self.log.log_to_file(f"Unzipping [{len(all_files)}] files from {zip_path} in {new_location}", "TRANSLATION", "INFO")
             self.check_files(new_location)
 
         # After unzipping delete the old zip file
@@ -281,7 +260,7 @@ class Translation:
             language_xml.find("scriptDirection").text
         ))
         # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.languages",))
-        self.log_ingestion_activity(f"Created New Language [ID: {new_language_id}] [Name: {language_name}]", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Created New Language [ID: {new_language_id}] [Name: {language_name}]", "TRANSLATION", "INFO")
 
         return new_language_id
     
@@ -309,7 +288,7 @@ class Translation:
             self.language_id,
             self.dbl_id
         ))
-        self.log_ingestion_activity(f"Created Translation Info: [abbreviationLocal: {abbreviation}] [name: {translation_name}]", "TRANSLATION", "DEBUG")
+        self.log.log_to_file(f"Created Translation Info: [abbreviationLocal: {abbreviation}] [name: {translation_name}]", "TRANSLATION", "DEBUG")
 
         self.create_translation_relationships(metadata_xml)
 
@@ -324,7 +303,7 @@ class Translation:
                 INSERT INTO bible.translationrelationships (from_translation, from_revision, to_translation, to_revision, type) 
                 VALUES (%s, %s, %s, %s, %s)
             """, (self.translation_id, self.revision, relation_dbl_id, relation_revision, relation_type))
-            self.log_ingestion_activity(f"Created Translation Relationship with [ID: {relation_dbl_id}] [Revision: {relation_revision}] [medium: {relation_type}]", "TRANSLATION", "DEBUG")
+            self.log.log_to_file(f"Created Translation Relationship with [ID: {relation_dbl_id}] [Revision: {relation_revision}] [medium: {relation_type}]", "TRANSLATION", "DEBUG")
 
     def check_files(self, file_location):
         top_folder = str(file_location).split("\\")[-1]
@@ -376,16 +355,14 @@ class Translation:
             self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml"),
             self.translation_id
         ))
-        self.log_ingestion_activity(f"Updated Translation Entry File IDs", "TRANSLATION", "TRACE")
+        self.log.log_to_file(f"Updated Translation Entry File IDs", "TRANSLATION", "TRACE")
 
         self.db.commit() # Commit all changes to database
 
         publication = metadata_xml.find("publication", default="true") # Get default files for publication
         contents = publication.find_all("content")
 
-        total_books = len(contents)
-        bar = None
-        percentage = None
+        self.log.set_progress_total = len(contents)
 
         # Selectively upload the files I want in the format I want (from metadata)
         for i, (content) in enumerate(contents):
@@ -416,23 +393,19 @@ class Translation:
                 # Skip any that are not 3 John book (used when testing = shortest book in the bible)
                 # if found_book != "3JN":
                 #     continue
-
-                # ✅ Proper loading bar (50 characters wide)
-                progress = int((i / total_books) * 50)
-                bar = '#' * progress + '-' * (50 - progress)
-                percentage = int((i / total_books) * 100)
                 
                 # Then update the database linking to them
                 if self.medium == "text":
-                    self.progress_message = f"    Processing Books: |{bar}| {percentage}% | {found_book}"
+                    self.log.increment_progress(found_book, increment=0)
 
                     book_map_id = self.db.fetch_clean_one("""
                         INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s) RETURNING id;
                     """, (book, self.translation_id, file_id, short_name, long_name))
 
-                    Book(self, found_book, book_map_id, file_id, self.obj.stream_file(object_name), self.conn)                    
+                    Book(self, found_book, book_map_id, file_id, self.obj.stream_file(object_name), self.log)   
+                    self.log.increment_progress(found_book)                 
                 if self.medium == "audio":
-                    self.progress_message = f"    Processing Chapters: |{bar}| {percentage}% | {chapter_ref}"
+                    self.log.increment_progress(chapter_ref, increment=0)
                     # Audio and eventually video don't have any connection but in serving the files themselves for consumption
                     #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
                     #   Since below are all the database references it needs.
@@ -443,12 +416,7 @@ class Translation:
                     self.db.execute("""
                         INSERT INTO bible.chapteroccurences (chapter_ref, file_id, book_to_file_id) VALUES (%s, %s, %s);
                     """, (chapter_ref, file_id, book_map_id))
-
-        progress = int((total_books / total_books) * 50)
-        bar = '#' * progress + '-' * (50 - progress)
-        percentage = int((total_books / total_books) * 100)
-        
-        self.progress_message = f"\r   |{bar}| {percentage}%"
+                    self.log.increment_progress(chapter_ref)
 
         self.db.commit()
         
@@ -466,7 +434,7 @@ class Translation:
             RETURNING id;
         """, (info.etag, info.content_type, info.object_name, info.bucket_name, self.source_id))
 
-        self.log_ingestion_activity(f"Created New File: [{info.object_name}] [File ID:{file_id}] [Bucket: {info.bucket_name}] [etag: {info.etag}]", "TRANSLATION", "DEBUG")
+        self.log.log_to_file(f"Created New File: [{info.object_name}] [File ID:{file_id}] [Bucket: {info.bucket_name}] [etag: {info.etag}]", "TRANSLATION", "DEBUG")
 
         if "versification" in object_name:
             self.createVersification(self.obj.stream_file(object_name))
@@ -545,8 +513,8 @@ class Translation:
         if property_additions > 0:
             print(f"    [{property_additions}] Properties loaded into database")
 
-        self.log_ingestion_activity(f"Initialised {style_additions} Styles!", "TRANSLATION", "INFO")
-        self.log_ingestion_activity(f"Initialised {property_additions} Properties!", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Initialised {style_additions} Styles!", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Initialised {property_additions} Properties!", "TRANSLATION", "INFO")
 
     def createVersification(self, file_string):
         # file_xml = BeautifulSoup(file_string, "xml")
@@ -600,18 +568,18 @@ class Translation:
                 """, (verse_ref, self.translation_id))
                 additions+=1
                 
-                self.log_ingestion_activity(f"Created Excluded Verse: {verse_ref}", "TRANSLATION", "INFO")
+                self.log.log_to_file(f"Created Excluded Verse: {verse_ref}", "TRANSLATION", "INFO")
 
         if additions > 0:
             print(f"    [{additions}] Excluded Verses added to database")
 
-        self.log_ingestion_activity(f"Created {additions} excluded verses", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Created {additions} excluded verses", "TRANSLATION", "INFO")
     
     def createVerses(self, section_text):
         verse_additions = 0
         chapter_additions = 0
 
-        self.log_ingestion_activity(f"Initializing Verses...", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Initializing Verses...", "TRANSLATION", "INFO")
         # Create all Verses Tables instances - different from VerseOccurences, just chceck they all exist
         for line in section_text.splitlines():
             sections = line.split(" ")
@@ -640,11 +608,11 @@ class Translation:
                             VALUES (%s, %s, %s, %s);
                         """, (book_code, int(chapter_num), chapter_ref, False))
                         print(f"     Non-Standard Chapter Created: {chapter_ref}")
-                        self.log_ingestion_activity(f"Created Non-Standard Chapter: {chapter_ref}", "TRANSLATION", "INFO")
+                        self.log.log_to_file(f"Created Non-Standard Chapter: {chapter_ref}", "TRANSLATION", "INFO")
                         chapter_additions+=1
                     except Exception as e:
                         print(f"❌ Skipped Chapter Creation of [{chapter_ref}] because of {e}")
-                        self.log_ingestion_activity(f"Skipped Chapter Creation of [{chapter_ref}] because of {e}", "TRANSLATION", "ERROR")
+                        self.log.log_to_file(f"Skipped Chapter Creation of [{chapter_ref}] because of {e}", "TRANSLATION", "ERROR")
                         # In the case it can't seem to create a new chapter then skip the chapter (won't take it as important)
 
                 for verse in range(1, (int(verse_count)+1)):
@@ -660,31 +628,10 @@ class Translation:
                             VALUES (%s, %s, %s)
                         """, (chapter_ref, verse_ref, str(verse)))
                         verse_additions += 1
-                        self.log_ingestion_activity(f"Created Verse: {verse_ref}", "TRANSLATION", "TRACE")
+                        self.log.log_to_file(f"Created Verse: {verse_ref}", "TRANSLATION", "TRACE")
         
         if verse_additions > 0:
             print(f"    [{verse_additions}] Verses Initialized into database")
             
-        self.log_ingestion_activity(f"Initialised {verse_additions} Verses!", "TRANSLATION", "INFO")
-        self.log_ingestion_activity(f"Initialised {chapter_additions} Chapters (Non Standard)!", "TRANSLATION", "INFO")
-
-    def elapsed_ingestion_time(self):
-        duration = time.time() - self.start_time
-        hours = int(duration // 3600)
-        minutes = int((duration % 3600) // 60)
-        seconds = int(duration % 60)
-
-        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
-        return formatted_duration
-
-    def log_ingestion_activity(self, log_message, source_class, log_level):
-        # Always update CLI progress bar, just only conditionally log
-        if self.progress_message != None and hasattr(sys.stdout, "write"):
-            sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_ingestion_time()}] | ")
-            sys.stdout.flush()
-
-        if self.LOG_MAPPING[log_level] < self.default_log_level:
-            return
-
-        with open(self.log_file, 'a', encoding="utf-8") as f:
-            f.write(f"{datetime.datetime.now()} [{log_level}] [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")
+        self.log.log_to_file(f"Initialised {verse_additions} Verses!", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Initialised {chapter_additions} Chapters (Non Standard)!", "TRANSLATION", "INFO")
