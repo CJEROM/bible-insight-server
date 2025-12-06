@@ -30,6 +30,15 @@ class DBManager:
         self.cur.execute(query, params)
         self.conn.commit()
 
+    def fetch_clean_one(self, query, params=None):
+        self.cur.execute(query, params)
+        result = self.cur.fetchone()
+
+        if result != None:
+            return result[0]
+        
+        return result
+    
     def fetch_one(self, query, params=None):
         self.cur.execute(query, params)
         return self.cur.fetchone()
