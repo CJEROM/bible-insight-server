@@ -30,6 +30,10 @@ class LogManager():
             self.set_default_log_folder("logs")
 
         self.log_file_extension = log_file_extension
+
+        if log_file_name == None:
+            raise ValueError("Missing required parameter: log_file_name.")
+        
         self.log_file_name = log_file_name
         
         self.log_file = self.log_path / f"{self.log_file_name}.{self.log_file_extension}"
