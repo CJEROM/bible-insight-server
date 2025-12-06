@@ -11,7 +11,7 @@ from ingestor.book import Book
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from utilities.managerhandler import ManagerHandler
-from utilities.logmanager import LogManager
+    from utilities.logmanager import LogManager
 
 class Translation:
     def __init__(self, manager: "ManagerHandler", medium, process_location, source_url, translation_id, dbl_id, agreement_id):

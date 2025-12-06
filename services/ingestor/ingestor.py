@@ -9,10 +9,12 @@ from ingestor.translation import Translation
 from utilities.managerhandler import ManagerHandler
 
 class Ingestor:
-    def __init__(self, manager: ManagerHandler):
-        self.manager = manager
-        self.env = manager.get_env()
-        self.db = manager.get_db()
+    def __init__(self):
+        self.manager = ManagerHandler()
+        self.manager.get_obj().set_default_bucket("bible-dbl-raw")
+
+        self.env = self.manager.get_env()
+        self.db = self.manager.get_db()
 
         # Worth adding option, that if dbl_id and agreement_id have been passed in, run just the class for that translation
         #       This would be useful when enforcing foreign key constraints with translation relationships
