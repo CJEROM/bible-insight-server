@@ -24,6 +24,13 @@ class ObjectManager:
 
         self.bucket = None
 
+    def set_default_bucket(self, default_bucket):
+        if default_bucket not in self.configured_buckets:
+            self.client.make_bucket(default_bucket)
+            self.configured_buckets.append(default_bucket)
+
+        self.bucket = default_bucket
+
     def init_object_storage(self):
         for bucket in self.configured_buckets:
             if not self.client.bucket_exists(bucket):
