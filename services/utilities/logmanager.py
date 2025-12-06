@@ -46,10 +46,11 @@ class LogManager():
         self.progress_message = None
 
         self.progress_total = None
+        self.bar_size = 50
 
         # ✅ Proper loading bar (50 characters wide)
-        progress = int((i / self.progress_total) * 50)
-        bar = '#' * progress + '-' * (50 - progress)
+        progress = int((i / self.progress_total) * self.bar_size)
+        bar = '#' * progress + '-' * (self.bar_size - progress)
         percentage = int((i / self.progress_total) * 100)
         
         self.progress_message = f"    Processing Books: |{bar}| {percentage}% | {found_book}"
@@ -104,6 +105,9 @@ class LogManager():
 
     def set_progress_total(self, total):
         self.progress_total = total
+
+    def set_progress_bar_size(self, new_size):
+        self.bar_size = new_size
 
     def update_progress_bar(self):
         pass
