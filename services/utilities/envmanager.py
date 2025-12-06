@@ -2,19 +2,6 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
-
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
-MINIO_USERNAME = os.getenv("MINIO_USERNAME")
-MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
-
-DBL_USERNAME = os.getenv("DBL_USERNAME")
-DBL_PASSWORD = os.getenv("DBL_PASSWORD")
-
 class EnvManager:
     def __init__(self):
         pass
@@ -34,4 +21,26 @@ class EnvManager:
         if required and value is None:
             raise ValueError(f"Missing required environment variable: {key}")
         return value
+        
+    # ======================== Group Getters ========================
+    def get_postgres_config(self) -> dict:
+        return {
+            "username": self.get("POSTGRES_USERNAME", required=True),
+            "password": self.get("POSTGRES_PASSWORD", required=True),
+            "database": self.get("POSTGRES_DB", required=True),
+            "host": self.get("POSTGRES_HOST", default="localhost"),
+            "port": int(self.get("POSTGRES_PORT", default="5432")),
+        }
 
+    def get_minio_config(self) -> dict:
+        return {
+            "endpoint": self.get("MINIO_ENDPOINT", required=True),
+            "username": self.get("MINIO_USERNAME", required=True),
+            "password": self.get("MINIO_PASSWORD", required=True),
+        }
+
+    def get_dbl_credentials(self) -> dict:
+        return {
+            "username": self.get("DBL_USERNAME", required=True),
+            "password": self.get("DBL_PASSWORD", required=True),
+        }
