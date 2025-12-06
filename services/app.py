@@ -99,6 +99,8 @@ if __name__ == "__main__":
         initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
         # # start_api_server() 
         manager = ManagerHandler()
+        manager.get_obj().set_default_bucket("bible-dbl-raw")
+        
         Ingestor(manager)
         # create_database_backup()
         # run_script(".\labeller\labeller.py")

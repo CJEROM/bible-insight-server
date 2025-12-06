@@ -170,7 +170,7 @@ class Ingestor:
                     download.save_as(os.path.join(self.download_path, download.suggested_filename))
                     print(f"✅ Downloaded ZIP: {new_path}")
 
-                    Translation(self.manager, "text", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
+                    Translation(self.manager, "text", new_path, url, translation_id, dbl_id, agreement_id)
                 else:
                     print("⚠️ No ZIP button found, assuming audio download instead")
                     # Expand all folders
@@ -205,7 +205,7 @@ class Ingestor:
                     
                     print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
 
-                    Translation(self.manager, "audio", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
+                    Translation(self.manager, "audio", new_path, url, translation_id, dbl_id, agreement_id)
 
                 # break
 
