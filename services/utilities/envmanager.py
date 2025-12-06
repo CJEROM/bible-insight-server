@@ -29,7 +29,7 @@ class EnvManager:
             "password": self.get("POSTGRES_PASSWORD", required=True),
             "database": self.get("POSTGRES_DB", required=True),
             "host": self.get("POSTGRES_HOST", default="localhost"),
-            "port": int(self.get("POSTGRES_PORT", default="5432")),
+            "port": int(self.get("POSTGRES_PORT", required=True)), #, default="5432"
         }
 
     def get_minio_config(self) -> dict:
