@@ -23,7 +23,7 @@ class LogManager():
             default_log_path=None, 
             default_log_folder=None, 
             log_file_name=None, 
-            log_file_extension=".log", 
+            log_file_extension="log", 
             log_level=2
         ):
         self.main_manager = manager
