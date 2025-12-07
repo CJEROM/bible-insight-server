@@ -259,7 +259,7 @@ class Assembler:
                 return None
             
     def set_full_reference(self, book_map_id, is_book=False):
-        book_details    = self.db.fetch_clean_one(self.SQL.get("get_book_details"), (book_map_id,))
+        book_details    = self.db.fetch_one(self.SQL.get("get_book_details"), (book_map_id,))
         book_code       = book_details[0]
         book_name       = book_details[1]
 
