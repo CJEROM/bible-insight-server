@@ -286,7 +286,7 @@ class Assembler:
             else:
                 self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. Scope Defined, but no occurence, node_id or canonical_path!", "ASSEMBLER", "ERROR")
                 # raise ValueError("Insufficient parameters provided for reconstruction.")
-        elif self.ref != None:
+        elif self.ref != None and self.translation_id != None:
             self.log.log_to_file("Assembling through Ref", "ASSEMBLER", "INFO")
             self.reconstruct_from_ref(self.translation_id, self.ref)
             self.assembler_type = "ref"
@@ -608,6 +608,44 @@ class Assembler:
     
     # Perhaps function to help build on nodes, to display strongs if available?
 
+# Used for TESTING
 if __name__ == "__main__":
-    chapter = Assembler(scope="chapter", occurence_id=1)
-    print(chapter.get_details())
+    test_translation = 1
+    test_occurence = 1
+    test_node_id = 22
+    test_node_path = "/usx:0/para:13/verse:1"
+    test_scope = "verse"
+    # test_scope = "chapter"
+    # test_scope = "verse"
+
+    # ======= OCCURENCE =======
+    # REQUIRED: scope, occurence_id
+    temp = Assembler(scope=test_scope, occurence_id=test_occurence) # GEN
+    print(temp.get_details())
+
+    # ======= NODE ID =======
+    # REQUIRED: scope, node_id
+    temp = Assembler(scope=test_scope, node_id=test_node_id) # GEN
+    print(temp.get_details())
+
+    # ======= NODE PATH =======
+    # REQUIRED: scope, canonical_path, translation_id
+    temp = Assembler(scope=test_scope, canonical_path=test_node_path, translation_id=test_translation)
+    print(temp.get_details())
+
+    # ======= REF =======
+    # REQUIRED: ref, translation_id
+    test_book       = "GEN"
+    test_chapter    = 1
+    test_verse      = 1
+    test_ref        = ""
+    match test_scope:
+        case "book":
+            test_ref = test_book
+        case "chapter":
+            test_ref = f"{test_book} {test_chapter}"
+        case "verse":
+            test_ref = f"{test_book} {test_chapter}:{test_verse}"
+
+    temp = Assembler(ref=test_ref, translation_id=test_translation)
+    print(temp.get_details())
