@@ -173,6 +173,9 @@ class LogManager():
 
             formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
             return formatted_duration
+        
+    def reset_elapsed_time(self):
+        self.start_time = time.time()
 
     def log_to_file(self, log_message, source_class, log_level):
         # Always update CLI progress bar, just only conditionally log
