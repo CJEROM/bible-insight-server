@@ -173,7 +173,7 @@ class Tokenisation:
         self.db = self.manager.get_db()
         self.obj = self.manager.get_obj()
         self.log = self.manager.create_log(f"_TOKENS-{self.translation_id}")
-        self.log.set_logging_level(2)
+        self.log.set_logging_level(1)
 
         self.log.log_to_file(f"Starting Tokenisation ...\n", "TOKENISATION", "INFO")
 
@@ -248,11 +248,11 @@ class Tokenisation:
         unique_tag = set()
         unique_dep = set()
 
-        for i, book_map_id in enumerate(all_books):
+        for book_i, book_map_id in enumerate(all_books):
             # Get all Chapters for this Book
             all_chapters = self.db.fetch_all(self.SQL.get("get_book_chapters"), (book_map_id,))
 
-            self.log.set_progress(new_message="", progress=i)
+            self.log.set_progress(new_message=" ", progress=book_i)
 
             for chapter_occurence_id, chapter_text, chapter_ref in all_chapters:
                 # Start NLP on reconstructed chapter text
@@ -264,7 +264,7 @@ class Tokenisation:
 
                 self.log.log_to_file(f"Creating {len(doc)} Tokens for [{chapter_ref}]...", "TOKEN", "DEBUG")
 
-                self.log.set_progress(new_message=f"{chapter_ref} / {len(all_chapters)}", progress=i)
+                self.log.set_progress(new_message=f"{chapter_ref} / {len(all_chapters)}", progress=book_i)
 
                 for i, token in enumerate(doc):
                     pos = token.pos_
