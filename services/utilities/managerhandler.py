@@ -1,7 +1,7 @@
-from dbmanager import DBManager
-from envmanager import EnvManager
-from logmanager import LogManager
-from objectmanager import ObjectManager
+from utilities.dbmanager import DBManager
+from utilities.envmanager import EnvManager
+from utilities.logmanager import LogManager
+from utilities.objectmanager import ObjectManager
 
 class ManagerHandler:
     def __init__(self):
@@ -21,7 +21,9 @@ class ManagerHandler:
         return self.obj
 
     def create_log(self, file_name):
-        self.logs[file_name] = LogManager(manager=self, log_file_name=file_name)
+        log_manager = LogManager(manager=self, log_file_name=file_name)
+        self.logs[file_name] = log_manager
+        return log_manager
 
     def return_log(self, file_name):
         requested_log = self.logs.get(file_name)

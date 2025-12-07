@@ -4,7 +4,9 @@ import sys
 import time
 import datetime
 
-from managerhandler import ManagerHandler
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utilities.managerhandler import ManagerHandler
 
 class LogManager():
     LOG_MAPPING = {
@@ -16,7 +18,15 @@ class LogManager():
         "FATAL": 5
     }
 
-    def __init__(self, manager: ManagerHandler = None, default_log_path=None, default_log_folder=None, log_file_name=None, log_file_extension=".log", log_level=2):
+    def __init__(
+            self, manager: "ManagerHandler" = None, 
+            default_log_path=None, 
+            default_log_folder=None, 
+            log_file_name=None, 
+            log_file_extension="log", 
+            log_level=2,
+            disable_log=False
+        ):
         self.main_manager = manager
 
         # ====================== Log Initialisation ======================
@@ -24,20 +34,21 @@ class LogManager():
 
         self.log_path = None
         if default_log_path != None:
-            self.set_default_log_path(default_log_path)
+            self.set_default_log_path(default_log_path, False)
         elif default_log_folder != None:
-            self.set_default_log_folder(default_log_folder)
+            self.set_default_log_folder(default_log_folder, False)
         else:
-            self.set_default_log_folder("logs")
+            self.set_default_log_folder("logs", False)
 
         self.log_file_extension = log_file_extension
+
+        self.log_file_name = log_file_name
 
         if log_file_name == None:
             raise ValueError("Missing required parameter: log_file_name.")
         
-        self.log_file_name = log_file_name
-        
         self.log_file = self.log_path / f"{self.log_file_name}.{self.log_file_extension}"
+        self.disable_log = disable_log
 
         self.clear_log_file() # Creates Log File Ready for writing
 
@@ -50,23 +61,34 @@ class LogManager():
 
         self.progress_count = 0
 
-    # For choosing either setting the full log_path or just the root folder that we want to store it in
-    def set_default_log_path(self, default_log_path):
-        try:
-            os.makedirs(default_log_path)
-        except Exception as e:
-            print("Log File Path Already Exists! Skipping Creation ...")
-        self.log_path = default_log_path
-        self.update_log_file()
+    def get_manager_handler(self):
+        return self.main_manager
+    
+    def get_file_name(self):
+        return self.log_file_name
 
-    def set_default_log_folder(self, log_folder):
-        default_log_path = Path(__file__).parents[2] / log_folder
+    # For choosing either setting the full log_path or just the root folder that we want to store it in
+    def set_default_log_path(self, default_log_path, update=True):
         try:
             os.makedirs(default_log_path)
         except Exception as e:
             print("Log File Path Already Exists! Skipping Creation ...")
         self.log_path = default_log_path
-        self.update_log_file()
+
+        if update:
+            self.update_log_file()
+
+    def set_default_log_folder(self, log_folder, update=True):
+        default_log_path = Path(__file__).parents[2] / log_folder
+
+        try:
+            os.makedirs(default_log_path)
+        except Exception as e:
+            print("Log File Path Already Exists! Skipping Creation ...")
+        self.log_path = default_log_path
+
+        if update:
+            self.update_log_file()
     
     def update_log_file(self):
         self.log_file = self.log_path / f"{self.log_file_name}.{self.log_file_extension}"
@@ -109,9 +131,9 @@ class LogManager():
         percentage = int((self.progress_count / self.progress_total) * 100)
 
         if is_complete:
-            self.progress_message = f"  |{bar}| {percentage}%"
+            self.progress_message = f"    |{bar}| {percentage}%                         "
         elif message != None:
-            self.progress_message = f"  Processing: |{bar}| {percentage}% | {message}"
+            self.progress_message = f"    Processing: |{bar}| {percentage}% | {message}"
         else:
             self.progress_message = None
 
@@ -121,12 +143,22 @@ class LogManager():
             sys.stdout.flush()
 
     def increment_progress(self, new_message, increment=1):
-        self.progress_count += increment
-        if self.progress_count < self.progress_total:
-            self.set_progress_message()
-        else:
-            self.set_progress_message(is_complete=True, message=new_message)
-        self.update_progress_bar()
+        if self.progress_total != None:
+            self.progress_count += increment
+            if self.progress_count < self.progress_total:
+                self.set_progress_message(message=new_message)
+            else:
+                self.set_progress_message(is_complete=True, message=new_message)
+            self.update_progress_bar()
+
+    def set_progress(self, new_message, progress):
+        if self.progress_total != None:
+            self.progress_count = progress
+            if self.progress_count < self.progress_total:
+                self.set_progress_message()
+            else:
+                self.set_progress_message(is_complete=True, message=new_message)
+            self.update_progress_bar()
     
     def elapsed_time(self, is_accurate=False):
         if is_accurate == False:
@@ -146,6 +178,9 @@ class LogManager():
 
             formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
             return formatted_duration
+        
+    def reset_elapsed_time(self):
+        self.start_time = time.time()
 
     def log_to_file(self, log_message, source_class, log_level):
         # Always update CLI progress bar, just only conditionally log

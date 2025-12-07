@@ -1,12 +1,14 @@
-from envmanager import EnvManager
 import psycopg2
 from psycopg2.extras import execute_values
 from pathlib import Path
 
-from managerhandler import ManagerHandler
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utilities.managerhandler import ManagerHandler
+    from utilities.envmanager import EnvManager
 
 class DBManager:
-    def __init__(self, this_manager: ManagerHandler = None):
+    def __init__(self, this_manager: "ManagerHandler" = None):
         self.this_manager = this_manager
         self.env = None
         if this_manager == None:
@@ -27,18 +29,17 @@ class DBManager:
 
         self.cur = self.conn.cursor()
 
+        self.CHUNK = 20000  # ideal for execute_values
+
         self.init_database()
 
     def init_database(self):
         # cur.execute("SELECT version();")
         is_init = self.fetch_clean_one("""
-            SELECT EXISTS (
-                SELECT 1
-                FROM information_schema.tables 
-                WHERE table_schema = 'public'
-                AND table_name = %s
-            );
-        """, ("languages",))
+            SELECT schema_name
+            FROM information_schema.schemata
+            WHERE schema_name = 'bible';
+        """)
         
         if is_init:
             print("Database Already Initialised!")
@@ -65,7 +66,7 @@ class DBManager:
                 sql_script = file.read()
                 self.execute(sql_script)
 
-        self.db_commit()
+        self.commit()
 
         print("Database Init Success")
 
@@ -90,14 +91,21 @@ class DBManager:
         self.cur.execute(query, params)
         return self.cur.fetchall()
     
-    def db_commit(self):
+    def set_chunks(self, new_chunk):
+        self.CHUNK = new_chunk
+    
+    def bulk_insert(self, query, items):
+        for i in range(0, len(items), self.CHUNK):
+            execute_values(self.cur, query, items[i:i+self.CHUNK])
+    
+    def commit(self):
         self.conn.commit()
 
-    def db_close(self):
+    def close(self):
         self.conn.close()
 
-    def get_db_cursor(self):
+    def get_cursor(self):
         return self.cur
 
-    def get_db_connection(self):
+    def get_connection(self):
         return self.conn

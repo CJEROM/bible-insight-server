@@ -1,10 +1,12 @@
 from minio import Minio
 
-from managerhandler import ManagerHandler
-from envmanager import EnvManager
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utilities.managerhandler import ManagerHandler
+    from utilities.envmanager import EnvManager
 
 class ObjectManager:
-    def __init__(self, this_manager: ManagerHandler = None, default_bucket=None):
+    def __init__(self, this_manager: "ManagerHandler" = None, default_bucket=None):
         self.this_manager = this_manager
         self.env = None
         if this_manager == None:
@@ -30,7 +32,9 @@ class ObjectManager:
 
         self.init_object_storage_buckets()
 
-        self.bucket = self.set_default_bucket(default_bucket)
+        self.bucket = None
+        if default_bucket != None:
+            self.bucket = self.set_default_bucket(default_bucket)
 
     def set_default_bucket(self, default_bucket):
         if default_bucket not in self.configured_buckets:
@@ -107,5 +111,5 @@ class ObjectManager:
             #     is_dir=False
             # )
         #endregion
-
+        return info
     
