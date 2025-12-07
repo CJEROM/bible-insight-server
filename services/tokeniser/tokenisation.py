@@ -1,34 +1,13 @@
 import spacy
-from spacy.tokens import Doc
-from minio import Minio
-from bs4 import BeautifulSoup
 
 from psycopg2.extras import execute_values
 import time
 import datetime
 import sys
-
-import psycopg2
-import os
 from pathlib import Path
-from dotenv import load_dotenv
+import os
 
-# Automatically find the project root (folder containing .env)
-current = Path(__file__).resolve()
-for parent in current.parents:
-    if (parent / ".env").exists():
-        load_dotenv(parent / ".env")
-        break
-
-POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
-
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
-MINIO_USERNAME = os.getenv("MINIO_USERNAME")
-MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
+from utilities.managerhandler import ManagerHandler
 
 # Decided I need to better tokenise so first will load all verses and then update the data for them later, I want tokens afterall in my database.
 
@@ -54,17 +33,6 @@ NLP_MAPPING = {
 # Will create tokens for one translation at a time, to preprocess it all, then carry on with the rest before moving onto others.
 
 class Tokenisation:
-    default_log_level = 1 # Here I can set the level of logging I want for my application
-
-    LOG_MAPPING = {
-        "TRACE": 0,
-        "DEBUG": 1,
-        "INFO": 2,
-        "WARN": 3,
-        "ERROR": 4,
-        "FATAL": 5
-    }
-
     SQL = {
         # --------------------------------- Fetch Types ---------------------------------
         "get_language": """
@@ -199,52 +167,27 @@ class Tokenisation:
     def __init__(self, translation_id):
         self.translation_id = translation_id
 
-        # Adds a database connection
-        self.conn = psycopg2.connect(
-            host=POSTGRES_HOST,
-            port=POSTGRES_PORT,
-            dbname=POSTGRES_DB,
-            user=POSTGRES_USERNAME,
-            password=POSTGRES_PASSWORD
-        )
-        self.cur = self.conn.cursor()
+        self.manager = ManagerHandler()
+        self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
-        # Passes Minio client connection on to the MinioUSXUpload class
-        self.client = Minio(
-            MINIO_ENDPOINT,
-            access_key=MINIO_USERNAME,
-            secret_key=MINIO_PASSWORD,
-            secure=False
-        )
+        self.db = self.manager.get_db()
+        self.obj = self.manager.get_obj()
+        self.log = self.manager.create_log(f"_TOKENS-{self.translation_id}")
+        self.log.set_logging_level(1)
 
-        self.start_time = time.time()
-        self.progress_message = None
+        self.log.log_to_file(f"Starting Tokenisation ...\n", "TOKENISATION", "INFO")
 
-        # Initialise logfile
-        log_path = Path(__file__).parents[2] / "logs"
-        self.log_file = log_path / f"_TOKENS-{self.translation_id}.log"
+        self.language_id = self.db.fetch_clean_one(self.SQL.get("get_language"), (self.translation_id,))
 
-        try:
-            os.makedirs(log_path)
-        except Exception as e:
-            print("Log File Path Already Exists!")
-        print(f"See Log File at: {self.log_file}!")
+        self.log.log_to_file(f"Linked to Language with ID: {self.language_id}", "INIT", "INFO")
 
-        with open(self.log_file, 'w', encoding="utf-8") as f:
-            f.write(f"Starting Tokenisation ...\n")
+        self.db.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
 
-        self.cur.execute(self.SQL.get("get_language"), (self.translation_id,))
-        self.language_id = self.cur.fetchone()[0]
-
-        self.log_ingestion_activity(f"Linked to Language with ID: {self.language_id}", "INIT", "INFO")
-
-        self.cur.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
-
-        self.log_ingestion_activity(f"Initialised Tokenisable Nodes!", "INIT", "INFO")
+        self.log.log_to_file(f"Initialised Tokenisable Nodes!", "INIT", "INFO")
 
         self.reconstruct_chapter_nodes()
 
-        self.log_ingestion_activity(f"Finished Constructing Tokens: {self.language_id}", "INIT", "INFO")
+        self.log.log_to_file(f"Finished Constructing Tokens: {self.language_id}", "INIT", "INFO")
 
         self.create_tokens()
 
@@ -254,24 +197,21 @@ class Tokenisation:
         #     to figure out if it has done it correctly by just doing distinct query and looking for weird cases
         # self.reconstruct_tokens(self.fetch_chapter_tokens(1))
 
-        self.conn.commit()
-        self.conn.close()
+        self.db.commit()
+        self.db.close()
     
     def reconstruct_chapter_nodes(self):
         # Get all Books for this Translation
-        self.cur.execute(self.SQL.get("get_translation_books"), (self.translation_id,))
-        all_books = self.cur.fetchall()
+        all_books = self.db.fetch_all(self.SQL.get("get_translation_books"), (self.translation_id,))
 
         for book_map_id in all_books:
             # Get all Chapters for this Book
-            self.cur.execute(self.SQL.get("get_book_chapters"), (book_map_id,))
-            all_chapters = self.cur.fetchall()
+            all_chapters = self.db.fetch_all(self.SQL.get("get_book_chapters"), (book_map_id,))
 
             for chapter_occurence_id,_,chapter_ref in all_chapters:
                 # Get all tokenisable nodes for this chapter.
-                self.cur.execute(self.SQL.get("get_chapter_tokenisable_nodes"), (chapter_occurence_id,))
-                tokenisable_nodes = self.cur.fetchall()
-                self.log_ingestion_activity(f"Nodes found to be tokenisable for [{chapter_ref}]: [{tokenisable_nodes}]", "NODE", "DEBUG")
+                tokenisable_nodes = self.db.fetch_all(self.SQL.get("get_chapter_tokenisable_nodes"), (chapter_occurence_id,))
+                self.log.log_to_file(f"Nodes found to be tokenisable for [{chapter_ref}]: [{tokenisable_nodes}]", "NODE", "DEBUG")
 
                 chapter_text = ""
 
@@ -281,13 +221,13 @@ class Tokenisation:
                     end = len(chapter_text)
 
                     # Update start, end offsets for node
-                    self.cur.execute(self.SQL.get("update_node_offsets"), (start, end, node_id))
+                    self.db.execute(self.SQL.get("update_node_offsets"), (start, end, node_id))
 
                 # When finished iterating through nodes
                 #       update chapter_occurences with reconstructed chapter_text
-                self.cur.execute(self.SQL.get("update_chapter_occurence_text"), (chapter_text, chapter_occurence_id))
+                self.db.execute(self.SQL.get("update_chapter_occurence_text"), (chapter_text, chapter_occurence_id))
                 # print(chapter_text)
-                self.log_ingestion_activity(f"Reconstructed Chapter [{chapter_ref}] Occurence [{chapter_occurence_id}]: \n[{chapter_text}\n]", "NODE", "TRACE")
+                self.log.log_to_file(f"Reconstructed Chapter [{chapter_ref}] Occurence [{chapter_occurence_id}]: \n[{chapter_text}\n]", "NODE", "TRACE")
     
     def create_tokens(self):
         # Init spacy pipeline used for training
@@ -295,32 +235,24 @@ class Tokenisation:
         nlp = spacy.load(f"{spacy_lang}_core_web_sm")
 
         # Get all Books for this Translation
-        self.cur.execute(self.SQL.get("get_translation_books"), (self.translation_id,))
-        all_books = self.cur.fetchall()
+        all_books = self.db.fetch_all(self.SQL.get("get_translation_books"), (self.translation_id,))
 
         all_new_tokens = []
         token_count = 1
 
-        total_books = len(all_books)
+        self.log.set_progress_total(len(all_books))
         
-        self.cur.execute(self.SQL.get("max_token_count"))
-        token_id_offset = self.cur.fetchone()[0]
+        token_id_offset = self.db.fetch_clean_one(self.SQL.get("max_token_count"))
 
         unique_pos = set()
         unique_tag = set()
         unique_dep = set()
 
-        for i, book_map_id in enumerate(all_books):
+        for book_i, book_map_id in enumerate(all_books):
             # Get all Chapters for this Book
-            self.cur.execute(self.SQL.get("get_book_chapters"), (book_map_id,))
-            all_chapters = self.cur.fetchall()
+            all_chapters = self.db.fetch_all(self.SQL.get("get_book_chapters"), (book_map_id,))
 
-            # ✅ Proper loading bar (50 characters wide)
-            progress = int((i / total_books) * 50)
-            bar = '#' * progress + '-' * (50 - progress)
-            percentage = int((i / total_books) * 100)
-
-            self.progress_message = f"\r    Processing Books: |{bar}| {percentage}%"
+            self.log.set_progress(new_message=" ", progress=book_i)
 
             for chapter_occurence_id, chapter_text, chapter_ref in all_chapters:
                 # Start NLP on reconstructed chapter text
@@ -330,9 +262,9 @@ class Tokenisation:
 
                 temp_tokens = []
 
-                self.log_ingestion_activity(f"Creating {len(doc)} Tokens for [{chapter_ref}]...", "TOKEN", "DEBUG")
+                self.log.log_to_file(f"Creating {len(doc)} Tokens for [{chapter_ref}]...", "TOKEN", "DEBUG")
 
-                self.progress_message = f"\r    Processing Books: |{bar}| {percentage}% | {chapter_ref} / {len(all_chapters)}"
+                self.log.set_progress(new_message=f"{chapter_ref} / {len(all_chapters)}", progress=book_i)
 
                 for i, token in enumerate(doc):
                     pos = token.pos_
@@ -370,7 +302,7 @@ class Tokenisation:
                         None # will be updated with head_token_id (i -> 18)
                     ]
 
-                    self.log_ingestion_activity(f"Creating Temp Token [{i}] [{token.idx}]: {this_token}", "TOKEN", "TRACE")
+                    self.log.log_to_file(f"Creating Temp Token [{i}] [{token.idx}]: {this_token}", "TOKEN", "TRACE")
 
                     token_db_id = token_count + token_id_offset # self.cur.fetchone()[0]
                     token_mapping[i] = [token_db_id, token.head.idx]
@@ -380,7 +312,7 @@ class Tokenisation:
                     token_count += 1
 
                 # print(token_mapping)
-                self.log_ingestion_activity(f"Current Temp Tokens => {temp_tokens}", "TOKEN", "TRACE")
+                self.log.log_to_file(f"Current Temp Tokens => {temp_tokens}", "TOKEN", "TRACE")
 
                 for i, token in enumerate(temp_tokens):
                     temp_token = token_mapping.get(i)
@@ -389,75 +321,28 @@ class Tokenisation:
                         continue
 
                     head_db_id = token_mapping[i][0]
-                    self.log_ingestion_activity(f"Updating Temp Token at [{i}] with head_db_id {head_db_id}", "TOKEN", "TRACE")
+                    self.log.log_to_file(f"Updating Temp Token at [{i}] with head_db_id {head_db_id}", "TOKEN", "TRACE")
 
                     temp_tokens[i][18] = head_db_id
                     all_new_tokens.append(tuple(temp_tokens[i]))
 
-                self.log_ingestion_activity(f"Finished Token Creation for [{chapter_ref}]", "TOKEN", "DEBUG")
-                self.log_ingestion_activity(f"Current Tokens => {all_new_tokens}", "TOKEN", "TRACE")
+                self.log.log_to_file(f"Finished Token Creation for [{chapter_ref}]", "TOKEN", "DEBUG")
+                self.log.log_to_file(f"Current Tokens => {all_new_tokens}", "TOKEN", "TRACE")
 
         # Now bulk insert all of the nodes into the database (in batches / chunks)
-        CHUNK = 20000  # ideal for execute_values
+        self.db.set_chunks(20000)  # ideal for execute_values
 
         unique_pos = list(unique_pos)
         unique_tag = list(unique_tag)
         unique_dep = list(unique_dep)
 
         # Bulk insert lookup values
-        sql_query = self.SQL.get("create_pos_lookup")
-        for i in range(0, len(unique_pos), CHUNK):
-            execute_values(self.cur, sql_query, unique_pos[i:i+CHUNK])  
-
-        sql_query = self.SQL.get("create_tag_lookup")
-        for i in range(0, len(unique_tag), CHUNK):
-            execute_values(self.cur, sql_query, unique_tag[i:i+CHUNK])  
-
-        sql_query = self.SQL.get("create_dep_lookup")
-        for i in range(0, len(unique_dep), CHUNK):
-            execute_values(self.cur, sql_query, unique_dep[i:i+CHUNK])  
+        self.db.bulk_insert(self.SQL.get("create_pos_lookup"), unique_pos)
+        self.db.bulk_insert(self.SQL.get("create_tag_lookup"), unique_tag)
+        self.db.bulk_insert(self.SQL.get("create_dep_lookup"), unique_dep)
 
         # Bulk Insert Tokens
-        sql_query = self.SQL.get("create_token")
-        for i in range(0, len(all_new_tokens), CHUNK):
-            execute_values(self.cur, sql_query, all_new_tokens[i:i+CHUNK])  
-
-    def stream_file(self, object_name, bucket):
-        # Get file
-        response = None 
-        try:
-            response = self.client.get_object(
-                bucket_name=bucket,
-                object_name=object_name,
-            )
-            # Read the data as bytes, then decode as UTF-8
-            data = response.read().decode("utf-8")
-            return data
-        finally:
-            if response:
-                response.close()
-                response.release_conn()   
-
-    def elapsed_ingestion_time(self):
-        duration = time.time() - self.start_time
-        hours = int(duration // 3600)
-        minutes = int((duration % 3600) // 60)
-        seconds = int(duration % 60)
-
-        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}"
-        return formatted_duration
-
-    def log_ingestion_activity(self, log_message, source_class, log_level):
-        # Always update CLI progress bar, just only conditionally log
-        if self.progress_message != None and hasattr(sys.stdout, "write"):
-            sys.stdout.write(f"\r{self.progress_message} | [Elapsed: {self.elapsed_ingestion_time()}] | ")
-            sys.stdout.flush()
-
-        if self.LOG_MAPPING[log_level] < self.default_log_level:
-            return
-
-        with open(self.log_file, 'a', encoding="utf-8") as f:
-            f.write(f"{datetime.datetime.now()} [{log_level}] [Elapsed: {self.elapsed_ingestion_time()}] [{source_class}] {log_message}\n")
+        self.db.bulk_insert(self.SQL.get("create_token"), all_new_tokens)
 
 if __name__ == "__main__":
     # conn = psycopg2.connect(
