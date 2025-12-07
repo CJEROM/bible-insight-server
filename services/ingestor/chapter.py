@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ingestor.book import Book
-    from utilities.logmanager import LogManager
+    from manager.logmanager import LogManager
 
 from ingestor.paragraph import Paragraph
 from ingestor.verse import Verse

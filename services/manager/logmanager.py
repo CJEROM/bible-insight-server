@@ -6,7 +6,7 @@ import datetime
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from utilities.managerhandler import ManagerHandler
+    from manager.managerhandler import ManagerHandler
 
 class LogManager():
     LOG_MAPPING = {

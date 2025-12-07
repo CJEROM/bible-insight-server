@@ -8,7 +8,7 @@
 
 # The idea is to anchor references to any information by either, verse, chapter, book, translation (the ones that make sense to users)
 
-from utilities.managerhandler import ManagerHandler
+from manager.managerhandler import ManagerHandler
 
 class Assembler:
     SQL = {

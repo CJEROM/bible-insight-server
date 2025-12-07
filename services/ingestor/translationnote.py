@@ -4,7 +4,7 @@ import re
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ingestor.chapter import Chapter
-    from utilities.logmanager import LogManager
+    from manager.logmanager import LogManager
 
 from ingestor.verse import Verse
 

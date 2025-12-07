@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ingestor.chapter import Chapter
-    from utilities.logmanager import LogManager
+    from manager.logmanager import LogManager
 
 class Verse:
     def __init__(self, this_chapter: "Chapter", verse_ref: str, log: "LogManager", is_special_case=False):

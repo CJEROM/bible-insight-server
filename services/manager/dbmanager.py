@@ -4,8 +4,8 @@ from pathlib import Path
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from utilities.managerhandler import ManagerHandler
-    from utilities.envmanager import EnvManager
+    from manager.managerhandler import ManagerHandler
+    from manager.envmanager import EnvManager
 
 class DBManager:
     def __init__(self, this_manager: "ManagerHandler" = None):

@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 from ingestor.translation import Translation
-from utilities.managerhandler import ManagerHandler
+from manager.managerhandler import ManagerHandler
 
 class Ingestor:
     def __init__(self):

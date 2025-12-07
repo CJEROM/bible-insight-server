@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from utilities.managerhandler import ManagerHandler
+    from manager.managerhandler import ManagerHandler
 
 class EnvManager:
     def __init__(self, this_manager: "ManagerHandler" = None):

@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 import os
 
-from utilities.managerhandler import ManagerHandler
+from manager.managerhandler import ManagerHandler
 
 # Decided I need to better tokenise so first will load all verses and then update the data for them later, I want tokens afterall in my database.
 

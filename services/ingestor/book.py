@@ -7,7 +7,7 @@ from ingestor.nodes import Nodes
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ingestor.translation import Translation
-    from utilities.logmanager import LogManager
+    from manager.logmanager import LogManager
 
 # Changing since will only be relevant for text anyway
 class Book:

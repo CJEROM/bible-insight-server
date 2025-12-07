@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ingestor.chapter import Chapter
-    from utilities.logmanager import LogManager
+    from manager.logmanager import LogManager
 
 class Paragraph:
     def __init__(self, this_chapter: "Chapter", paragraph_node_id, para_xml, log: "LogManager"):
