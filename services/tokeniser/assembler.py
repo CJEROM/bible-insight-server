@@ -15,11 +15,11 @@ class Assembler:
         # Reconstruct from OCCURENCE -> ID
         "get_chapter_tokenisable_nodes": """
             WITH chapter_bounds AS (
-                SELECT start_node, end_node
+                SELECT start_node, end_node, chapter_ref, translation_id, book_map_id
                 FROM bible.chapteroccurences
                 WHERE id = %s
             )
-            SELECT n.id, n.node_text
+            SELECT n.id, n.node_text, cb.chapter_ref, cb.translation_id, cb.book_map_id
             FROM chapter_bounds cb
             JOIN bible.nodes n 
                 ON n.id BETWEEN cb.start_node AND cb.end_node
@@ -28,11 +28,11 @@ class Assembler:
         """,
         "get_verse_tokenisable_nodes": """
             WITH verse_bounds AS (
-                SELECT start_node, end_node
+                SELECT start_node, end_node, verse_ref, translation_id, book_map_id
                 FROM bible.verseoccurences
                 WHERE id = %s
             )
-            SELECT n.id, n.node_text
+            SELECT n.id, n.node_text, vb.verse_ref, vb.translation_id, vb.book_map_id
             FROM verse_bounds vb
             JOIN bible.nodes n 
                 ON n.id BETWEEN vb.start_node AND vb.end_node
@@ -40,15 +40,15 @@ class Assembler:
             ORDER BY n.id;
         """,
         "get_book_tokenisable_nodes": """
-            SELECT id, node_text
-            FROM bible.nodes
+            SELECT id, node_text, book_code, translation_id
+            FROM bible.nodes n
             WHERE is_tokenisable = TRUE
                 AND book_map_id = %s
             ORDER BY id;
         """,
         # Reconstruct from NODE -> ID
         "get_book_for_node_id": """
-            SELECT n.id, n.node_text
+            SELECT n.id, n.node_text, n.book_map_id
             FROM bible.nodes n
             WHERE n.book_map_id = (
                 SELECT book_map_id
@@ -60,12 +60,12 @@ class Assembler:
         """,
         "get_chapter_for_node_id": """
             WITH chapter_found AS (
-                SELECT id, start_node, end_node
+                SELECT id, start_node, end_node, chapter_ref, translation_id, book_map_id
                 FROM bible.chapteroccurences
                 WHERE start_node <= %s AND end_node >= %s
                 LIMIT 1
             )
-            SELECT n.id, n.node_text
+            SELECT n.id, n.node_text, cf.chapter_ref, cf.translation_id, cf.book_map_id
             FROM bible.nodes n 
             JOIN chapter_found cf
                 ON n.id BETWEEN cf.start_node AND cf.end_node
@@ -74,12 +74,12 @@ class Assembler:
         """,
         "get_verse_for_node_id": """
             WITH verse_found AS (
-                SELECT id, start_node, end_node
+                SELECT id, start_node, end_node, verse_ref, translation_id, book_map_id
                 FROM bible.verseoccurences
                 WHERE start_node <= %s AND end_node >= %s
                 LIMIT 1
             )
-            SELECT n.id, n.node_text
+            SELECT n.id, n.node_text, vf.verse_ref, vf.translation_id, vf.book_map_id
             FROM bible.nodes n 
             JOIN verse_found vf
                 ON n.id BETWEEN vf.start_node AND vf.end_node
@@ -88,7 +88,7 @@ class Assembler:
         """,
         # Reconstruct from NODE -> CANONICAL PATH
         "get_book_for_node_path": """
-            SELECT n.id, n.node_text
+            SELECT n.id, n.node_text, n.book_map_id
             FROM bible.nodes n
             WHERE n.book_map_id = (
                 SELECT book_map_id
@@ -105,13 +105,13 @@ class Assembler:
                 WHERE canonical_path = %s AND translation_id = %s
             ),
             chapter_found AS (
-                SELECT id, start_node, end_node
+                SELECT id, start_node, end_node, chapter_ref, translation_id, book_map_id
                 FROM bible.chapteroccurences cf
                 JOIN node_found nf
                   ON nf.node_id BETWEEN cf.start_node AND cf.end_node
                 LIMIT 1
             )
-            SELECT n.id, n.node_text
+            SELECT n.id, n.node_text, cf.chapter_ref, cf.translation_id, cf.book_map_id
             FROM bible.nodes n 
             JOIN chapter_found cf
                 ON n.id BETWEEN cf.start_node AND cf.end_node
@@ -125,13 +125,13 @@ class Assembler:
                 WHERE canonical_path = %s AND translation_id = %s
             ),
             verse_found AS (
-                SELECT id, start_node, end_node
+                SELECT id, start_node, end_node, verse_ref, translation_id, book_map_id
                 FROM bible.verseoccurences vf
                 JOIN node_found nf
                   ON nf.node_id BETWEEN vf.start_node AND vf.end_node
                 LIMIT 1
             )
-            SELECT n.id, n.node_text
+            SELECT n.id, n.node_text, vf.verse_ref, vf.translation_id, vf.book_map_id
             FROM bible.nodes n 
             JOIN verse_found vf
                 ON n.id BETWEEN vf.start_node AND vf.end_node
@@ -140,7 +140,7 @@ class Assembler:
         """,
         # Reconstruct from REF
         "get_book_from_ref": """
-            SELECT id, node_text
+            SELECT id, node_text, book_map_id
             FROM bible.nodes
             WHERE book_map_id = (
                 SELECT id 
@@ -152,11 +152,11 @@ class Assembler:
         """,
         "get_chapter_from_ref": """
             WITH chapter_bounds AS (
-                SELECT start_node, end_node
+                SELECT start_node, end_node, chapter_ref, translation_id, book_map_id
                 FROM bible.chapteroccurences
                 WHERE chapter_ref = %s AND translation_id = %s
             )
-            SELECT n.id, n.node_text
+            SELECT n.id, n.node_text, cb.chapter_ref, cb.translation_id, cb.book_map_id
             FROM chapter_bounds cb
             JOIN bible.nodes n 
                 ON n.id BETWEEN cb.start_node AND cb.end_node
@@ -165,11 +165,11 @@ class Assembler:
         """,
         "get_verse_from_ref": """
             WITH verse_bounds AS (
-                SELECT start_node, end_node
+                SELECT start_node, end_node, verse_ref, translation_id, book_map_id
                 FROM bible.verseoccurences
                 WHERE verse_ref = %s AND translation_id = %s
             )
-            SELECT n.id, n.node_text
+            SELECT n.id, n.node_text, vb.verse_ref, vb.translation_id, vb.book_map_id
             FROM verse_bounds vb
             JOIN bible.nodes n 
                 ON n.id BETWEEN vb.start_node AND vb.end_node
@@ -186,7 +186,13 @@ class Assembler:
             SELECT * 
             FROM bible.chapteroccurences
             WHERE chapter_ref = %s
-        """
+        """,
+        # Get Book Details 
+        "get_book_details": """
+            SELECT book_code, translation_id, short
+            FROM bible.booktofile
+            WHERE id = %s
+        """,
     }
 
     def __init__(self, occurence_id=None, node_id=None, canonical_path=None, ref=None, scope=None, translation_id=None):
@@ -277,8 +283,10 @@ class Assembler:
 
         tokenisable_nodes_results = self.db.fetch_all(query, (occurence_id,))
         self.log.log_to_file(f"Tokens for Reconstruction: {tokenisable_nodes_results}", "OCCURENCE", "DEBUG")
-        for id, node_text in tokenisable_nodes_results:
-            self.nodes.append(id)
+        for node in tokenisable_nodes_results:
+            node_id = node[0]
+            node_text = node [1]
+            self.nodes.append(node_id)
             self.text += node_text
 
     def reconstruct_from_node_id(self, scope, node_id):
@@ -296,8 +304,10 @@ class Assembler:
         
         tokenisable_nodes_results = self.db.get_cursor().fetchall()
         self.log.log_to_file(f"Tokens for Reconstruction: {tokenisable_nodes_results}", "NODE_ID", "DEBUG")
-        for id, node_text in tokenisable_nodes_results:
-            self.nodes.append(id)
+        for node in tokenisable_nodes_results:
+            node_id = node[0]
+            node_text = node [1]
+            self.nodes.append(node_id)
             self.text += node_text
 
     def reconstruct_from_node_path(self, scope, translation_id, canonical_path):
@@ -312,8 +322,10 @@ class Assembler:
 
         tokenisable_nodes_results = self.db.fetch_all(query, (canonical_path,translation_id))
         self.log.log_to_file(f"Tokens for Reconstruction: {tokenisable_nodes_results}", "CANONICAL_PATH", "DEBUG")
-        for id, node_text in tokenisable_nodes_results:
-            self.nodes.append(id)
+        for node in tokenisable_nodes_results:
+            node_id = node[0]
+            node_text = node [1]
+            self.nodes.append(node_id)
             self.text += node_text
 
     def reconstruct_from_ref(self, translation_id, ref):
@@ -337,8 +349,10 @@ class Assembler:
 
         tokenisable_nodes_results = self.db.fetch_all(query, (ref, translation_id))
         self.log.log_to_file(f"Tokens for Reconstruction: f{tokenisable_nodes_results}", "REF", "DEBUG")
-        for id, node_text in tokenisable_nodes_results:
-            self.nodes.append(id)
+        for node in tokenisable_nodes_results:
+            node_id = node[0]
+            node_text = node [1]
+            self.nodes.append(node_id)
             self.text += node_text
     
     # Perhaps function to help build on nodes, to display strongs if available?
