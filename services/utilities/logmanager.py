@@ -24,7 +24,8 @@ class LogManager():
             default_log_folder=None, 
             log_file_name=None, 
             log_file_extension="log", 
-            log_level=2
+            log_level=2,
+            disable_log=False
         ):
         self.main_manager = manager
 
@@ -47,6 +48,7 @@ class LogManager():
             raise ValueError("Missing required parameter: log_file_name.")
         
         self.log_file = self.log_path / f"{self.log_file_name}.{self.log_file_extension}"
+        self.disable_log = disable_log
 
         self.clear_log_file() # Creates Log File Ready for writing
 
