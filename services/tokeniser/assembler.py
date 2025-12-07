@@ -8,23 +8,10 @@
 
 # The idea is to anchor references to any information by either, verse, chapter, book, translation (the ones that make sense to users)
 
+from utilities.managerhandler import ManagerHandler
+
 import psycopg2
 import os
-from pathlib import Path
-from dotenv import load_dotenv
-
-# Automatically find the project root (folder containing .env)
-current = Path(__file__).resolve()
-for parent in current.parents:
-    if (parent / ".env").exists():
-        load_dotenv(parent / ".env")
-        break
-
-POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 
 class Assembler:
     SQL = {
@@ -213,16 +200,13 @@ class Assembler:
         self.scope = scope
 
         self.translation_id = translation_id
-        
-        # Adds a database connection
-        self.conn = psycopg2.connect(
-            host=POSTGRES_HOST,
-            port=POSTGRES_PORT,
-            dbname=POSTGRES_DB,
-            user=POSTGRES_USERNAME,
-            password=POSTGRES_PASSWORD
-        )
-        self.cur = self.conn.cursor()
+
+        self.manager = ManagerHandler()
+        self.manager.get_obj().set_default_bucket("bible-dbl-raw")
+
+        self.db = self.manager.get_db()
+        self.log = self.manager.create_log("assembler")
+        self.log.set_logging_level(2)
 
         self.nodes = [] # Represents all (tokenisable) nodes used to reconstruct context
         self.text = ""
@@ -239,17 +223,26 @@ class Assembler:
         # Attempt to automatically determine what reconstruction method to use
         if self.scope != None:
             if self.occurence_id != None:
+                self.log.log_to_file("Assembling through Occurence", "ASSEMBLER", "INFO")
                 self.reconstruct_occurence(self.scope, self.occurence_id)
             elif self.node_id != None:
+                self.log.log_to_file("Assembling from Node ID", "ASSEMBLER", "INFO")
                 self.reconstruct_from_node_id(self.scope, self.node_id)
             elif self.canonical_path != None and self.translation_id != None:
+                self.log.log_to_file("Assembling through Node Canonical Path", "ASSEMBLER", "INFO")
                 self.reconstruct_from_node_path(self.scope, self.translation_id, self.canonical_path)
             else:
+                self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. Scope Defined, but no occurence, node_id or canonical_path!", "ASSEMBLER", "ERROR")
                 raise ValueError("Insufficient parameters provided for reconstruction.")
         elif self.ref != None:
+            self.log.log_to_file("Assembling through Ref", "ASSEMBLER", "INFO")
             self.reconstruct_from_ref(self.translation_id, self.ref)
         else:
+            self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. No Scope or Ref Defined!", "ASSEMBLER", "ERROR")
             raise ValueError("Insufficient parameters provided for reconstruction.")
+        
+        # Log the resulted reconstruction - if it was successful (no error flagged)
+        self.log.log_to_file(f"Reconstruction: [\n{self.text}\n]", "OCCURENCE", "DEBUG")
     
     def reconstruct_occurence(self, scope, occurence_id):
         query = ""
@@ -261,8 +254,8 @@ class Assembler:
             case "verse":
                 query = self.SQL.get("get_verse_tokenisable_nodes")
 
-        self.cur.execute(query, (occurence_id,))
-        tokenisable_nodes_results = self.cur.fetchall()
+        tokenisable_nodes_results = self.db.fetch_all(query, (occurence_id,))
+        self.log.log_to_file(f"Tokens for Reconstruction: {tokenisable_nodes_results}", "OCCURENCE", "DEBUG")
         for id, node_text in tokenisable_nodes_results:
             self.nodes.append(id)
             self.text += node_text
@@ -272,15 +265,16 @@ class Assembler:
         match scope:
             case "book":
                 query = self.SQL.get("get_book_for_node_id")
-                self.cur.execute(query, (node_id,))
+                self.db.execute(query, (node_id,))
             case "chapter":
                 query = self.SQL.get("get_chapter_for_node_id")
-                self.cur.execute(query, (node_id,node_id))
+                self.db.execute(query, (node_id,node_id))
             case "verse":
                 query = self.SQL.get("get_verse_for_node_id")
-                self.cur.execute(query, (node_id,node_id))
+                self.db.execute(query, (node_id,node_id))
         
-        tokenisable_nodes_results = self.cur.fetchall()
+        tokenisable_nodes_results = self.db.get_cursor().fetchall()
+        self.log.log_to_file(f"Tokens for Reconstruction: {tokenisable_nodes_results}", "NODE_ID", "DEBUG")
         for id, node_text in tokenisable_nodes_results:
             self.nodes.append(id)
             self.text += node_text
@@ -295,8 +289,8 @@ class Assembler:
             case "verse":
                 query = self.SQL.get("get_verse_for_node_path")
 
-        self.cur.execute(query, (canonical_path,translation_id))
-        tokenisable_nodes_results = self.cur.fetchall()
+        tokenisable_nodes_results = self.db.fetch_all(query, (canonical_path,translation_id))
+        self.log.log_to_file(f"Tokens for Reconstruction: {tokenisable_nodes_results}", "CANONICAL_PATH", "DEBUG")
         for id, node_text in tokenisable_nodes_results:
             self.nodes.append(id)
             self.text += node_text
@@ -320,8 +314,8 @@ class Assembler:
             case "verse":
                 query = self.SQL.get("get_verse_from_ref")
 
-        self.cur.execute(query, (ref, translation_id))
-        tokenisable_nodes_results = self.cur.fetchall()
+        tokenisable_nodes_results = self.db.fetch_all(query, (ref, translation_id))
+        self.log.log_to_file(f"Tokens for Reconstruction: f{tokenisable_nodes_results}", "REF", "DEBUG")
         for id, node_text in tokenisable_nodes_results:
             self.nodes.append(id)
             self.text += node_text
