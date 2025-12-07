@@ -36,13 +36,10 @@ class DBManager:
     def init_database(self):
         # cur.execute("SELECT version();")
         is_init = self.fetch_clean_one("""
-            SELECT EXISTS (
-                SELECT 1
-                FROM information_schema.tables 
-                WHERE table_schema = 'public'
-                AND table_name = %s
-            );
-        """, ("languages",))
+            SELECT schema_name
+            FROM information_schema.schemata
+            WHERE schema_name = 'bible';
+        """)
         
         if is_init:
             print("Database Already Initialised!")
