@@ -102,11 +102,10 @@ class Translation:
         )
 
         minio_config = self.env.get_minio_config()
-        minio_endpoint = minio_config["endpoint"]
 
         # For now not sure how this works
         export_storage = label_studio_client.export_storage.s3.create(
-            s3endpoint=f"http://{minio_endpoint}", #Updated from localhost to hardcoded IP
+            s3endpoint=f"http://192.168.0.19:8080", #Updated from localhost to hardcoded IP
             aws_access_key_id=minio_config["username"],
             aws_secret_access_key=minio_config["password"],
             project=self.translation_project.id,
@@ -346,7 +345,7 @@ class Translation:
         publication = metadata_xml.find("publication", default="true") # Get default files for publication
         contents = publication.find_all("content")
 
-        self.log.set_progress_total = len(contents)
+        self.log.set_progress_total(len(contents))
 
         # Selectively upload the files I want in the format I want (from metadata)
         for i, (content) in enumerate(contents):
