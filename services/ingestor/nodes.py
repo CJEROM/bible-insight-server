@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 class Nodes:
     SQL = {
         "new_node": """
-            INSERT INTO bible.nodes (node_text, node_type, code, sid, eid, vid, style, number, caller, closed, version, strong, loc, parent_node_id, index_in_parent, book_map_id, canonical_path, align) 
+            INSERT INTO bible.nodes (node_text, node_type, code, sid, eid, vid, style, number, caller, closed, version, strong, loc, parent_node_id, index_in_parent, book_map_id, canonical_path, align, translation_id) 
             VALUES %s;
         """,
         "max_node_count": """
@@ -29,6 +29,7 @@ class Nodes:
         # Initialise variables 
         self.book_soup = BeautifulSoup(book_xml, "xml")
         self.book_map_id = self.this_book.get_book_map_id()
+        self.translation_id = self.this_translation.get_translation_id()
 
         self.created_nodes = {
             "chapter": {},
@@ -59,7 +60,7 @@ class Nodes:
             node_id = node_id_counter + node_id_offset # since i will be 0, want to start at 1 instead + offset from database to say this new node is
             node_type = None
             
-            this_node = [None] * 18 # create mutable list of length 17
+            this_node = [None] * 19 # create mutable list of length 17
 
             if isinstance(node, Tag):
                 node_type =     node.name
@@ -124,10 +125,11 @@ class Nodes:
             path_map[id(node)] = canonical_path
 
             # Update the rest of the node parts that required more processing
-            this_node[13] = parent_node_id # parent_node_id, 13
-            this_node[14] = index_in_parent # index_in_parent, 14
-            this_node[15] = self.book_map_id # book_map_id, 15
-            this_node[16] = canonical_path # canonical_path, 16 
+            this_node[13] = parent_node_id          # parent_node_id, 13
+            this_node[14] = index_in_parent         # index_in_parent, 14
+            this_node[15] = self.book_map_id        # book_map_id, 15
+            this_node[16] = canonical_path          # canonical_path, 16 
+            this_node[18] = self.translation_id     # translation_id, 18
 
             # Prepare for next node, and add for bulk insert
             all_new_nodes.append(tuple(this_node))
