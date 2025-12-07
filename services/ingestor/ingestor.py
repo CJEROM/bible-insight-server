@@ -143,7 +143,7 @@ class Ingestor:
                 # dbl_id = "32664dc3288a28df"
                 # agreement_id = 265137
 
-                print(f"\n✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
+                print(f"\n\n✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
 
                 new_path = None
 

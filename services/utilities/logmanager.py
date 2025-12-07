@@ -126,7 +126,7 @@ class LogManager():
         percentage = int((self.progress_count / self.progress_total) * 100)
 
         if is_complete:
-            self.progress_message = f"    |{bar}| {percentage}%"
+            self.progress_message = f"    |{bar}| {percentage}%                         "
         elif message != None:
             self.progress_message = f"    Processing: |{bar}| {percentage}% | {message}"
         else:
