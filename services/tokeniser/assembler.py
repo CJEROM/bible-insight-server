@@ -208,6 +208,8 @@ class Assembler:
         self.nodes = [] # Represents all (tokenisable) nodes used to reconstruct context
         self.text = ""
 
+        self.assembler_type = None
+
         self.assemble()
 
     def get_nodes(self):
@@ -216,24 +218,46 @@ class Assembler:
     def get_reconstructed_text(self):
         return self.text
     
+    def get_translation_id(self):
+        return self.translation_id
+    
+    def get_occurence_id(self):
+        return (self.scope, self.occurence_id)
+    
+    def get_node_id(self):
+        return self.node_id
+    
+    def get_canonical_path(self):
+        return (self.canonical_path)
+    
+    def get_scope(self):
+        return self.scope
+    
+    def get_assembler_type(self):
+        return self.assembler_type
+    
     def assemble(self):
         # Attempt to automatically determine what reconstruction method to use
         if self.scope != None:
             if self.occurence_id != None:
                 self.log.log_to_file("Assembling through Occurence", "ASSEMBLER", "INFO")
                 self.reconstruct_occurence(self.scope, self.occurence_id)
+                self.assembler_type = "occurence"
             elif self.node_id != None:
                 self.log.log_to_file("Assembling from Node ID", "ASSEMBLER", "INFO")
                 self.reconstruct_from_node_id(self.scope, self.node_id)
+                self.assembler_type = "node_id"
             elif self.canonical_path != None and self.translation_id != None:
                 self.log.log_to_file("Assembling through Node Canonical Path", "ASSEMBLER", "INFO")
                 self.reconstruct_from_node_path(self.scope, self.translation_id, self.canonical_path)
+                self.assembler_type = "canonical_path"
             else:
                 self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. Scope Defined, but no occurence, node_id or canonical_path!", "ASSEMBLER", "ERROR")
                 # raise ValueError("Insufficient parameters provided for reconstruction.")
         elif self.ref != None:
             self.log.log_to_file("Assembling through Ref", "ASSEMBLER", "INFO")
             self.reconstruct_from_ref(self.translation_id, self.ref)
+            self.assembler_type = "ref"
         else:
             self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. No Scope or Ref Defined!", "ASSEMBLER", "ERROR")
             # raise ValueError("Insufficient parameters provided for reconstruction.")
