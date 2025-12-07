@@ -10,9 +10,6 @@
 
 from utilities.managerhandler import ManagerHandler
 
-import psycopg2
-import os
-
 class Assembler:
     SQL = {
         # Reconstruct from OCCURENCE -> ID
