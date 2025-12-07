@@ -104,15 +104,15 @@ class Translation:
         minio_config = self.env.get_minio_config()
 
         # For now not sure how this works
-        export_storage = label_studio_client.export_storage.s3.create(
-            s3endpoint=f"http://192.168.0.19:8080", #Updated from localhost to hardcoded IP
-            aws_access_key_id=minio_config["username"],
-            aws_secret_access_key=minio_config["password"],
-            project=self.translation_project.id,
-            bucket="bible-nlp",
-            prefix=f"{self.translation_title}/exports/",
-            title="TEST Export"
-        )
+        # export_storage = label_studio_client.export_storage.s3.create(
+        #     s3endpoint=f"http://192.168.0.19:8080", #Updated from localhost to hardcoded IP
+        #     aws_access_key_id=minio_config["username"],
+        #     aws_secret_access_key=minio_config["password"],
+        #     project=self.translation_project.id,
+        #     bucket="bible-nlp",
+        #     prefix=f"{self.translation_title}/exports/",
+        #     title="TEST Export"
+        # )
 
         self.db.execute("""
             INSERT INTO bible.labellingprojects (id) 
