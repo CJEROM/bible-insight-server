@@ -61,6 +61,9 @@ class LogManager():
 
     def get_manager_handler(self):
         return self.main_manager
+    
+    def get_file_name(self):
+        return self.log_file_name
 
     # For choosing either setting the full log_path or just the root folder that we want to store it in
     def set_default_log_path(self, default_log_path, update=True):
