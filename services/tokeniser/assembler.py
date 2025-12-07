@@ -8,6 +8,8 @@
 
 # The idea is to anchor references to any information by either, verse, chapter, book, translation (the ones that make sense to users)
 
+# This class should be discardable after creation, it won't be changed after its been initialised, you only access the data within instead
+
 from manager.managerhandler import ManagerHandler
 
 class Assembler:
@@ -28,11 +30,11 @@ class Assembler:
         """,
         "get_verse_tokenisable_nodes": """
             WITH verse_bounds AS (
-                SELECT start_node, end_node, verse_ref, translation_id, book_map_id
+                SELECT start_node, end_node, verse_ref, translation_id, book_map_id, chapter_id
                 FROM bible.verseoccurences
                 WHERE id = %s
             )
-            SELECT n.id, n.node_text, vb.verse_ref, vb.translation_id, vb.book_map_id
+            SELECT n.id, n.node_text, vb.verse_ref, vb.translation_id, vb.book_map_id, vb.chapter_id
             FROM verse_bounds vb
             JOIN bible.nodes n 
                 ON n.id BETWEEN vb.start_node AND vb.end_node
@@ -40,7 +42,7 @@ class Assembler:
             ORDER BY n.id;
         """,
         "get_book_tokenisable_nodes": """
-            SELECT id, node_text, book_code, translation_id
+            SELECT id, node_text, translation_id, book_code
             FROM bible.nodes n
             WHERE is_tokenisable = TRUE
                 AND book_map_id = %s
@@ -48,7 +50,7 @@ class Assembler:
         """,
         # Reconstruct from NODE -> ID
         "get_book_for_node_id": """
-            SELECT n.id, n.node_text, n.book_map_id
+            SELECT n.id, n.node_text, n.translation_id, n.book_map_id
             FROM bible.nodes n
             WHERE n.book_map_id = (
                 SELECT book_map_id
@@ -65,7 +67,7 @@ class Assembler:
                 WHERE start_node <= %s AND end_node >= %s
                 LIMIT 1
             )
-            SELECT n.id, n.node_text, cf.chapter_ref, cf.translation_id, cf.book_map_id
+            SELECT n.id, n.node_text, cf.chapter_ref, cf.translation_id, cf.book_map_id, cf.id
             FROM bible.nodes n 
             JOIN chapter_found cf
                 ON n.id BETWEEN cf.start_node AND cf.end_node
@@ -74,12 +76,12 @@ class Assembler:
         """,
         "get_verse_for_node_id": """
             WITH verse_found AS (
-                SELECT id, start_node, end_node, verse_ref, translation_id, book_map_id
+                SELECT id, start_node, end_node, verse_ref, translation_id, book_map_id, chapter_id
                 FROM bible.verseoccurences
                 WHERE start_node <= %s AND end_node >= %s
                 LIMIT 1
             )
-            SELECT n.id, n.node_text, vf.verse_ref, vf.translation_id, vf.book_map_id
+            SELECT n.id, n.node_text, vf.verse_ref, vf.translation_id, vf.book_map_id, vf.chapter_id, vf.id
             FROM bible.nodes n 
             JOIN verse_found vf
                 ON n.id BETWEEN vf.start_node AND vf.end_node
@@ -88,7 +90,7 @@ class Assembler:
         """,
         # Reconstruct from NODE -> CANONICAL PATH
         "get_book_for_node_path": """
-            SELECT n.id, n.node_text, n.book_map_id
+            SELECT n.id, n.node_text, n.translation_id, n.book_map_id
             FROM bible.nodes n
             WHERE n.book_map_id = (
                 SELECT book_map_id
@@ -105,13 +107,13 @@ class Assembler:
                 WHERE canonical_path = %s AND translation_id = %s
             ),
             chapter_found AS (
-                SELECT id, start_node, end_node, chapter_ref, translation_id, book_map_id
+                SELECT id, start_node, end_node, chapter_ref, book_map_id
                 FROM bible.chapteroccurences cf
                 JOIN node_found nf
                   ON nf.node_id BETWEEN cf.start_node AND cf.end_node
                 LIMIT 1
             )
-            SELECT n.id, n.node_text, cf.chapter_ref, cf.translation_id, cf.book_map_id
+            SELECT n.id, n.node_text, cf.chapter_ref, cf.book_map_id, cf.id
             FROM bible.nodes n 
             JOIN chapter_found cf
                 ON n.id BETWEEN cf.start_node AND cf.end_node
@@ -125,13 +127,13 @@ class Assembler:
                 WHERE canonical_path = %s AND translation_id = %s
             ),
             verse_found AS (
-                SELECT id, start_node, end_node, verse_ref, translation_id, book_map_id
+                SELECT id, start_node, end_node, verse_ref, book_map_id, chapter_id
                 FROM bible.verseoccurences vf
                 JOIN node_found nf
                   ON nf.node_id BETWEEN vf.start_node AND vf.end_node
                 LIMIT 1
             )
-            SELECT n.id, n.node_text, vf.verse_ref, vf.translation_id, vf.book_map_id
+            SELECT n.id, n.node_text, vf.verse_ref, vf.book_map_id, vf.chapter_id, vf.id
             FROM bible.nodes n 
             JOIN verse_found vf
                 ON n.id BETWEEN vf.start_node AND vf.end_node
@@ -152,11 +154,11 @@ class Assembler:
         """,
         "get_chapter_from_ref": """
             WITH chapter_bounds AS (
-                SELECT start_node, end_node, chapter_ref, translation_id, book_map_id
+                SELECT id, start_node, end_node, book_map_id
                 FROM bible.chapteroccurences
                 WHERE chapter_ref = %s AND translation_id = %s
             )
-            SELECT n.id, n.node_text, cb.chapter_ref, cb.translation_id, cb.book_map_id
+            SELECT n.id, n.node_text, cb.book_map_id, cb.id
             FROM chapter_bounds cb
             JOIN bible.nodes n 
                 ON n.id BETWEEN cb.start_node AND cb.end_node
@@ -165,11 +167,11 @@ class Assembler:
         """,
         "get_verse_from_ref": """
             WITH verse_bounds AS (
-                SELECT start_node, end_node, verse_ref, translation_id, book_map_id
+                SELECT id, start_node, end_node, book_map_id, chapter_id
                 FROM bible.verseoccurences
                 WHERE verse_ref = %s AND translation_id = %s
             )
-            SELECT n.id, n.node_text, vb.verse_ref, vb.translation_id, vb.book_map_id
+            SELECT n.id, n.node_text, vb.book_map_id, vb.chapter_id, vb.id
             FROM verse_bounds vb
             JOIN bible.nodes n 
                 ON n.id BETWEEN vb.start_node AND vb.end_node
@@ -189,18 +191,28 @@ class Assembler:
         """,
         # Get Book Details 
         "get_book_details": """
-            SELECT book_code, translation_id, short
+            SELECT book_code, short
             FROM bible.booktofile
             WHERE id = %s
         """,
+        "get_canonical_path_for_node": """
+            SELECT canonical_path
+            FROM bible.nodes
+            WHERE id = %s
+        """,
+        "get_node_id_for_canonical_path": """
+            SELECT id
+            FROM bible.nodes
+            WHERE canonical_path = %s AND translation_id = %s
+        """
     }
 
     def __init__(self, occurence_id=None, node_id=None, canonical_path=None, ref=None, scope=None, translation_id=None):
-        self.occurence_id = occurence_id
-        self.node_id = node_id
+        self.occurence_id   = occurence_id
+        self.node_id        = node_id
         self.canonical_path = canonical_path
-        self.ref = ref
-        self.scope = scope
+        self.ref            = ref
+        self.scope          = scope
 
         self.translation_id = translation_id
 
@@ -211,36 +223,49 @@ class Assembler:
         self.log = self.manager.create_log("assembler")
         self.log.set_logging_level(2)
 
-        self.nodes = [] # Represents all (tokenisable) nodes used to reconstruct context
-        self.text = ""
+        self.nodes  = [] # Represents all (tokenisable) nodes used to reconstruct context
+        self.text   = ""
 
         self.assembler_type = None
+        self.details = {
+            "type": None,               # What type of assembly
+            "scope": None,              # Scope it tried to reconstruct BOOK, CHAPTER, VERSE
+            "nodes": None,              # Tokenisable Nodes used in reconstruction
+            "text": None,               # Reconstructed Text from Tokenisable Nodes
+
+            "ref": None,                # Ref for scope e.g. GEN, GEN 1, GEN 1:1
+            "full_ref": None,           # Full Ref e.g. Genesis, Genesis 1, Genesis 1:1
+            "translation": None,        # Translation this came from
+
+            "book": None,               # bible.booktofil -> book_map_id 
+            "chapter": None,            # bible.chapteroccurences -> id
+            "verse": None,              # bible.verseoccurences -> id
+
+            "node": None,               # bible.nodes -> id
+            "node_path": None           # bible.nodes -> canonical_path
+        }
 
         self.assemble()
+    
+    def get_details(self, detail=None):
+        if detail == None:
+            return self.details
+        else:
+            found_detail = self.details.get(detail)
+            if found_detail:
+                return found_detail
+            else:
+                return None
+            
+    def set_full_reference(self, book_map_id, is_book=False):
+        book_details    = self.db.fetch_clean_one(self.SQL.get("get_book_details"), (book_map_id,))
+        book_code       = book_details[0]
+        book_name       = book_details[1]
 
-    def get_nodes(self):
-        return self.nodes
-    
-    def get_reconstructed_text(self):
-        return self.text
-    
-    def get_translation_id(self):
-        return self.translation_id
-    
-    def get_occurence_id(self):
-        return (self.scope, self.occurence_id)
-    
-    def get_node_id(self):
-        return self.node_id
-    
-    def get_canonical_path(self):
-        return (self.canonical_path)
-    
-    def get_scope(self):
-        return self.scope
-    
-    def get_assembler_type(self):
-        return self.assembler_type
+        if is_book:
+            self.details["ref"] = book_code
+
+        self.details["full_ref"] = book_name
     
     def assemble(self):
         # Attempt to automatically determine what reconstruction method to use
@@ -267,68 +292,244 @@ class Assembler:
         else:
             self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. No Scope or Ref Defined!", "ASSEMBLER", "ERROR")
             # raise ValueError("Insufficient parameters provided for reconstruction.")
+
+        self.details["type"]    = self.assembler_type
+        self.details["scope"]   = self.scope
+        self.details["text"]    = self.text
+        self.details["nodes"]   = self.nodes
         
         # Log the resulted reconstruction - if it was successful (no error flagged)
         self.log.log_to_file(f"Reconstruction: [\n{self.text}\n]", "OCCURENCE", "DEBUG")
     
     def reconstruct_occurence(self, scope, occurence_id):
-        query = ""
+        valid_nodes = None
         match scope:
             case "book":
-                query = self.SQL.get("get_book_tokenisable_nodes")
-            case "chapter":
-                query = self.SQL.get("get_chapter_tokenisable_nodes")
-            case "verse":
-                query = self.SQL.get("get_verse_tokenisable_nodes")
+                book_map_id = occurence_id
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_book_tokenisable_nodes"), 
+                    (book_map_id,)
+                )
+                sample_node = valid_nodes[0]
 
-        tokenisable_nodes_results = self.db.fetch_all(query, (occurence_id,))
-        self.log.log_to_file(f"Tokens for Reconstruction: {tokenisable_nodes_results}", "OCCURENCE", "DEBUG")
-        for node in tokenisable_nodes_results:
+                translation_id      = sample_node[2]
+                book_code           = sample_node[3]
+                
+                self.details["ref"]         = book_code
+                self.details["translation"] = translation_id
+
+                self.details["book"]        = book_map_id
+
+                self.set_full_reference(book_map_id)
+                        
+            case "chapter":
+                chapter_occurence_id = occurence_id
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_chapter_tokenisable_nodes"), 
+                    (occurence_id,)
+                )
+                sample_node = valid_nodes[0]
+
+                chapter_ref         = sample_node[2]
+                translation_id      = sample_node[3]
+                book_map_id         = sample_node[4]
+                
+                self.details["ref"]         = chapter_ref
+                self.details["translation"] = translation_id
+
+                self.details["book"]        = book_map_id
+                self.details["chapter"]     = chapter_occurence_id
+
+                self.set_full_reference(book_map_id)
+                self.details["full_ref"] += " " + chapter_ref.split(" ")[1]
+
+            case "verse":
+                verse_occurence_id = occurence_id
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_verse_tokenisable_nodes"), 
+                    (occurence_id,)
+                )
+                sample_node = valid_nodes[0]
+
+                verse_ref           = sample_node[2]
+                translation_id      = sample_node[3]
+                book_map_id         = sample_node[4]
+                chapter_occurence_id= sample_node[5]
+                
+                self.details["ref"]         = verse_ref
+                self.details["translation"] = translation_id
+
+                self.details["book"]        = book_map_id
+                self.details["chapter"]     = chapter_occurence_id
+                self.details["verse"]       = verse_occurence_id
+
+                self.set_full_reference(book_map_id)
+                self.details["full_ref"] += " " + verse_ref.split(" ")[1]
+        
+        self.log.log_to_file(f"Tokens for Reconstruction: {valid_nodes}", "OCCURENCE", "DEBUG")
+        for node in valid_nodes:
             node_id = node[0]
             node_text = node [1]
             self.nodes.append(node_id)
             self.text += node_text
 
     def reconstruct_from_node_id(self, scope, node_id):
-        query = ""
+        valid_nodes = None
         match scope:
             case "book":
-                query = self.SQL.get("get_book_for_node_id")
-                self.db.execute(query, (node_id,))
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_book_for_node_id"), 
+                    (node_id,)
+                )
+                sample_node = valid_nodes[0]
+
+                translation_id      = sample_node[2]
+                book_map_id         = sample_node[3]
+                
+                self.details["translation"] = translation_id
+                
+                self.details["book"]        = book_map_id
+
+                self.details["node"]        = node_id
+                self.details["node_path"]   = self.db.fetch_clean_one(self.SQL.get("get_canonical_path_for_node"), (node_id,))
+
+                self.set_full_reference(book_map_id, True)
+
             case "chapter":
-                query = self.SQL.get("get_chapter_for_node_id")
-                self.db.execute(query, (node_id,node_id))
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_chapter_for_node_id"), 
+                    (node_id, node_id)
+                )
+                sample_node = valid_nodes[0]
+
+                chapter_ref         = sample_node[2]
+                translation_id      = sample_node[3]
+                book_map_id         = sample_node[4]
+                chapter_occurence_id= sample_node[5]
+
+                self.details["ref"]         = chapter_ref
+                self.details["translation"] = translation_id
+
+                self.details["book"]        = book_map_id
+                self.details["chapter"]     = chapter_occurence_id
+
+                self.details["node"]        = node_id
+                self.details["node_path"]   = self.db.fetch_clean_one(self.SQL.get("get_canonical_path_for_node"), (node_id,))
+
+                self.set_full_reference(book_map_id)
+                self.details["full_ref"] += " " + chapter_ref.split(" ")[1]
+
             case "verse":
-                query = self.SQL.get("get_verse_for_node_id")
-                self.db.execute(query, (node_id,node_id))
-        
-        tokenisable_nodes_results = self.db.get_cursor().fetchall()
-        self.log.log_to_file(f"Tokens for Reconstruction: {tokenisable_nodes_results}", "NODE_ID", "DEBUG")
-        for node in tokenisable_nodes_results:
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_verse_for_node_id"), 
+                    (node_id, node_id)
+                )
+                sample_node = valid_nodes[0]
+
+                verse_ref           = sample_node[2]
+                translation_id      = sample_node[3]
+                book_map_id         = sample_node[4]
+                chapter_occurence_id= sample_node[5]
+                verse_occurence_id  = sample_node[6]
+                
+                self.details["ref"]         = verse_ref
+                self.details["translation"] = translation_id
+
+                self.details["book"]        = book_map_id
+                self.details["chapter"]     = chapter_occurence_id
+                self.details["verse"]       = verse_occurence_id
+
+                self.details["node"]        = node_id
+                self.details["node_path"]   = self.db.fetch_clean_one(self.SQL.get("get_canonical_path_for_node"), (node_id,))
+
+                self.set_full_reference(book_map_id)
+                self.details["full_ref"] += " " + verse_ref.split(" ")[1]
+
+        self.log.log_to_file(f"Tokens for Reconstruction: {valid_nodes}", "NODE_ID", "DEBUG")
+        for node in valid_nodes:
             node_id = node[0]
             node_text = node [1]
             self.nodes.append(node_id)
             self.text += node_text
 
     def reconstruct_from_node_path(self, scope, translation_id, canonical_path):
-        query = ""
+        valid_nodes = None
         match scope:
             case "book":
-                query = self.SQL.get("get_book_for_node_path")
-            case "chapter":
-                query = self.SQL.get("get_chapter_for_node_path")
-            case "verse":
-                query = self.SQL.get("get_verse_for_node_path")
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_book_for_node_path"), 
+                    (canonical_path,)
+                )
+                sample_node = valid_nodes[0]
 
-        tokenisable_nodes_results = self.db.fetch_all(query, (canonical_path,translation_id))
-        self.log.log_to_file(f"Tokens for Reconstruction: {tokenisable_nodes_results}", "CANONICAL_PATH", "DEBUG")
-        for node in tokenisable_nodes_results:
+                translation_id      = sample_node[2]
+                book_map_id         = sample_node[3]
+                
+                self.details["translation"] = translation_id
+                
+                self.details["book"]        = book_map_id
+
+                self.details["node"]        = self.db.fetch_clean_one(self.SQL.get("get_node_id_for_canonical_path"), (canonical_path, translation_id))
+                self.details["node_path"]   = canonical_path
+
+                self.set_full_reference(book_map_id, True)
+                
+            case "chapter":
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_chapter_for_node_path"), 
+                    (canonical_path,)
+                )
+                sample_node = valid_nodes[0]
+
+                chapter_ref         = sample_node[2]
+                book_map_id         = sample_node[3]
+                chapter_occurence_id= sample_node[4]
+
+                self.details["ref"]         = chapter_ref
+                self.details["translation"] = translation_id
+
+                self.details["book"]        = book_map_id
+                self.details["chapter"]     = chapter_occurence_id
+
+                self.details["node"]        = self.db.fetch_clean_one(self.SQL.get("get_node_id_for_canonical_path"), (canonical_path, translation_id))
+                self.details["node_path"]   = canonical_path
+
+                self.set_full_reference(book_map_id)
+                self.details["full_ref"] += " " + chapter_ref.split(" ")[1]
+
+            case "verse":
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_verse_for_node_path"), 
+                    (canonical_path,)
+                )
+                sample_node = valid_nodes[0]
+
+                verse_ref           = sample_node[2]
+                book_map_id         = sample_node[3]
+                chapter_occurence_id= sample_node[4]
+                verse_occurence_id  = sample_node[5]
+
+                self.details["ref"]         = verse_ref
+                self.details["translation"] = translation_id
+
+                self.details["book"]        = book_map_id
+                self.details["chapter"]     = chapter_occurence_id
+                self.details["verse"]       = verse_occurence_id
+
+                self.details["node"]        = self.db.fetch_clean_one(self.SQL.get("get_node_id_for_canonical_path"), (canonical_path, translation_id))
+                self.details["node_path"]   = canonical_path
+
+                self.set_full_reference(book_map_id)
+                self.details["full_ref"] += " " + verse_ref.split(" ")[1]
+
+        self.log.log_to_file(f"Tokens for Reconstruction: {valid_nodes}", "CANONICAL_PATH", "DEBUG")
+        for node in valid_nodes:
             node_id = node[0]
             node_text = node [1]
             self.nodes.append(node_id)
             self.text += node_text
 
-    def reconstruct_from_ref(self, translation_id, ref):
+    def reconstruct_from_ref(self, translation_id, ref:str):
         # Find if GEN, GEN 1, GEN 1:1 => Based on that change query
         scope = None
         if len(ref.split(" ")) == 1: # No space so book
@@ -337,19 +538,67 @@ class Assembler:
             scope = "chapter"
         else:
             scope = "verse"
+        self.scope = scope
 
-        query = ""
+        valid_nodes = None
         match scope:
             case "book":
-                query = self.SQL.get("get_book_from_ref")
-            case "chapter":
-                query = self.SQL.get("get_chapter_from_ref")
-            case "verse":
-                query = self.SQL.get("get_verse_from_ref")
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_book_from_ref"), 
+                    (ref, translation_id)
+                )
+                sample_node = valid_nodes[0]
 
-        tokenisable_nodes_results = self.db.fetch_all(query, (ref, translation_id))
-        self.log.log_to_file(f"Tokens for Reconstruction: f{tokenisable_nodes_results}", "REF", "DEBUG")
-        for node in tokenisable_nodes_results:
+                book_map_id         = sample_node[2]
+                
+                self.details["translation"] = translation_id
+                self.details["book"]        = book_map_id
+
+                self.set_full_reference(book_map_id, True)
+
+            case "chapter":
+                chapter_ref = ref
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_chapter_from_ref"), 
+                    (ref, translation_id)
+                )
+                sample_node = valid_nodes[0]
+
+                book_map_id         = sample_node[2]
+                chapter_occurence_id= sample_node[3]
+
+                self.details["ref"]         = chapter_ref
+                
+                self.details["translation"] = translation_id
+                self.details["book"]        = book_map_id
+                self.details["chapter"]     = chapter_occurence_id
+
+                self.set_full_reference(book_map_id)
+                self.details["full_ref"] += " " + chapter_ref.split(" ")[1]
+            case "verse":
+                verse_ref = ref
+                valid_nodes = self.db.fetch_all(
+                    self.SQL.get("get_verse_from_ref"), 
+                    (ref, translation_id)
+                )
+                sample_node = valid_nodes[0]
+
+                book_map_id         = sample_node[2]
+                chapter_occurence_id= sample_node[3]
+                verse_occurence_id  = sample_node[4]
+
+                self.details["ref"]         = verse_ref
+                self.details["translation"] = translation_id
+
+                self.details["book"]        = book_map_id
+                self.details["chapter"]     = chapter_occurence_id
+                self.details["verse"]       = verse_occurence_id
+
+                self.set_full_reference(book_map_id)
+                self.details["full_ref"] += " " + verse_ref.split(" ")[1]
+
+        self.log.log_to_file(f"Tokens for Reconstruction: f{valid_nodes}", "REF", "DEBUG")
+        for node in valid_nodes:
             node_id = node[0]
             node_text = node [1]
             self.nodes.append(node_id)
@@ -359,5 +608,4 @@ class Assembler:
 
 if __name__ == "__main__":
     chapter = Assembler(scope="chapter", occurence_id=1)
-    print(chapter.get_nodes())
-    print(chapter.get_reconstructed_text())
+    print(chapter.get_details())
