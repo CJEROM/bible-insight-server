@@ -207,7 +207,7 @@ class Assembler:
         """
     }
 
-    def __init__(self, occurence_id=None, node_id=None, canonical_path=None, ref=None, scope=None, translation_id=None):
+    def __init__(self, manager: ManagerHandler = None, occurence_id=None, node_id=None, canonical_path=None, ref=None, scope=None, translation_id=None):
         self.occurence_id   = occurence_id
         self.node_id        = node_id
         self.canonical_path = canonical_path
@@ -216,8 +216,10 @@ class Assembler:
 
         self.translation_id = translation_id
 
-        self.manager = ManagerHandler()
-        self.manager.get_obj().set_default_bucket("bible-dbl-raw")
+        self.manager = manager
+        if manager == None:
+            self.manager = ManagerHandler()
+            self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
         self.db = self.manager.get_db()
         self.log = self.manager.create_log("assembler")
