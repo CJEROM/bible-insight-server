@@ -276,12 +276,14 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     parent_node_id          INTEGER, -- Can be null due to usx root node
     index_in_parent         INTEGER,
     book_map_id             INTEGER,
+    translation_id          INTEGER,
     canonical_path          TEXT,
     is_tokenisable          BOOLEAN,
     chapter_start_offset    INTEGER,
     chapter_end_offset      INTEGER,
     FOREIGN KEY (parent_node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE,
     FOREIGN KEY (strong) REFERENCES bible.strongs (code) ON DELETE SET NULL
 );
@@ -311,6 +313,7 @@ CREATE TABLE IF NOT EXISTS bible.chapters (
 CREATE TABLE IF NOT EXISTS bible.chapteroccurences (
     id                      SERIAL PRIMARY KEY,
     chapter_ref             TEXT,
+    translation_id          INTEGER,
     file_id            		INTEGER, -- audio_file
     book_map_id             INTEGER, -- usx_file
     start_node              INTEGER, -- usx_file
@@ -319,6 +322,7 @@ CREATE TABLE IF NOT EXISTS bible.chapteroccurences (
     FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref),
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id),
     FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE
 );
@@ -360,9 +364,13 @@ CREATE TABLE IF NOT EXISTS bible.verseoccurences (
     id                      SERIAL PRIMARY KEY,
     verse_ref               TEXT,
     chapter_id              INTEGER, --Chapter Occurence this is under
+    book_map_id             INTEGER,
+    translation_id          INTEGER,
     start_node              INTEGER,
     end_node                INTEGER,
     FOREIGN KEY (chapter_id) REFERENCES bible.chapteroccurences (id) ON DELETE CASCADE,
+    FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE

@@ -2,17 +2,21 @@ from bs4 import BeautifulSoup
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from translation import Translation
-    from book import Book
+    from ingestor.book import Book
+    from utilities.logmanager import LogManager
 
-from paragraph import Paragraph
-from verse import Verse
-from translationnote import TranslationNote
+from ingestor.paragraph import Paragraph
+from ingestor.verse import Verse
+from ingestor.translationnote import TranslationNote
 
 class Chapter:
-    def __init__(self, this_translation: "Translation", this_book: "Book", chapter_ref, chapter_text, db_conn):
-        self.this_translation = this_translation
-        self.this_book =        this_book
+    def __init__(self, this_book: "Book", chapter_ref, chapter_text, log: "LogManager"):
+        self.this_book =            this_book
+        self.this_translation =     self.this_book.get_this_translation()
+
+        self.log = log
+        self.manager = self.log.get_manager_handler()
+        self.db = self.manager.get_db()
 
         self.language_id =      self.this_translation.get_language_id()
         self.translation_id =   self.this_translation.get_translation_id()
@@ -24,38 +28,36 @@ class Chapter:
         self.chapter_xml =      BeautifulSoup(chapter_text, "xml")
 
         self.bible_structure =  self.this_translation.get_bible_structure_info()
-
-        # Adds a database connection
-        self.conn =             db_conn
-        self.cur =              self.conn.cursor()
         
         self.createChapter()
 
         all_chapter_nodes = self.this_book.get_book_nodes().get_chapters().get(self.chapter_ref)
         if all_chapter_nodes == None:
-            self.this_translation.log_ingestion_activity(f"Chapter {chapter_ref} invalid, skipping...", f"CHAPTER: {self.chapter_ref}", "DEBUG")
+            self.log.log_to_file(f"Chapter {chapter_ref} invalid, skipping...", f"CHAPTER: {self.chapter_ref}", "DEBUG")
             return
         
         self.start_node = all_chapter_nodes["sid"]
         self.end_node = all_chapter_nodes["eid"]
 
         # Create a Chapter Occurence
-        self.cur.execute("""
-            INSERT INTO bible.chapteroccurences (chapter_ref, book_map_id, start_node, end_node) 
-            VALUES (%s, %s, %s, %s)
+        self.chapter_occurence_id = self.db.fetch_clean_one("""
+            INSERT INTO bible.chapteroccurences (chapter_ref, book_map_id, translation_id, start_node, end_node) 
+            VALUES (%s, %s, %s, %s, %s)
             RETURNING id;
-        """, (self.chapter_ref, self.book_map_id, self.start_node, self.end_node))
-        self.chapter_occurence_id = self.cur.fetchone()[0]
+        """, (self.chapter_ref, self.book_map_id, self.translation_id, self.start_node, self.end_node))
 
-        self.this_translation.log_ingestion_activity(f"Created Chapter Occurence [ID: {self.chapter_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.end_node}]", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
+        self.log.log_to_file(f"Created Chapter Occurence [ID: {self.chapter_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.end_node}]", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
 
-        self.conn.commit()
+        self.db.commit()
 
         self.last_verse =       self.createVerseOccurences()
         self.createParagraphs()
         self.createTranslationNotes()
 
-        self.conn.commit()
+        self.db.commit()
+
+    def get_this_book(self):
+        return self.this_book
 
     def get_chapter_ref(self):
         return self.chapter_ref
@@ -71,20 +73,19 @@ class Chapter:
 
     # This is to validate the addition of non standard chapters outside the normal 1189 if there are any for a particular translation
     def createChapter(self):
-        self.cur.execute("""
+        chapter_found = self.db.fetch_one("""
             SELECT chapter_ref FROM bible.chapters WHERE chapter_ref = %s
         """, (self.chapter_ref,))
-        chapter_found = self.cur.fetchone()
 
         if chapter_found == None:
             book_code, chapter_num = self.chapter_ref.split(" ")
-            self.cur.execute("""
+            self.db.execute("""
                 INSERT INTO bible.chapters (book_code, chapter_num, chapter_ref, standard) 
                 VALUES (%s, %s, %s, %s);
             """, (book_code, int(chapter_num), self.chapter_ref, False))
             # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.chapteroccurences",))
             print(f"     Non-Standard Chapter Created: {self.chapter_ref}")
-            self.this_translation.log_ingestion_activity(f"Created Non-Standard Chapter: {self.chapter_ref}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
+            self.log.log_to_file(f"Created Non-Standard Chapter: {self.chapter_ref}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
 
     def createParagraphs(self):
         additions = 0
@@ -93,19 +94,19 @@ class Chapter:
         para_node_ids = self.this_book.get_book_nodes().get_paras().get(self.chapter_ref)
 
         if all_paragraphs == None or para_node_ids == None:
-            self.this_translation.log_ingestion_activity(f"No Paragraphs for this Chapter!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
+            self.log.log_to_file(f"No Paragraphs for this Chapter!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
             return
 
-        self.this_translation.log_ingestion_activity(f"Creating [{len(para_node_ids)}] Paragraphs ...", f"CHAPTER: {self.chapter_ref}", "INFO")
-        self.this_translation.log_ingestion_activity(f"Creating With Paragraph Node Ids => {para_node_ids}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
+        self.log.log_to_file(f"Creating [{len(para_node_ids)}] Paragraphs ...", f"CHAPTER: {self.chapter_ref}", "INFO")
+        self.log.log_to_file(f"Creating With Paragraph Node Ids => {para_node_ids}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
 
         for i, (para) in enumerate(all_paragraphs):
-            Paragraph(self.this_translation, self.this_book, self, para_node_ids[i], para, self.conn)
+            Paragraph(self, para_node_ids[i], para, self.log)
             additions += 1
         
         if additions > 0:
             # print(f"    [{additions}] Paragraphs added to database")
-            self.this_translation.log_ingestion_activity(f"Created [{additions}] out of [{len(para_node_ids)}] Paragraphs!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
+            self.log.log_to_file(f"Created [{additions}] out of [{len(para_node_ids)}] Paragraphs!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
             pass
 
     def createVerseOccurences(self):
@@ -114,17 +115,17 @@ class Chapter:
 
         # Translation Notes aren't guaranteed to be created, so don't create them if they don't exist
         if len(all_verses) == None:
-            self.this_translation.log_ingestion_activity(f"No Verse Occurences for this Chapter!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
+            self.log.log_to_file(f"No Verse Occurences for this Chapter!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
             return
 
-        self.this_translation.log_ingestion_activity(f"Creating [{len(all_verses)}] Verse Occurences ...", f"CHAPTER: {self.chapter_ref}", "INFO")
+        self.log.log_to_file(f"Creating [{len(all_verses)}] Verse Occurences ...", f"CHAPTER: {self.chapter_ref}", "INFO")
 
         latest_ref = None
 
         for verse in all_verses:
             verse_ref = verse.get("sid")
             if verse_ref:
-                Verse(self.this_translation, self.this_book, self, verse_ref, self.conn)
+                Verse(self, verse_ref, self.log)
                 additions += 1
 
             latest_ref = verse_ref
@@ -134,7 +135,7 @@ class Chapter:
             pass
         return latest_ref # how many verses have been created for this translation
 
-    def standardise_dash(self, ref):
+    def standardise_dash(self, ref: str):
         new_ref = ref
         dash_formats = ["–", "—", "−", "–"] # Different dashes used
         for dash in dash_formats:
@@ -148,12 +149,12 @@ class Chapter:
 
         # Translation Notes aren't guaranteed to be created, so don't create them if they don't exist
         if all_note_node_ids == None:
-            self.this_translation.log_ingestion_activity(f"No Translation Notes for this Chapter!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
+            self.log.log_to_file(f"No Translation Notes for this Chapter!", f"CHAPTER: {self.chapter_ref}", "DEBUG")
             return
         
-        self.this_translation.log_ingestion_activity(f"Creating [{len(all_note_node_ids)}] Translation Notes ...", f"CHAPTER: {self.chapter_ref}", "INFO")
-        self.this_translation.log_ingestion_activity(f"Creating Translation Notes Node Ids => {all_note_node_ids}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
+        self.log.log_to_file(f"Creating [{len(all_note_node_ids)}] Translation Notes ...", f"CHAPTER: {self.chapter_ref}", "INFO")
+        self.log.log_to_file(f"Creating Translation Notes Node Ids => {all_note_node_ids}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
 
         # Go through chapter and grab all cross references and footnotes, and write to database
         for i, this_note in enumerate(self.chapter_xml.find_all("note")):
-            TranslationNote(self.this_translation, self.this_book, self, this_note, all_note_node_ids[i], self.conn)
+            TranslationNote(self, this_note, all_note_node_ids[i], self.log)
