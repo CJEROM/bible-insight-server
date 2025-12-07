@@ -386,7 +386,7 @@ class Translation:
                     """, (book, self.translation_id, file_id, short_name, long_name))
 
                     Book(self, found_book, book_map_id, file_id, self.obj.stream_file(object_name), self.log)   
-                    self.log.increment_progress(found_book)                 
+                    self.log.set_progress(found_book, i+1)                 
                 if self.medium == "audio":
                     self.log.increment_progress(chapter_ref, increment=0)
                     # Audio and eventually video don't have any connection but in serving the files themselves for consumption
@@ -399,7 +399,7 @@ class Translation:
                     self.db.execute("""
                         INSERT INTO bible.chapteroccurences (chapter_ref, file_id, book_to_file_id) VALUES (%s, %s, %s);
                     """, (chapter_ref, file_id, book_map_id))
-                    self.log.increment_progress(chapter_ref)
+                    self.log.set_progress(chapter_ref, i+1)
 
         self.db.commit()
         
