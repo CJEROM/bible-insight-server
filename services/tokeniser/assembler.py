@@ -95,7 +95,7 @@ class Assembler:
             WHERE n.book_map_id = (
                 SELECT book_map_id
                 FROM book.nodes
-                WHERE canonical_path = %s AND translation_id = %s
+                WHERE canonical_path LIKE %s AND translation_id = %s
             )
             AND n.is_tokenisable = TRUE
             ORDER BY n.id;
@@ -104,7 +104,7 @@ class Assembler:
             WITH node_found AS (
                 SELECT id AS node_id
                 FROM bible.nodes 
-                WHERE canonical_path = %s AND translation_id = %s
+                WHERE canonical_path LIKE %s AND translation_id = %s
             ),
             chapter_found AS (
                 SELECT id, start_node, end_node, chapter_ref, book_map_id
@@ -124,7 +124,7 @@ class Assembler:
             WITH node_found AS (
                 SELECT id AS node_id
                 FROM bible.nodes 
-                WHERE canonical_path = %s AND translation_id = %s
+                WHERE canonical_path LIKE %s AND translation_id = %s
             ),
             verse_found AS (
                 SELECT id, start_node, end_node, verse_ref, book_map_id, chapter_id
@@ -459,7 +459,7 @@ class Assembler:
             case "book":
                 valid_nodes = self.db.fetch_all(
                     self.SQL.get("get_book_for_node_path"), 
-                    (canonical_path,)
+                    (canonical_path, translation_id)
                 )
                 sample_node = valid_nodes[0]
 
@@ -478,7 +478,7 @@ class Assembler:
             case "chapter":
                 valid_nodes = self.db.fetch_all(
                     self.SQL.get("get_chapter_for_node_path"), 
-                    (canonical_path,)
+                    (canonical_path, translation_id)
                 )
                 sample_node = valid_nodes[0]
 
@@ -501,7 +501,7 @@ class Assembler:
             case "verse":
                 valid_nodes = self.db.fetch_all(
                     self.SQL.get("get_verse_for_node_path"), 
-                    (canonical_path,)
+                    (canonical_path, translation_id)
                 )
                 sample_node = valid_nodes[0]
 
