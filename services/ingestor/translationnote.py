@@ -313,7 +313,7 @@ class TranslationNote:
         this_ref = [None] * 5
 
         if destination_type == "verse":
-            Verse(self.this_translation, self.this_book, self.this_chapter, verse_ref=destination_ref, db_conn=self.conn, is_special_case=True)
+            Verse(self.this_chapter, verse_ref=destination_ref, log=self.log, is_special_case=True)
 
         this_ref[0] = node_id # node_id
         # this_ref[1] = # from_verse_ref
