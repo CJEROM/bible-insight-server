@@ -230,13 +230,13 @@ class Assembler:
                 self.reconstruct_from_node_path(self.scope, self.translation_id, self.canonical_path)
             else:
                 self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. Scope Defined, but no occurence, node_id or canonical_path!", "ASSEMBLER", "ERROR")
-                raise ValueError("Insufficient parameters provided for reconstruction.")
+                # raise ValueError("Insufficient parameters provided for reconstruction.")
         elif self.ref != None:
             self.log.log_to_file("Assembling through Ref", "ASSEMBLER", "INFO")
             self.reconstruct_from_ref(self.translation_id, self.ref)
         else:
             self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. No Scope or Ref Defined!", "ASSEMBLER", "ERROR")
-            raise ValueError("Insufficient parameters provided for reconstruction.")
+            # raise ValueError("Insufficient parameters provided for reconstruction.")
         
         # Log the resulted reconstruction - if it was successful (no error flagged)
         self.log.log_to_file(f"Reconstruction: [\n{self.text}\n]", "OCCURENCE", "DEBUG")
@@ -320,6 +320,6 @@ class Assembler:
     # Perhaps function to help build on nodes, to display strongs if available?
 
 if __name__ == "__main__":
-    chapter = Assembler("book", 1)
+    chapter = Assembler(scope="chapter", occurence_id=1)
     print(chapter.get_nodes())
     print(chapter.get_reconstructed_text())
