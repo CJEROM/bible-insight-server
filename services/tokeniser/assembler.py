@@ -227,22 +227,23 @@ class Assembler:
         self.text   = ""
 
         self.assembler_type = None
+        # Commented out details init, so that only return what is relevant (no empty details returned on request)
         self.details = {
-            "type": None,               # What type of assembly
-            "scope": None,              # Scope it tried to reconstruct BOOK, CHAPTER, VERSE
-            "nodes": None,              # Tokenisable Nodes used in reconstruction
-            "text": None,               # Reconstructed Text from Tokenisable Nodes
+            # "type": None,               # What type of assembly
+            # "scope": None,              # Scope it tried to reconstruct BOOK, CHAPTER, VERSE
+            # "nodes": None,              # Tokenisable Nodes used in reconstruction
+            # "text": None,               # Reconstructed Text from Tokenisable Nodes
 
-            "ref": None,                # Ref for scope e.g. GEN, GEN 1, GEN 1:1
-            "full_ref": None,           # Full Ref e.g. Genesis, Genesis 1, Genesis 1:1
-            "translation": None,        # Translation this came from
+            # "ref": None,                # Ref for scope e.g. GEN, GEN 1, GEN 1:1
+            # "full_ref": None,           # Full Ref e.g. Genesis, Genesis 1, Genesis 1:1
+            # "translation": None,        # Translation this came from
 
-            "book": None,               # bible.booktofil -> book_map_id 
-            "chapter": None,            # bible.chapteroccurences -> id
-            "verse": None,              # bible.verseoccurences -> id
+            # "book": None,               # bible.booktofil -> book_map_id 
+            # "chapter": None,            # bible.chapteroccurences -> id
+            # "verse": None,              # bible.verseoccurences -> id
 
-            "node": None,               # bible.nodes -> id
-            "node_path": None           # bible.nodes -> canonical_path
+            # "node": None,               # bible.nodes -> id
+            # "node_path": None           # bible.nodes -> canonical_path
         }
 
         self.assemble()
@@ -575,6 +576,7 @@ class Assembler:
 
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + chapter_ref.split(" ")[1]
+                
             case "verse":
                 verse_ref = ref
                 valid_nodes = self.db.fetch_all(
