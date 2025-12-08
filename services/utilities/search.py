@@ -5,7 +5,7 @@ class Search():
     SQL = {
 
     }
-    
+
     def __init__(self):
         self.manager = ManagerHandler()
         self.manager.get_obj().set_default_bucket("bible-dbl-raw")
@@ -47,6 +47,9 @@ class Search():
         pass
 
     def search_entities(self, entity_id):
+        pass
+
+    def compare_translations(self, ref):
         pass
 
 
