@@ -3,6 +3,23 @@ from tokeniser.assembler import Assembler
 
 class Search():
     SQL = {
+        "get_languages": """
+            SELECT id, iso, name, namelocal, scriptdirection 
+            FROM bible.languages;
+        """,
+        "get_translations_info": """
+            SELECT dbl_id, medium, name, namelocal, abbreviationlocal, language_id
+            FROM bible.translationinfo;
+        """,
+        "get_translations": """
+            SELECT dbl_id, agreement_id
+            FROM bible.translations;
+        """,
+        "get_books": """
+            SELECT id, book_code, translation_id, file_id, short
+            FROM bible.booktofile;
+        """,
+        #
         "get_word_nodes": """
             SELECT id
             FROM bible.nodes
@@ -21,14 +38,20 @@ class Search():
         self.log.set_logging_level(2)
 
         # For setting context that we want to search in.
-        self.language_id    = None
-        self.translation_id = 1
-        self.scope          = "verse" # Book, Chapter, Verse
-        self.book           = None
-        self.chapter        = None
-        self.verse          = None
+        self.languages          = {}
+        self.translations       = {}
+        self.scope              = "verse" # Book, Chapter, Verse
+        self.books              = {}
+
+        self.translation_id     = 1
 
         self.results = []
+
+    def init_filters(self):
+        languages       = self.db.fetch_all(self.SQL.get("get_languages"))
+        translationinfo = self.db.fetch_all(self.SQL.get("get_translations_info"))
+        translations    = self.db.fetch_all(self.SQL.get("get_translations"))
+        books           = self.db.fetch_all(self.SQL.get("get_books"))
 
     def set_translation_context(self, translation_id=None):
         self.translation_id = translation_id
