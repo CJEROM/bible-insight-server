@@ -66,7 +66,9 @@ class Search():
         for node_id in result_nodes:
             new_result = Assembler(manager=self.manager, scope=self.scope, node_id=node_id, translation_id=self.translation_id)
             final_results.append(new_result)
-            print(new_result.get_details())
+            print(new_result.get_details("full_ref"))
+            print(new_result.get_details("text"))
+            print()
 
     def search_strongs(self, strongs):
         pass
