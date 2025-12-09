@@ -1,3 +1,7 @@
+from pathlib import Path
+import os
+import csv
+
 from manager.managerhandler import ManagerHandler
 from tokeniser.assembler import Assembler
 
@@ -63,12 +67,14 @@ class Search():
     def search_word(self, word):
         result_nodes = self.db.fetch_all(self.SQL.get("get_word_nodes"), (f"%{word}%", self.translation_id))
         final_results = []
+        csv_results = [["ref", "text"]]
         for node_id in result_nodes:
             new_result = Assembler(manager=self.manager, scope=self.scope, node_id=node_id, translation_id=self.translation_id)
             final_results.append(new_result)
-            print(new_result.get_details("full_ref"))
-            print(new_result.get_details("text"))
-            print()
+            # print(new_result.get_details("full_ref"))
+            # print(new_result.get_details("text"))
+            csv_results.append([new_result.get_details("full_ref"), new_result.get_details("text")])
+        self.create_csv_file(f"{word}", csv_results)
 
     def search_strongs(self, strongs):
         pass
@@ -88,6 +94,18 @@ class Search():
     def compare_translations(self, ref):
         pass
 
+    def create_csv_file(self, file_name, contents):
+        file_folder = Path(__file__).parents[2] / "logs" / "csv"
+        file_path = file_folder / f"{file_name}.tsv"
+
+        try:
+            os.makedirs(file_folder)
+        except Exception as e:
+            pass
+
+        with open(file_path, 'w', newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, delimiter="\t")
+            writer.writerows(contents)
 
 if __name__ == "__main__":
     new_search = Search()
