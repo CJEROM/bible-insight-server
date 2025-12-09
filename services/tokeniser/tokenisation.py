@@ -112,7 +112,7 @@ class Tokenisation:
 
         self.reconstruct_translation_chapters()
 
-        self.log.log_to_file(f"Finished Constructing Tokens: {self.language_id}", "INIT", "INFO")
+        self.log.log_to_file(f"COMPLETED Translation Re Construction!", "INIT", "INFO")
 
         self.create_tokens()
 
