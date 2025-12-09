@@ -24,6 +24,11 @@ class ManagerHandler:
         log_manager = LogManager(manager=self, log_file_name=file_name)
         self.logs[file_name] = log_manager
         return log_manager
+    
+    def create_log_in_folder(self, file_name, folders:list):
+        log_manager = LogManager(manager=self, log_file_name=file_name, default_log_folder=folders)
+        self.logs[file_name] = log_manager
+        return log_manager
 
     def return_log(self, file_name):
         requested_log = self.logs.get(file_name)
