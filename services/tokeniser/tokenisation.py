@@ -353,7 +353,8 @@ if __name__ == "__main__":
     manager.get_obj().set_default_bucket("bible-dbl-raw")
 
     if is_test:
-        Tokenisation(1, manager)
+        # Tokenisation(1, manager) # Basic    English
+        Tokenisation(7, manager) # Strongs  English
     else:
         db = manager.get_db()
 
