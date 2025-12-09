@@ -11,17 +11,39 @@ class Search():
             SELECT id, iso, name, namelocal, scriptdirection 
             FROM bible.languages;
         """,
-        "get_translations_info": """
-            SELECT dbl_id, medium, name, namelocal, abbreviationlocal, language_id
-            FROM bible.translationinfo;
-        """,
         "get_translations": """
-            SELECT dbl_id, agreement_id
-            FROM bible.translations;
+            SELECT DISTINCT ON (t.dbl_id)
+                t.id,
+                ti.language_id,
+                ti.medium,
+                ti.name,
+                ti.namelocal,
+                ti.abbreviationlocal,
+                da.copyright,
+                da.promotion
+            FROM bible.translations t
+            JOIN bible.translationinfo ti
+            ON t.dbl_id = ti.dbl_id
+            JOIN bible.dblagreements da
+            ON t.agreement_id = da.id
+            WHERE da.enabled = TRUE
+            ORDER BY
+                t.dbl_id,
+                t.revision DESC,   -- highest revision first
+                t.id ASC;          -- tie-breaker in case multiple agreements share the same revision
         """,
-        "get_books": """
+        "get_distinct_books": """
+            SELECT DISTINCT ON (book_code)
+                book_code, short
+            FROM bible.booktofile
+            ORDER BY
+                book_code,
+                id ASC;   -- choose the first row for that book_code
+        """,
+        "get_book": """
             SELECT id, book_code, translation_id, file_id, short
-            FROM bible.booktofile;
+            FROM bible.booktofile
+            WHERE book_code = %s AND translation_id = %s;
         """,
         #
         "get_word_nodes": """
@@ -42,20 +64,51 @@ class Search():
         self.log.set_logging_level(2)
 
         # For setting context that we want to search in.
-        self.languages          = {}
-        self.translations       = {}
         self.scope              = "verse" # Book, Chapter, Verse
-        self.books              = {}
 
         self.translation_id     = 1
+        self.filter = {
+            "books": {},
+            "translations": {},
+            "languages": {}
+        }
 
         self.results = []
 
-    def init_filters(self):
+    def init_filter(self):
         languages       = self.db.fetch_all(self.SQL.get("get_languages"))
-        translationinfo = self.db.fetch_all(self.SQL.get("get_translations_info"))
+        for language in languages:
+            language_id = language[0]
+            self.filter["languages"][language_id] = {
+                "code":              language[1],
+                "name":             language[2],
+                "namelocal":        language[3],
+                "scriptdirection":  language[4],
+                "active":           True
+            }#(language, True)
+
         translations    = self.db.fetch_all(self.SQL.get("get_translations"))
-        books           = self.db.fetch_all(self.SQL.get("get_books"))
+        for translation in translations:
+            translation_id = translation[0]
+            self.filter["translations"][translation_id] = {
+                "language_id":      translation[1],
+                "medium":           translation[2],
+                "name":             translation[3],
+                "namelocal":        translation[4],
+                "code":             translation[5],
+                "copyright":        translation[6],
+                "promotion":        translation[7],
+                "active":           True
+            }#(translation, True)
+
+        books           = self.db.fetch_all(self.SQL.get("get_distinct_books"))
+        for book in books:
+            book_code = book[0]
+            self.filter["translations"][book_code] = {
+                "name":             book[1],
+                "active":           True
+            }#(book, True)
+        
 
     def set_translation_context(self, translation_id=None):
         self.translation_id = translation_id
