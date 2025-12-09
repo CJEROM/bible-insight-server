@@ -1,12 +1,5 @@
 import spacy
 
-from psycopg2.extras import execute_values
-import time
-import datetime
-import sys
-from pathlib import Path
-import os
-
 from manager.managerhandler import ManagerHandler
 from tokeniser.assembler import Assembler
 
