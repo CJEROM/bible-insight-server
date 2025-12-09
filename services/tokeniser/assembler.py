@@ -204,7 +204,18 @@ class Assembler:
             SELECT id
             FROM bible.nodes
             WHERE canonical_path = %s AND translation_id = %s
-        """
+        """,
+        # Helper Update Queries
+        "update_node_offsets": """
+            UPDATE bible.nodes 
+            SET chapter_start_offset = %s, chapter_end_offset = %s
+            WHERE id = %s;
+        """,
+        "update_chapter_occurence_text": """
+            UPDATE bible.chapteroccurences 
+            SET reconstructed_text = %s
+            WHERE id = %s;
+        """,
     }
 
     def __init__(self, manager: ManagerHandler = None, occurence_id=None, node_id=None, canonical_path=None, ref=None, scope=None, translation_id=None):
@@ -303,6 +314,29 @@ class Assembler:
         
         # Log the resulted reconstruction - if it was successful (no error flagged)
         self.log.log_to_file(f"Reconstruction: [\n{self.text}\n]", "OCCURENCE", "DEBUG")
+
+    def assemble_text(self, source: str, tokenisable_nodes: list, update_offsets:bool = False):
+        self.log.log_to_file(f"Tokens for Reconstruction: f{tokenisable_nodes}", source, "DEBUG")
+
+        temp_offsets = []
+
+        for node in tokenisable_nodes:
+            node_id = node[0]
+            node_text = node[1]
+            self.nodes.append(node_id)
+
+            start = len(self.text)
+            self.text += node_text
+            end = len(self.text)
+
+            temp_offsets.append((start, end, node_id))
+
+        if update_offsets:
+            # Update start, end offsets for node
+            self.db.bulk_insert(self.SQL.get("update_node_offsets"), temp_offsets)
+
+            if self.details.get("scope") == "chapter":
+                self.db.execute(self.SQL.get("update_chapter_occurence_text"), (self.text, self.details.get("chapter")))
     
     def reconstruct_occurence(self, scope, occurence_id):
         valid_nodes = None
@@ -369,12 +403,7 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
         
-        self.log.log_to_file(f"Tokens for Reconstruction: {valid_nodes}", "OCCURENCE", "DEBUG")
-        for node in valid_nodes:
-            node_id = node[0]
-            node_text = node [1]
-            self.nodes.append(node_id)
-            self.text += node_text
+        self.assemble_text("OCCURENCE", valid_nodes)
 
     def reconstruct_from_node_id(self, scope, node_id):
         valid_nodes = None
@@ -448,12 +477,7 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.log.log_to_file(f"Tokens for Reconstruction: {valid_nodes}", "NODE_ID", "DEBUG")
-        for node in valid_nodes:
-            node_id = node[0]
-            node_text = node [1]
-            self.nodes.append(node_id)
-            self.text += node_text
+        self.assemble_text("NODE_ID", valid_nodes)
 
     def reconstruct_from_node_path(self, scope, translation_id, canonical_path):
         valid_nodes = None
@@ -525,12 +549,7 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.log.log_to_file(f"Tokens for Reconstruction: {valid_nodes}", "CANONICAL_PATH", "DEBUG")
-        for node in valid_nodes:
-            node_id = node[0]
-            node_text = node [1]
-            self.nodes.append(node_id)
-            self.text += node_text
+        self.assemble_text("CANONICAL_PATH", valid_nodes)
 
     def reconstruct_from_ref(self, translation_id, ref:str):
         # Find if GEN, GEN 1, GEN 1:1 => Based on that change query
@@ -601,12 +620,7 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.log.log_to_file(f"Tokens for Reconstruction: f{valid_nodes}", "REF", "DEBUG")
-        for node in valid_nodes:
-            node_id = node[0]
-            node_text = node [1]
-            self.nodes.append(node_id)
-            self.text += node_text
+        self.assemble_text("REF", valid_nodes)
     
     # Perhaps function to help build on nodes, to display strongs if available?
 
