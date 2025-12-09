@@ -1,4 +1,4 @@
-
+import traceback
 
 # Responsible for helping me test token queries and trying to reassemble fragments in a way I might request it from the server
 
@@ -224,7 +224,7 @@ class Assembler:
             occurence_id=None, node_id=None, canonical_path=None, ref=None, scope=None, translation_id=None, 
             is_nlp=False
         ):
-        
+
         self.occurence_id   = occurence_id
         self.node_id        = node_id
         self.canonical_path = canonical_path
@@ -267,7 +267,13 @@ class Assembler:
             # "node_path": None           # bible.nodes -> canonical_path
         }
 
-        self.assemble()
+        try:
+            self.assemble()
+        except Exception as e:
+            self.log.log_to_file("No Tokenisable Nodes for assembly suspected!", "ASSEMBLER", "WARN")
+
+            error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            self.log.log_to_file(error_message, "ASSEMBLER", "ERROR")
     
     def get_details(self, detail=None):
         if detail == None:
