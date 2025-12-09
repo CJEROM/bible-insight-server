@@ -49,7 +49,7 @@ class Translation:
         self.style_dict = {}
 
         # Initialise logfile
-        self.log = self.manager.create_log(f"{self.translation_id}-{self.translation_title}")
+        self.log = self.manager.create_log_in_folder(f"{self.translation_id}-{self.translation_title}", ["logs", "ingestor"])
         self.log.set_logging_level(2)
 
         self.log.log_to_file(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]", "TRANSLATION", "INFO")
