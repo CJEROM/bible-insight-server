@@ -9,11 +9,14 @@ if TYPE_CHECKING:
 class Nodes:
     SQL = {
         "new_node": """
-            INSERT INTO bible.nodes (node_text, node_type, code, sid, eid, vid, style, number, caller, closed, version, strong, loc, parent_node_id, index_in_parent, book_map_id, canonical_path, align, translation_id) 
+            INSERT INTO bible.nodes (node_text, node_type, code, sid, eid, vid, style, number, caller, closed, version, strong, loc, parent_node_id, index_in_parent, book_map_id, canonical_path, align, translation_id, is_tokenisable) 
             VALUES %s;
         """,
         "max_node_count": """
             SELECT COALESCE(MAX(id), 0) FROM bible.nodes;
+        """,
+        "is_para_versetext": """
+            SELECT versetext FROM bible.styles WHERE style = %s AND source_file_id = %s
         """
     }
 
@@ -29,6 +32,7 @@ class Nodes:
         # Initialise variables 
         self.book_soup = BeautifulSoup(book_xml, "xml")
         self.book_map_id = self.this_book.get_book_map_id()
+        self.book_style_file_id = self.this_translation.get_file("styles")
         self.translation_id = self.this_translation.get_translation_id()
 
         self.created_nodes = {
@@ -60,7 +64,7 @@ class Nodes:
             node_id = node_id_counter + node_id_offset # since i will be 0, want to start at 1 instead + offset from database to say this new node is
             node_type = None
             
-            this_node = [None] * 19 # create mutable list of length 17
+            this_node = [None] * 20 # create mutable list of length 17
 
             if isinstance(node, Tag):
                 node_type =     node.name
@@ -91,6 +95,14 @@ class Nodes:
 
                 this_node[0] = str(node) # node_text, 0
                 this_node[1] = node_type # node_type, 1
+
+                for node_parent in node.parents:
+                    if node_parent.name == "note":
+                        continue # if text_node inside a note node, then skip, never tokenisable
+                    elif node_parent.name == "para":
+                        # if inside a para node
+                        parent_style = node_parent.get("style")
+                        this_node[19] = self.db.fetch_clean_one(self.SQL.get("is_para_versetext"), (parent_style, self.book_style_file_id)) # is_tokenisable, 19
 
             # ------ Skip empty nodes
             if all(x is None for x in this_node) and node_type != "table":
