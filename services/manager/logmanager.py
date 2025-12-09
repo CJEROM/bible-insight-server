@@ -21,7 +21,7 @@ class LogManager():
     def __init__(
             self, manager: "ManagerHandler" = None, 
             default_log_path=None, 
-            default_log_folder=None, 
+            default_log_folder:list=None, 
             log_file_name=None, 
             log_file_extension="log", 
             log_level=2,
@@ -38,7 +38,7 @@ class LogManager():
         elif default_log_folder != None:
             self.set_default_log_folder(default_log_folder, False)
         else:
-            self.set_default_log_folder("logs", False)
+            self.set_default_log_folder(["logs"], False)
 
         self.log_file_extension = log_file_extension
 
@@ -79,8 +79,10 @@ class LogManager():
         if update:
             self.update_log_file()
 
-    def set_default_log_folder(self, log_folder, update=True):
-        default_log_path = Path(__file__).parents[2] / log_folder
+    def set_default_log_folder(self, log_folders, update=True):
+        default_log_path = Path(__file__).parents[2]
+        for folder in log_folders:
+            default_log_path = default_log_path / folder
 
         try:
             os.makedirs(default_log_path)
