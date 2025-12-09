@@ -164,11 +164,13 @@ class Tokenisation:
         """
     }
 
-    def __init__(self, translation_id):
+    def __init__(self, translation_id, manager:ManagerHandler = None):
         self.translation_id = translation_id
 
-        self.manager = ManagerHandler()
-        self.manager.get_obj().set_default_bucket("bible-dbl-raw")
+        self.manager = manager
+        if manager == None:
+            self.manager = ManagerHandler()
+            self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
         self.db = self.manager.get_db()
         self.obj = self.manager.get_obj()
@@ -345,22 +347,19 @@ class Tokenisation:
         self.db.bulk_insert(self.SQL.get("create_token"), all_new_tokens)
 
 if __name__ == "__main__":
-    # conn = psycopg2.connect(
-    #     host=POSTGRES_HOST,
-    #     port=POSTGRES_PORT,
-    #     dbname=POSTGRES_DB,
-    #     user=POSTGRES_USERNAME,
-    #     password=POSTGRES_PASSWORD
-    # )
-    # cur = conn.cursor()
+    is_test = True
 
-    # cur.execute("""
-    #     SELECT id FROM bible.translations;            
-    # """)
-    # all_translations = cur.fetchall()
+    manager = ManagerHandler()
+    manager.get_obj().set_default_bucket("bible-dbl-raw")
 
-    # for translation in all_translations:
-    #     Tokenisation(translation[0])
-    
-    Tokenisation(1)
-    pass
+    if is_test:
+        Tokenisation(1, manager)
+    else:
+        db = manager.get_db()
+
+        all_translations = db.fetch_all("""
+            SELECT id FROM bible.translations;            
+        """)
+
+        for translation in all_translations:
+            Tokenisation(translation[0], manager)
