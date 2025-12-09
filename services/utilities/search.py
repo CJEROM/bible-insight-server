@@ -80,7 +80,7 @@ class Search():
         self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
         self.db = self.manager.get_db()
-        self.log = self.manager.create_log("search")
+        self.log = self.manager.create_log_in_folder("search", ["logs", "search"])
         self.log.set_logging_level(2)
 
         self.translation_id     = 1
@@ -196,7 +196,7 @@ class Search():
         pass
 
     def create_csv_file(self, file_name, contents):
-        file_folder = Path(__file__).parents[2] / "logs" / "csv"
+        file_folder = Path(__file__).parents[2] / "logs" / "search" / "csv"
         file_path = file_folder / f"{file_name}.tsv"
 
         try:

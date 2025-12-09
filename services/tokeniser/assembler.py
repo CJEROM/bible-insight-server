@@ -241,7 +241,7 @@ class Assembler:
             self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
         self.db = self.manager.get_db()
-        self.log = self.manager.create_log("assembler")
+        self.log = self.manager.create_log_in_folder("assembler", ["logs", "assembler"])
         self.log.set_logging_level(2)
 
         self.nodes  = [] # Represents all (tokenisable) nodes used to reconstruct context
