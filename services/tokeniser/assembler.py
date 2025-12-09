@@ -218,7 +218,13 @@ class Assembler:
         """,
     }
 
-    def __init__(self, manager: ManagerHandler = None, occurence_id=None, node_id=None, canonical_path=None, ref=None, scope=None, translation_id=None):
+    def __init__(
+            self, 
+            manager: ManagerHandler = None, 
+            occurence_id=None, node_id=None, canonical_path=None, ref=None, scope=None, translation_id=None, 
+            is_nlp=False
+        ):
+        
         self.occurence_id   = occurence_id
         self.node_id        = node_id
         self.canonical_path = canonical_path
@@ -226,6 +232,8 @@ class Assembler:
         self.scope          = scope
 
         self.translation_id = translation_id
+
+        self.is_nlp         = is_nlp
 
         self.manager = manager
         if manager == None:
@@ -403,7 +411,7 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
         
-        self.assemble_text("OCCURENCE", valid_nodes)
+        self.assemble_text("OCCURENCE", valid_nodes, self.is_nlp)
 
     def reconstruct_from_node_id(self, scope, node_id):
         valid_nodes = None
@@ -477,7 +485,7 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.assemble_text("NODE_ID", valid_nodes)
+        self.assemble_text("NODE_ID", valid_nodes, self.is_nlp)
 
     def reconstruct_from_node_path(self, scope, translation_id, canonical_path):
         valid_nodes = None
@@ -549,7 +557,7 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.assemble_text("CANONICAL_PATH", valid_nodes)
+        self.assemble_text("CANONICAL_PATH", valid_nodes, self.is_nlp)
 
     def reconstruct_from_ref(self, translation_id, ref:str):
         # Find if GEN, GEN 1, GEN 1:1 => Based on that change query
@@ -620,7 +628,7 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.assemble_text("REF", valid_nodes)
+        self.assemble_text("REF", valid_nodes, self.is_nlp)
     
     # Perhaps function to help build on nodes, to display strongs if available?
 
