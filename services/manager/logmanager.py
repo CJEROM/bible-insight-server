@@ -72,7 +72,8 @@ class LogManager():
         try:
             os.makedirs(default_log_path)
         except Exception as e:
-            print("Log File Path Already Exists! Skipping Creation ...")
+            pass
+            # print("Log File Path Already Exists! Skipping Creation ...")
         self.log_path = default_log_path
 
         if update:
@@ -84,7 +85,8 @@ class LogManager():
         try:
             os.makedirs(default_log_path)
         except Exception as e:
-            print("Log File Path Already Exists! Skipping Creation ...")
+            pass
+            # print("Log File Path Already Exists! Skipping Creation ...")
         self.log_path = default_log_path
 
         if update:
