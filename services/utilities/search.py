@@ -52,6 +52,26 @@ class Search():
             WHERE node_text LIKE %s
                 AND translation_id = %s
                 AND is_tokenisable = TRUE;
+        """,
+        "get_strong_nodes": """
+            SELECT id
+            FROM bible.nodes
+            WHERE strong LIKE %s
+                AND translation_id = %s
+        """,
+        "get_unique_strong_text": """
+            WITH strongs_nodes AS (
+                SELECT id
+                FROM bible.nodes
+                WHERE strong LIKE %s
+                AND translation_id = %s
+            )
+            SELECT DISTINCT n.node_text
+            FROM bible.nodes n
+            JOIN strongs_nodes sn
+            ON n.parent_node_id = sn.id
+            WHERE n.node_text IS NOT NULL
+  AND n.node_text <> '';
         """
     }
 
@@ -113,16 +133,14 @@ class Search():
     def set_language_context(self, language_id=None, language_iso=None):
         # can set language from either id or iso
         self.language_id = language_id
-    
-    def search_word(self, word):
-        result_nodes = self.db.fetch_all(self.SQL.get("get_word_nodes"), (f"%{word}%", self.translation_id))
+
+    def search_results(self, nodes: list, config:list = ["full_ref", "text"]):
+        csv_results = [config]
 
         final_results = []
         result_contexts = {} # Chapter context for verses
 
-        csv_results = [["ref", "text"]]
-        
-        for node_id in result_nodes:
+        for node_id in nodes:
             new_result = Assembler(manager=self.manager, scope="verse", node_id=node_id, translation_id=self.translation_id)
             final_results.append(new_result)
 
@@ -130,11 +148,37 @@ class Search():
             if result_chapter not in result_contexts.keys():
                 result_contexts[result_chapter] = Assembler(manager=self.manager, scope="chapter", node_id=node_id, translation_id=self.translation_id)
             
-            csv_results.append([new_result.get_details("full_ref"), new_result.get_details("text")])
-        self.create_csv_file(f"{word}", csv_results)
+            csv_line = []
+            for item in config:
+                csv_line.append(new_result.get_details(item))
 
-    def search_strongs(self, strongs):
-        pass
+            csv_results.append(csv_line)
+
+        return {
+            "csv": csv_results,
+            "chapters": result_contexts,
+            "verses": final_results
+        }
+    
+    def search_word(self, word):
+        nodes_found = self.db.fetch_all(self.SQL.get("get_word_nodes"), (f"%{word}%", self.translation_id))
+
+        results = self.search_results(nodes_found)
+
+        self.create_csv_file(f"{word}", results["csv"])
+
+    def search_strongs(self, strong):
+        # Find strongs occurences
+        nodes_found = self.db.fetch_all(self.SQL.get("get_word_nodes"), (f"{strong}", self.translation_id))
+
+        # Find all unique words that use this strong code
+        unique_words = self.db.fetch_all(self.SQL.get("get_unique_strong_text"), (f"{strong}", self.translation_id))
+        for word in unique_words:
+            print(word)
+
+        results = self.search_results(nodes_found)
+
+        self.create_csv_file(f"{strong}", results["csv"])
 
     def strongs_autocorrect_suggestions(self, strongs):
         pass
