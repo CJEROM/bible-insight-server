@@ -63,9 +63,6 @@ class Search():
         self.log = self.manager.create_log("search")
         self.log.set_logging_level(2)
 
-        # For setting context that we want to search in.
-        self.scope              = "verse" # Book, Chapter, Verse
-
         self.translation_id     = 1
         self.filter = {
             "books": {},
@@ -119,13 +116,20 @@ class Search():
     
     def search_word(self, word):
         result_nodes = self.db.fetch_all(self.SQL.get("get_word_nodes"), (f"%{word}%", self.translation_id))
+
         final_results = []
+        result_contexts = {} # Chapter context for verses
+
         csv_results = [["ref", "text"]]
+        
         for node_id in result_nodes:
-            new_result = Assembler(manager=self.manager, scope=self.scope, node_id=node_id, translation_id=self.translation_id)
+            new_result = Assembler(manager=self.manager, scope="verse", node_id=node_id, translation_id=self.translation_id)
             final_results.append(new_result)
-            # print(new_result.get_details("full_ref"))
-            # print(new_result.get_details("text"))
+
+            result_chapter = new_result.get_details("chapter")
+            if result_chapter not in result_contexts.keys():
+                result_contexts[result_chapter] = Assembler(manager=self.manager, scope="chapter", node_id=node_id, translation_id=self.translation_id)
+            
             csv_results.append([new_result.get_details("full_ref"), new_result.get_details("text")])
         self.create_csv_file(f"{word}", csv_results)
 
