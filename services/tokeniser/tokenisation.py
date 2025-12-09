@@ -62,73 +62,6 @@ class Tokenisation:
             INSERT INTO lookup.nlp_tag_types (tag) VALUES %s ON CONFLICT DO NOTHING;
         """,
         # --------------------------------- Node Types ---------------------------------
-        "init_tokenisable_nodes": """
-            WITH RECURSIVE text_nodes AS (
-                SELECT
-                    n.id          AS text_node_id,
-                    n.parent_node_id
-                FROM bible.nodes n
-                WHERE n.node_type = 'text'
-                AND n.canonical_path LIKE '%%para%%text%%'
-                AND n.canonical_path NOT LIKE '%%note%%'
-                AND n.book_map_id IN (
-                    SELECT id
-                    FROM bible.booktofile
-                    WHERE translation_id = %s
-                )
-            ),
-            ancestor_chain AS (
-                -- seed: start at the text node's parent
-                SELECT
-                    t.text_node_id,
-                    t.parent_node_id      AS ancestor_id,
-                    1                     AS depth
-                FROM text_nodes t
-
-                UNION ALL
-
-                -- step: move one level up each time
-                SELECT
-                    ac.text_node_id,
-                    n.parent_node_id      AS ancestor_id,
-                    ac.depth + 1          AS depth
-                FROM ancestor_chain ac
-                JOIN bible.nodes n
-                ON n.id = ac.ancestor_id
-                WHERE ac.ancestor_id IS NOT NULL
-            ),
-            para_for_text AS (
-                SELECT DISTINCT ON (ac.text_node_id)
-                    ac.text_node_id,
-                    ac.ancestor_id AS para_node_id,
-                    ac.depth
-                FROM ancestor_chain ac
-                JOIN bible.nodes p
-                ON p.id = ac.ancestor_id
-                WHERE p.node_type = 'para'
-                ORDER BY ac.text_node_id, ac.depth  -- keep nearest para
-            )
-            UPDATE bible.nodes n
-            SET is_tokenisable = TRUE
-            FROM para_for_text pt
-            JOIN bible.paragraphs bp
-            ON bp.node_id = pt.para_node_id
-            WHERE n.id = pt.text_node_id
-            AND bp.is_versetext = TRUE
-            AND n.is_tokenisable IS DISTINCT FROM TRUE;
-        """,
-        "get_tokenisable_nodes": """
-            SELECT
-                n.id AS text_node_id,
-                n.node_text
-            FROM bible.nodes n
-            WHERE n.is_tokenisable = 'true'
-            AND n.book_map_id IN (
-                    SELECT id FROM bible.booktofile
-                    WHERE translation_id = %s   -- <-- your target translation
-            )
-            ORDER BY n.id ASC
-        """,
         "get_chapter_tokenisable_nodes": """
             WITH chapter_bounds AS (
                 SELECT start_node, end_node
@@ -182,10 +115,6 @@ class Tokenisation:
         self.language_id = self.db.fetch_clean_one(self.SQL.get("get_language"), (self.translation_id,))
 
         self.log.log_to_file(f"Linked to Language with ID: {self.language_id}", "INIT", "INFO")
-
-        self.db.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
-
-        self.log.log_to_file(f"Initialised Tokenisable Nodes!", "INIT", "INFO")
 
         self.reconstruct_chapter_nodes()
 
