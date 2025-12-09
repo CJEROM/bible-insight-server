@@ -8,6 +8,7 @@ from pathlib import Path
 import os
 
 from manager.managerhandler import ManagerHandler
+from tokeniser.assembler import Assembler
 
 # Decided I need to better tokenise so first will load all verses and then update the data for them later, I want tokens afterall in my database.
 
@@ -116,7 +117,7 @@ class Tokenisation:
 
         self.log.log_to_file(f"Linked to Language with ID: {self.language_id}", "INIT", "INFO")
 
-        self.reconstruct_chapter_nodes()
+        self.reconstruct_translation_chapters()
 
         self.log.log_to_file(f"Finished Constructing Tokens: {self.language_id}", "INIT", "INFO")
 
@@ -131,7 +132,7 @@ class Tokenisation:
         self.db.commit()
         self.db.close()
     
-    def reconstruct_chapter_nodes(self):
+    def reconstruct_translation_chapters(self):
         # Get all Books for this Translation
         all_books = self.db.fetch_all(self.SQL.get("get_translation_books"), (self.translation_id,))
 
@@ -140,25 +141,10 @@ class Tokenisation:
             all_chapters = self.db.fetch_all(self.SQL.get("get_book_chapters"), (book_map_id,))
 
             for chapter_occurence_id,_,chapter_ref in all_chapters:
-                # Get all tokenisable nodes for this chapter.
-                tokenisable_nodes = self.db.fetch_all(self.SQL.get("get_chapter_tokenisable_nodes"), (chapter_occurence_id,))
-                self.log.log_to_file(f"Nodes found to be tokenisable for [{chapter_ref}]: [{tokenisable_nodes}]", "NODE", "DEBUG")
-
-                chapter_text = ""
-
-                for node_id, text in tokenisable_nodes:
-                    start = len(chapter_text)
-                    chapter_text+=text  # Accumulate text for chapter occurence from nodes
-                    end = len(chapter_text)
-
-                    # Update start, end offsets for node
-                    self.db.execute(self.SQL.get("update_node_offsets"), (start, end, node_id))
-
-                # When finished iterating through nodes
-                #       update chapter_occurences with reconstructed chapter_text
-                self.db.execute(self.SQL.get("update_chapter_occurence_text"), (chapter_text, chapter_occurence_id))
-                # print(chapter_text)
-                self.log.log_to_file(f"Reconstructed Chapter [{chapter_ref}] Occurence [{chapter_occurence_id}]: \n[{chapter_text}\n]", "NODE", "TRACE")
+                # Reconstruct for chapter
+                assembled_chapter = Assembler(scope="chapter", occurence_id=chapter_occurence_id, is_nlp=True)
+                
+                self.log.log_to_file(f"Reconstructed Chapter [{chapter_ref}] using Assembler : [{assembled_chapter.get_details()}]", "NODE", "DEBUG")
     
     def create_tokens(self):
         # Init spacy pipeline used for training
