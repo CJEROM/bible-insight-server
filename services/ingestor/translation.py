@@ -66,7 +66,7 @@ class Translation:
             print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
             self.db.get_connection().rollback()
 
-        self.log.log_to_file("Completed Translation Ingestion!", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Completed Translation [{self.translation_name}] Ingestion!", "TRANSLATION", "INFO")
 
         # Create Label Studio Project for this specific translation of the bible
         label_studio_env = self.env.get_label_studio()
