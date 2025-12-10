@@ -42,7 +42,7 @@ class DBManager:
         """)
         
         if is_init:
-            print("Database Already Initialised!")
+            # print("Database Already Initialised!")
             return 
 
         db_server_script_path = Path(__file__).parents[2] / "services" / "database" / "server"
