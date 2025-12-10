@@ -1,4 +1,6 @@
 import traceback
+import re
+from bs4 import BeautifulSoup
 
 # Responsible for helping me test token queries and trying to reassemble fragments in a way I might request it from the server
 
@@ -254,6 +256,7 @@ class Assembler:
         self.db = self.manager.get_db()
         self.log = self.manager.create_log_in_folder("assembler", ["logs", "assembler"])
         self.log.set_logging_level(2)
+        self.obj = self.manager.get_obj()
 
         self.nodes  = [] # Represents all (tokenisable) nodes used to reconstruct context
         self.text   = ""
@@ -340,6 +343,7 @@ class Assembler:
         self.details["text"]    = self.text
         self.details["nodes"]   = self.nodes
 
+        self.set_xml()
         self.get_strongs(self.scope)
         
         # Log the resulted reconstruction - if it was successful (no error flagged)
@@ -652,9 +656,63 @@ class Assembler:
 
         self.assemble_text("REF", valid_nodes, self.is_nlp)
     
+    def get_file_id(self):
+        book_map_id = self.details["book"]
+        file_id = self.db.fetch_clean_one("""
+            SELECT file_id FROM bible.booktofile WHERE id = %s;
+        """, (book_map_id,))
+        self.details["file"] = file_id
+        return file_id
+
     # Perhaps function to help build on nodes, to display strongs if available?
     def set_xml(self):
-        pass
+        print(self.get_file_id())
+        book_xml = BeautifulSoup(self.obj.stream_file_from_file_id(self.get_file_id()), "xml")
+
+        ref_text = None
+
+        if self.scope != "book":
+            ref = self.details["ref"]
+
+            start_tag = book_xml.find(self.scope, sid=ref)
+            end_tag = book_xml.find(self.scope, eid=ref)
+
+            search_string = f"{start_tag}.*{end_tag}"
+            ref_found = re.search(search_string, str(book_xml), re.DOTALL)
+
+            # In case of WLC for example, Malachi 4 doesn't exist, so skip over chapter
+            #       if it doesn't exist for this book.
+            # Should also account for upper range increased due to non standard chapters (skip over them)
+            if ref_found == None:
+                self.log.log_to_file(f"{ref} XML Not Found...", f"XML", "DEBUG")
+                return
+
+            # Have to add encapsulating tags, since otherwise only first chapter tag, 
+            #       will be included when parsed as xml, ignoring the rest of the text
+            ref_text = """<usx version="3.0">\n"""
+
+            if self.scope == "verse":
+                closing = ""
+                for node in start_tag.parents:
+                    closing += f"\n</{node.name}>"
+                    ref_text += f"{start_tag.parent}\n"
+                    if node.name == "para" or node.name == "table":
+                        break
+                    else: 
+                        ref_text += start_tag.parent 
+
+                ref_text += ref_found.group(0)
+
+                ref_text += closing
+
+            else:
+                ref_text += ref_found.group(0)
+            ref_text += "\n</usx>"
+        else: 
+            ref_text = book_xml
+
+        if ref_text != None:
+            self.details["xml"] = ref_text
 
     def get_strongs(self, scope):
         params = []
@@ -685,7 +743,6 @@ class Assembler:
                     FROM bible.verseoccurences
                     WHERE id = %s
                 """, (verse_id,))
-                print(start_node, end_node)
                 base_query += " AND id BETWEEN %s AND %s"
                 params.extend([start_node, end_node])
 
@@ -704,9 +761,11 @@ class Assembler:
         pass
     
     def get_cross_refs(self):
+        # All cross reference in and out
         pass
     
     def get_foot_notes(self):
+        # Only for this translation
         pass
     
     def get_user_notes(self):
