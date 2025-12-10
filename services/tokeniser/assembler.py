@@ -184,6 +184,39 @@ class Assembler:
             WHERE n.is_tokenisable = TRUE
             ORDER BY n.id;
         """,
+        "get_matched_verse_ref": """
+            WITH input_ref AS (
+                SELECT %s AS ref
+            ),
+
+            -- 1. Check if canonical verse exists e.g. GEN 3:1
+            direct_match AS (
+                SELECT vo.verse_ref
+                FROM bible.verseoccurences vo
+                JOIN input_ref i ON vo.verse_ref = i.ref
+                WHERE vo.translation_id = %s
+            ),
+
+            -- 2. If not, find non-standard refs that map *to* the input canonical ref e.g. if exists GEN 3:1-2
+            fallback_match AS (
+                SELECT vc.non_standard_verse_ref AS verse_ref
+                FROM bible.verse_correction vc
+                JOIN bible.verseoccurences vo 
+                    ON vo.verse_ref = vc.non_standard_verse_ref
+                JOIN input_ref i ON vc.verse_ref = i.ref
+                WHERE vo.translation_id = %s
+            )
+
+            -- 3. Prefer direct match; if none, return fallback
+            SELECT verse_ref
+            FROM direct_match
+
+            UNION ALL
+
+            SELECT verse_ref
+            FROM fallback_match
+            LIMIT 1;  -- return first match only              
+        """,
         # NOT IN USE YET
         "get_ref_all_verseoccurences": """
             SELECT * 
@@ -630,17 +663,13 @@ class Assembler:
                 self.details["full_ref"] += " " + chapter_ref.split(" ")[1]
                 
             case "verse":
-                verse_ref = ref
-                # Check if visible for translation, if not
-
-                # check verse corrections for alternative
-
-                # if still nothing then return null
+                verse_ref = self.db.fetch_clean_one(self.SQL.get("get_matched_verse_ref"), (ref, translation_id, translation_id))
 
                 valid_nodes = self.db.fetch_all(
                     self.SQL.get("get_verse_from_ref"), 
-                    (ref, translation_id)
+                    (verse_ref, translation_id)
                 )
+
                 sample_node = valid_nodes[0]
 
                 book_map_id         = sample_node[2]
