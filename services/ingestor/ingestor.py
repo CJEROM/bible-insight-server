@@ -9,7 +9,7 @@ from ingestor.translation import Translation
 from manager.managerhandler import ManagerHandler
 
 class Ingestor:
-    def __init__(self, manager: ManagerHandler = None, dbl_id = None, agreement_id = None):
+    def __init__(self, manager: ManagerHandler = None, dbl_id = None, agreement_id = None, all_translations: list = None):
         self.manager = manager
         if manager == None:
             self.manager = ManagerHandler()
@@ -17,6 +17,7 @@ class Ingestor:
 
         self.dbl_id = dbl_id
         self.agreement_id = agreement_id
+        self.all_translations = all_translations
 
         self.env = self.manager.get_env()
         self.db = self.manager.get_db()
@@ -125,7 +126,11 @@ class Ingestor:
             else:
                 print("     Already logged in") # Assumes that we couldn't find email field in link means we are logged in already
 
-            translations = self.db.fetch_all("""SELECT dbl_id, agreement_id FROM bible.DBLInfo;""")
+            translations = None
+            if self.all_translations == None:
+                translations = self.db.fetch_all("""SELECT dbl_id, agreement_id FROM bible.DBLInfo;""")
+            else:
+                translations = self.all_translations
 
             for i, dbl_id, agreement_id in enumerate(translations):
                 if self.dbl_id != None and self.agreement_id != None:
