@@ -101,7 +101,7 @@ class Tokenisation:
 
         self.db = self.manager.get_db()
         self.obj = self.manager.get_obj()
-        self.log = self.manager.create_log_in_folder(f"TOKENS-{self.translation_id}", ["logs", "tokenisation"])
+        self.log = self.manager.create_log_in_folder(["logs", "tokenisation"], f"TOKENS-{self.translation_id}")
         self.log.set_logging_level(1)
 
         self.log.log_to_file(f"Starting Tokenisation ...\n", "TOKENISATION", "INFO")
