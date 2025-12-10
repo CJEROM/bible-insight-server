@@ -12,6 +12,10 @@ import traceback
 
 from manager.managerhandler import ManagerHandler
 
+VERSE   = "verse"
+CHAPTER = "chapter"
+BOOK    = "book"
+
 class Assembler:
     SQL = {
         # Reconstruct from OCCURENCE -> ID
@@ -216,9 +220,13 @@ class Assembler:
             SET reconstructed_text = %s
             WHERE id = %s;
         """,
+        # Base Classes that are extended
         "get_strongs_in_range": """
-
-        """
+            SELECT DISTINCT strong
+            FROM bible.nodes
+            WHERE strong IS NOT NULL
+        """,
+        # Helper Classes
     }
 
     def __init__(
@@ -331,6 +339,8 @@ class Assembler:
         self.details["scope"]   = self.scope
         self.details["text"]    = self.text
         self.details["nodes"]   = self.nodes
+
+        self.get_strongs(self.scope)
         
         # Log the resulted reconstruction - if it was successful (no error flagged)
         self.log.log_to_file(f"Reconstruction: [\n{self.text}\n]", "OCCURENCE", "DEBUG")
@@ -646,8 +656,43 @@ class Assembler:
     def set_xml(self):
         pass
 
-    def get_strongs(self):
-        pass
+    def get_strongs(self, scope):
+        params = []
+        
+        base_query = self.SQL.get("get_strongs_in_range")
+
+        match scope:
+            case "book":
+                book_map_id = self.details.get("book")
+                base_query += " AND book_map_id = %s"
+                params.append(book_map_id)
+
+            case "chapter":
+                chapter_id = self.details.get("chapter")
+                start_node, end_node = self.db.fetch_one("""
+                    SELECT start_node, end_node
+                    FROM bible.chapteroccurences
+                    WHERE id = %s
+                """, (chapter_id,))
+                base_query += " AND id BETWEEN %s AND %s"
+                params.extend([start_node, end_node])
+
+            case "verse":
+                verse_id = self.details.get("verse")
+                print(verse_id)
+                start_node, end_node = self.db.fetch_one("""
+                    SELECT start_node, end_node
+                    FROM bible.verseoccurences
+                    WHERE id = %s
+                """, (verse_id,))
+                print(start_node, end_node)
+                base_query += " AND id BETWEEN %s AND %s"
+                params.extend([start_node, end_node])
+
+        found_strongs = self.db.fetch_all_single(base_query, params)
+
+        if len(found_strongs) > 0:
+            self.details["strongs"] = found_strongs
     
     def get_entities(self):
         pass
@@ -669,7 +714,7 @@ class Assembler:
 
 # Used for TESTING
 if __name__ == "__main__":
-    test_translation = 1
+    test_translation = 7
     test_occurence = 1
     test_node_id = 22
     test_node_path = "/usx:0/para:13/verse:1"
@@ -679,18 +724,18 @@ if __name__ == "__main__":
 
     # ======= OCCURENCE =======
     # REQUIRED: scope, occurence_id
-    temp = Assembler(scope=test_scope, occurence_id=test_occurence) # GEN
-    print(temp.get_details())
+    # temp = Assembler(scope=test_scope, occurence_id=test_occurence) # GEN
+    # print(temp.get_details())
 
-    # ======= NODE ID =======
-    # REQUIRED: scope, node_id
-    temp = Assembler(scope=test_scope, node_id=test_node_id) # GEN
-    print(temp.get_details())
+    # # ======= NODE ID =======
+    # # REQUIRED: scope, node_id
+    # temp = Assembler(scope=test_scope, node_id=test_node_id) # GEN
+    # print(temp.get_details())
 
-    # ======= NODE PATH =======
-    # REQUIRED: scope, canonical_path, translation_id
-    temp = Assembler(scope=test_scope, canonical_path=test_node_path, translation_id=test_translation)
-    print(temp.get_details())
+    # # ======= NODE PATH =======
+    # # REQUIRED: scope, canonical_path, translation_id
+    # temp = Assembler(scope=test_scope, canonical_path=test_node_path, translation_id=test_translation)
+    # print(temp.get_details())
 
     # ======= REF =======
     # REQUIRED: ref, translation_id
