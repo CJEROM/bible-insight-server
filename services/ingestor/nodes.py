@@ -98,12 +98,12 @@ class Nodes:
 
                 for node_parent in node.parents:
                     if node_parent.name == "note":
-                        continue # if text_node inside a note node, then skip, never tokenisable
+                        break # if text_node inside a note node, then skip, never tokenisable
                     elif node_parent.name == "para":
                         # if inside a para node
                         parent_style = node_parent.get("style")
                         this_node[19] = self.db.fetch_clean_one(self.SQL.get("is_para_versetext"), (parent_style, self.book_style_file_id)) # is_tokenisable, 19
-                        continue
+                        break
 
             # ------ Skip empty nodes
             if all(x is None for x in this_node) and node_type != "table":
