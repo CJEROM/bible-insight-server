@@ -760,40 +760,20 @@ class Assembler:
 
     def get_strongs(self, scope):
         params = []
-        
-        base_query = self.SQL.get("get_strongs_in_range")
 
-        match scope:
-            case "book":
-                book_map_id = self.details.get("book")
-                base_query += " AND book_map_id = %s"
-                params.append(book_map_id)
+        soup = BeautifulSoup(self.get_details("xml"), "xml")
 
-            case "chapter":
-                chapter_id = self.details.get("chapter")
-                start_node, end_node = self.db.fetch_one("""
-                    SELECT start_node, end_node
-                    FROM bible.chapteroccurences
-                    WHERE id = %s
-                """, (chapter_id,))
-                base_query += " AND id BETWEEN %s AND %s"
-                params.extend([start_node, end_node])
+        # Get all nodes with a 'strong' attribute
+        nodes = soup.find_all(attrs={"strong": True})
 
-            case "verse":
-                verse_id = self.details.get("verse")
-                print(verse_id)
-                start_node, end_node = self.db.fetch_one("""
-                    SELECT start_node, end_node
-                    FROM bible.verseoccurences
-                    WHERE id = %s
-                """, (verse_id,))
-                base_query += " AND id BETWEEN %s AND %s"
-                params.extend([start_node, end_node])
+        # Extract their strong values
+        strong_values = [node.get("strong") for node in nodes]
 
-        found_strongs = self.db.fetch_all_single(base_query, params)
+        # Make them unique
+        unique_strongs = set(strong_values)
 
-        if len(found_strongs) > 0:
-            self.details["strongs"] = found_strongs
+        if len(unique_strongs) > 0:
+            self.details["strongs"] = list(unique_strongs)
     
     def get_entities(self):
         pass
@@ -817,7 +797,7 @@ class Assembler:
 
 # Used for TESTING
 if __name__ == "__main__":
-    test_translation = 7
+    test_translation = 8
     test_occurence = 1
     test_node_id = 22
     test_node_path = "/usx:0/para:13/verse:1"
