@@ -785,7 +785,7 @@ if __name__ == "__main__":
     test_occurence = 1
     test_node_id = 22
     test_node_path = "/usx:0/para:13/verse:1"
-    test_scope = "verse"
+    test_scope = "chapter"
     # test_scope = "chapter"
     # test_scope = "verse"
 
@@ -819,4 +819,6 @@ if __name__ == "__main__":
             test_ref = f"{test_book} {test_chapter}:{test_verse}"
 
     temp = Assembler(ref=test_ref, translation_id=test_translation)
+    print(temp.get_details())
+    temp.add_detail()
     print(temp.get_details())
