@@ -45,7 +45,6 @@ class Search():
             SELECT id
             FROM bible.nodes
             WHERE node_text LIKE %s
-                AND translation_id = %s
                 AND is_tokenisable = TRUE;
         """,
         "get_strong_nodes": """
@@ -91,7 +90,6 @@ class Search():
         self.log = self.manager.create_log_in_folder(["logs", "search"])
         self.log.set_logging_level(1)
 
-        self.translation_id = 8
         self.filter = {
             "books": {},
             "translations": {},
@@ -229,12 +227,14 @@ class Search():
         result_contexts = {} # Chapter context for verses
 
         for node_id in nodes:
-            new_result = Assembler(manager=self.manager, scope="verse", node_id=node_id, translation_id=self.translation_id)
-            final_results.append(new_result)
+            for translation_id in self.filter["translations"].keys():
+                if self.filter["translations"][translation_id]["active"] == True:
+                    new_result = Assembler(manager=self.manager, scope="verse", node_id=node_id, translation_id=translation_id)
+                    final_results.append(new_result)
 
-            result_chapter = new_result.get_details("chapter")
-            if result_chapter not in result_contexts.keys():
-                result_contexts[result_chapter] = Assembler(manager=self.manager, scope="chapter", node_id=node_id, translation_id=self.translation_id)
+                result_chapter = new_result.get_details("chapter")
+                if result_chapter not in result_contexts.keys():
+                    result_contexts[result_chapter] = Assembler(manager=self.manager, scope="chapter", node_id=node_id, translation_id=translation_id)
             
             csv_line = []
             for item in config:
@@ -255,7 +255,7 @@ class Search():
     def search_word(self, word):
         query = self.SQL.get("get_word_nodes")
 
-        nodes_found = self.modify_search_query(query, [f"%{word}%", self.translation_id], ["books", "translations"])
+        nodes_found = self.modify_search_query(query, [f"%{word}%",], ["books", "translations"])
 
         results = self.search_results(nodes_found)
 
@@ -304,7 +304,7 @@ class Search():
 
 if __name__ == "__main__":
     new_search = Search()
-    new_search.update_filter("languages", 1, False)
+    new_search.update_filter("translations", 1, False)
     new_search.search_word("fruit")
 
     # again_search = Search()
