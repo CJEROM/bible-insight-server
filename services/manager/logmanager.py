@@ -45,9 +45,9 @@ class LogManager():
         self.log_file_name = log_file_name
 
         if log_file_name == None:
-            dt = datetime.now()
+            dt = datetime.datetime.now()
             # dt.strftime("%Y-%m-%d %H:%M:%S") => 2025-12-09 20:15:42
-            log_file_name = dt.strftime("%Y%m%d%H%M%S")
+            self.log_file_name = str(dt.strftime("%Y%m%d%H%M%S"))
         
         self.log_file = self.log_path / f"{self.log_file_name}.{self.log_file_extension}"
         self.disable_log = disable_log
