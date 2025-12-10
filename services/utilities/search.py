@@ -88,10 +88,9 @@ class Search():
         self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
         self.db = self.manager.get_db()
-        self.log = self.manager.create_log_in_folder(["logs", "search"], "search")
-        self.log.set_logging_level(2)
+        self.log = self.manager.create_log_in_folder(["logs", "search"])
+        self.log.set_logging_level(1)
 
-        self.translation_id     = 1
         self.filter = {
             "books": {},
             "translations": {},
@@ -134,8 +133,14 @@ class Search():
                 "active":           True
             }#(book, True)
 
+        language_filter = self.filter["languages"]
+        translation_filter = self.filter["translations"]
+        book_filter = self.filter["books"]
+        self.log.log_to_file(f"Initialised filters: [\n{language_filter}\n{translation_filter}\n{book_filter}\n]", "init_filter", "DEBUG")
+
     def update_filter(self, type:str, key:str, is_active:bool):
         self.filter[type][key]["active"] = is_active
+        self.log.log_to_file(f"Updating filter type: {type}, with key{key}, to {is_active}", "update_filter", "DEBUG")
 
         match type:
             case "languages":
@@ -148,11 +153,17 @@ class Search():
                 pass
             case "books":
                 pass
+
+        language_filter = self.filter["languages"]
+        translation_filter = self.filter["translations"]
+        book_filter = self.filter["books"]
+        self.log.log_to_file(f"Current filters: [\n{language_filter}\n{translation_filter}\n{book_filter}\n]", "update_filter", "DEBUG")
         
     def apply_filters(self, base_sql:str, filter_types:list):
         filters = self.filter
         where_clauses = []
         params = []
+        self.log.log_to_file(f"Applying filters: {filter_types} to [\n{base_sql}\n]", "apply_filters", "DEBUG")
 
         if filters["translations"] and "translations" in filter_types:
             where_clauses.append("translation_id = ANY(%s)")
@@ -173,20 +184,15 @@ class Search():
             params.append(list(filters["books"].keys()))
 
         if where_clauses:
-            return base_sql + " AND " + " AND ".join(where_clauses), params
+            new_query = base_sql + " AND " + " AND ".join(where_clauses)
+            self.log.log_to_file(f"Modified query to [\n{new_query}\n] with params: {params}", "apply_filters", "DEBUG")
+            return new_query, params
         return base_sql, params
 
     def modify_search_query(self, query:str, params:list = None, filter_types:list = None):
         new_query, temp_params = self.apply_filters(query.replace(";", ""), filter_types)
         params.extend(temp_params)
         return self.db.fetch_all(new_query, tuple(params))
-
-    def set_translation_context(self, translation_id=None):
-        self.translation_id = translation_id
-
-    def set_language_context(self, language_id=None, language_iso=None):
-        # can set language from either id or iso
-        self.language_id = language_id
 
     def search_results(self, nodes: list, config:list = ["full_ref", "text"]):
         csv_results = [config]
@@ -207,12 +213,16 @@ class Search():
                 csv_line.append(new_result.get_details(item))
 
             csv_results.append(csv_line)
-
-        return {
+        
+        complete_results = {
             "csv": csv_results,
             "chapters": result_contexts,
             "verses": final_results
         }
+
+        self.log.log_to_file(f"Search Results: {complete_results}, with config: {config}", "search_results", "DEBUG")
+
+        return complete_results
     
     def search_word(self, word):
         query = self.SQL.get("get_word_nodes")
@@ -266,7 +276,8 @@ class Search():
 
 if __name__ == "__main__":
     new_search = Search()
+    new_search.update_filter("languages", 1, False)
     new_search.search_word("fruit")
 
-    again_search = Search()
-    again_search.search_strongs("H7397")
+    # again_search = Search()
+    # again_search.search_strongs("H7397")
