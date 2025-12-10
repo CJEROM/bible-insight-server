@@ -691,7 +691,7 @@ class Assembler:
     def add_detail(self):
         if self.details != {}:
             self.set_xml()
-            self.get_strongs(self.scope)
+            self.get_strongs()
 
             self.get_entities()
             self.get_llema()
@@ -758,9 +758,7 @@ class Assembler:
         if ref_text != None:
             self.details["xml"] = ref_text
 
-    def get_strongs(self, scope):
-        params = []
-
+    def get_strongs(self):
         soup = BeautifulSoup(self.get_details("xml"), "xml")
 
         # Get all nodes with a 'strong' attribute
