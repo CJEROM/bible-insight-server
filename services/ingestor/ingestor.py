@@ -9,9 +9,12 @@ from ingestor.translation import Translation
 from manager.managerhandler import ManagerHandler
 
 class Ingestor:
-    def __init__(self):
+    def __init__(self, dbl_id = None, agreement_id = None):
         self.manager = ManagerHandler()
         self.manager.get_obj().set_default_bucket("bible-dbl-raw")
+
+        self.dbl_id = dbl_id
+        self.agreement_id = agreement_id
 
         self.env = self.manager.get_env()
         self.db = self.manager.get_db()
@@ -121,27 +124,19 @@ class Ingestor:
                 print("     Already logged in") # Assumes that we couldn't find email field in link means we are logged in already
 
             translations = self.db.fetch_all("""SELECT dbl_id, agreement_id FROM bible.DBLInfo;""")
-            # translations = (
-            #     "6bab4d6c61b31b80-252265".split("-"), # introduces PSA151
-            #     "32664dc3288a28df-265137".split("-"),
-            #     "f72b840c855f362c-240017".split("-"),
-            #     # "65bfdebd704a8324-250819".split("-"),
-            #     "06125adad2d5898a-240014".split("-"),
-            #     "04da588535d2f823-240018".split("-"),
-            #     "72f4e6dc683324df-278101".split("-")
-            #     # "c114c33098c4fef1-252266".split("-")
-            # )
 
-            for dbl_id, agreement_id in translations:
+            for i, dbl_id, agreement_id in enumerate(translations):
+                if self.dbl_id != None and self.agreement_id != None:
+                    if i == 0:
+                        dbl_id = self.dbl_id
+                        agreement_id = self.agreement_id
+                    else:
+                        break
 
                 translation_id = self.get_translation(dbl_id, agreement_id)
                 if translation_id == -1:
                     print(f"❌ Translation {dbl_id}-{agreement_id} already exists! Skipping ...")
                     continue # Skip because its already in our system
-
-                # 32664dc3288a28df-265137
-                # dbl_id = "32664dc3288a28df"
-                # agreement_id = 265137
 
                 print(f"\n\n✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
 
@@ -153,7 +148,7 @@ class Ingestor:
 
                 # Wait for the download button to appear
                 # Inspect the page and adjust the selector to match the button
-                page.wait_for_selector("button:has-text('Download')")  
+                page.wait_for_selector("button:has-text('Download All')")  
 
                 zip_button = page.query_selector("button:has-text('Download All')")
                 if zip_button:
@@ -197,15 +192,11 @@ class Ingestor:
                         download = download_info.value
                         download.save_as(os.path.join(folder_path, filename))
 
-                        # print(f"✅ Downloaded {filename} → {folder_path}")
-
                     new_path = Path(self.download_path) / download_folder_name
                     
                     print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
 
                     Translation(self.manager, "audio", new_path, url, translation_id, dbl_id, agreement_id)
-
-                # break
 
             browser.close()
 
