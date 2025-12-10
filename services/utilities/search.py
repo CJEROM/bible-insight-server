@@ -91,6 +91,7 @@ class Search():
         self.log = self.manager.create_log_in_folder(["logs", "search"])
         self.log.set_logging_level(1)
 
+        self.translation_id = 8
         self.filter = {
             "books": {},
             "translations": {},
@@ -145,8 +146,8 @@ class Search():
         match type:
             case "languages":
                 for translation in self.filter["translations"].keys():
-                    if self.filter[translation]["language_id"] == key:
-                        self.filter[translation]["active"] = is_active
+                    if self.filter["translations"][translation]["language_id"] == key:
+                        self.filter["translations"][translation]["active"] = is_active
                 
                 print(self.filter["translations"])
             case "translations":
@@ -167,21 +168,37 @@ class Search():
 
         if filters["translations"] and "translations" in filter_types:
             where_clauses.append("translation_id = ANY(%s)")
-            params.append(list(filters["translations"].keys()))
+            temp_list = []
+
+            for key in filters["translations"].keys():
+                if filters["translations"][key]["active"]:
+                    temp_list.append(key)
+
+            params.append(temp_list)
 
         # Languages affects translations
         if filters["languages"] and "languages" in filter_types:
             where_clauses.append("""translation_id IN (
                 SELECT id FROM bible.translations WHERE language_id = ANY(%s)
             )""")
-            params.append(list(filters["languages"].keys()))
+
+            for key in filters["languages"].keys():
+                if filters["languages"][key]["active"]:
+                    temp_list.append(key)
+                    
+            params.append(temp_list)
 
         # Translations affects books
         if filters["books"] and "books" in filter_types:
             where_clauses.append("""book_map_id IN (
                 SELECT id FROM bible.booktofile WHERE book_code = ANY(%s)
             )""")
-            params.append(list(filters["books"].keys()))
+
+            for key in filters["books"].keys():
+                if filters["books"][key]["active"]:
+                    temp_list.append(key)
+                    
+            params.append(temp_list)
 
         if where_clauses:
             new_query = base_sql + " AND " + " AND ".join(where_clauses)
