@@ -342,9 +342,6 @@ class Assembler:
         self.details["scope"]   = self.scope
         self.details["text"]    = self.text
         self.details["nodes"]   = self.nodes
-
-        self.set_xml()
-        self.get_strongs(self.scope)
         
         # Log the resulted reconstruction - if it was successful (no error flagged)
         self.log.log_to_file(f"Reconstruction: [\n{self.text}\n]", "OCCURENCE", "DEBUG")
@@ -656,6 +653,17 @@ class Assembler:
 
         self.assemble_text("REF", valid_nodes, self.is_nlp)
     
+    def add_detail(self):
+        self.set_xml()
+        self.get_strongs(self.scope)
+
+        self.get_entities()
+        self.get_llema()
+        self.get_quotes()
+        self.get_cross_refs()
+        self.get_foot_notes()
+        self.get_user_notes()
+
     def get_file_id(self):
         book_map_id = self.details["book"]
         file_id = self.db.fetch_clean_one("""
