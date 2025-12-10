@@ -56,22 +56,35 @@ class Search():
         "get_strong_nodes": """
             SELECT id
             FROM bible.nodes
-            WHERE strong LIKE %s
-                AND translation_id = %s
+            WHERE strong = %s
         """,
         "get_unique_strong_text": """
             WITH strongs_nodes AS (
                 SELECT id
                 FROM bible.nodes
-                WHERE strong LIKE %s
-                AND translation_id = %s
+                WHERE strong = %s
             )
             SELECT DISTINCT n.node_text
             FROM bible.nodes n
             JOIN strongs_nodes sn
             ON n.parent_node_id = sn.id
             WHERE n.node_text IS NOT NULL
-  AND n.node_text <> '';
+            AND n.node_text <> '';
+        """,
+        "get_strongs_occurences_per_translation" : """
+            SELECT 
+                sn.strong,
+                LOWER(n.node_text) AS node_text,
+                n.translation_id,
+                COUNT(*) AS occurrences
+            FROM bible.nodes sn
+            JOIN bible.nodes n
+                ON n.parent_node_id = sn.id
+            WHERE sn.strong IS NOT NULL
+            AND n.node_text IS NOT NULL
+            AND n.node_text <> ''
+            GROUP BY sn.strong, LOWER(n.node_text), n.translation_id
+            ORDER BY sn.strong, occurrences DESC;
         """
     }
 
@@ -169,14 +182,14 @@ class Search():
 
     def search_strongs(self, strong):
         # Find strongs occurences
-        nodes_found = self.db.fetch_all(self.SQL.get("get_word_nodes"), (f"{strong}", self.translation_id))
+        nodes_found = self.db.fetch_all(self.SQL.get("get_strong_nodes"), (strong,))
 
         # Find all unique words that use this strong code
-        unique_words = self.db.fetch_all(self.SQL.get("get_unique_strong_text"), (f"{strong}", self.translation_id))
+        unique_words = self.db.fetch_all(self.SQL.get("get_unique_strong_text"), (strong,))
         for word in unique_words:
             print(word)
 
-        results = self.search_results(nodes_found)
+        results = self.search_results(nodes_found, config=["full_ref", "translation", "text"])
 
         self.create_csv_file(f"{strong}", results["csv"])
 
@@ -211,3 +224,6 @@ class Search():
 if __name__ == "__main__":
     new_search = Search()
     new_search.search_word("fruit")
+
+    again_search = Search()
+    again_search.search_strongs("H7397")
