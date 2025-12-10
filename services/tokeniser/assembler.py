@@ -631,6 +631,12 @@ class Assembler:
                 
             case "verse":
                 verse_ref = ref
+                # Check if visible for translation, if not
+
+                # check verse corrections for alternative
+
+                # if still nothing then return null
+
                 valid_nodes = self.db.fetch_all(
                     self.SQL.get("get_verse_from_ref"), 
                     (ref, translation_id)
