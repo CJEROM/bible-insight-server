@@ -1,13 +1,7 @@
 import spacy
 
-from psycopg2.extras import execute_values
-import time
-import datetime
-import sys
-from pathlib import Path
-import os
-
 from manager.managerhandler import ManagerHandler
+from tokeniser.assembler import Assembler
 
 # Decided I need to better tokenise so first will load all verses and then update the data for them later, I want tokens afterall in my database.
 
@@ -62,73 +56,6 @@ class Tokenisation:
             INSERT INTO lookup.nlp_tag_types (tag) VALUES %s ON CONFLICT DO NOTHING;
         """,
         # --------------------------------- Node Types ---------------------------------
-        "init_tokenisable_nodes": """
-            WITH RECURSIVE text_nodes AS (
-                SELECT
-                    n.id          AS text_node_id,
-                    n.parent_node_id
-                FROM bible.nodes n
-                WHERE n.node_type = 'text'
-                AND n.canonical_path LIKE '%%para%%text%%'
-                AND n.canonical_path NOT LIKE '%%note%%'
-                AND n.book_map_id IN (
-                    SELECT id
-                    FROM bible.booktofile
-                    WHERE translation_id = %s
-                )
-            ),
-            ancestor_chain AS (
-                -- seed: start at the text node's parent
-                SELECT
-                    t.text_node_id,
-                    t.parent_node_id      AS ancestor_id,
-                    1                     AS depth
-                FROM text_nodes t
-
-                UNION ALL
-
-                -- step: move one level up each time
-                SELECT
-                    ac.text_node_id,
-                    n.parent_node_id      AS ancestor_id,
-                    ac.depth + 1          AS depth
-                FROM ancestor_chain ac
-                JOIN bible.nodes n
-                ON n.id = ac.ancestor_id
-                WHERE ac.ancestor_id IS NOT NULL
-            ),
-            para_for_text AS (
-                SELECT DISTINCT ON (ac.text_node_id)
-                    ac.text_node_id,
-                    ac.ancestor_id AS para_node_id,
-                    ac.depth
-                FROM ancestor_chain ac
-                JOIN bible.nodes p
-                ON p.id = ac.ancestor_id
-                WHERE p.node_type = 'para'
-                ORDER BY ac.text_node_id, ac.depth  -- keep nearest para
-            )
-            UPDATE bible.nodes n
-            SET is_tokenisable = TRUE
-            FROM para_for_text pt
-            JOIN bible.paragraphs bp
-            ON bp.node_id = pt.para_node_id
-            WHERE n.id = pt.text_node_id
-            AND bp.is_versetext = TRUE
-            AND n.is_tokenisable IS DISTINCT FROM TRUE;
-        """,
-        "get_tokenisable_nodes": """
-            SELECT
-                n.id AS text_node_id,
-                n.node_text
-            FROM bible.nodes n
-            WHERE n.is_tokenisable = 'true'
-            AND n.book_map_id IN (
-                    SELECT id FROM bible.booktofile
-                    WHERE translation_id = %s   -- <-- your target translation
-            )
-            ORDER BY n.id ASC
-        """,
         "get_chapter_tokenisable_nodes": """
             WITH chapter_bounds AS (
                 SELECT start_node, end_node
@@ -174,7 +101,7 @@ class Tokenisation:
 
         self.db = self.manager.get_db()
         self.obj = self.manager.get_obj()
-        self.log = self.manager.create_log(f"_TOKENS-{self.translation_id}")
+        self.log = self.manager.create_log_in_folder(f"TOKENS-{self.translation_id}", ["logs", "tokenisation"])
         self.log.set_logging_level(1)
 
         self.log.log_to_file(f"Starting Tokenisation ...\n", "TOKENISATION", "INFO")
@@ -183,13 +110,9 @@ class Tokenisation:
 
         self.log.log_to_file(f"Linked to Language with ID: {self.language_id}", "INIT", "INFO")
 
-        self.db.execute(self.SQL.get("init_tokenisable_nodes"), (self.translation_id,))
+        self.reconstruct_translation_chapters()
 
-        self.log.log_to_file(f"Initialised Tokenisable Nodes!", "INIT", "INFO")
-
-        self.reconstruct_chapter_nodes()
-
-        self.log.log_to_file(f"Finished Constructing Tokens: {self.language_id}", "INIT", "INFO")
+        self.log.log_to_file(f"COMPLETED Translation Re Construction!", "INIT", "INFO")
 
         self.create_tokens()
 
@@ -202,7 +125,7 @@ class Tokenisation:
         self.db.commit()
         self.db.close()
     
-    def reconstruct_chapter_nodes(self):
+    def reconstruct_translation_chapters(self):
         # Get all Books for this Translation
         all_books = self.db.fetch_all(self.SQL.get("get_translation_books"), (self.translation_id,))
 
@@ -211,25 +134,10 @@ class Tokenisation:
             all_chapters = self.db.fetch_all(self.SQL.get("get_book_chapters"), (book_map_id,))
 
             for chapter_occurence_id,_,chapter_ref in all_chapters:
-                # Get all tokenisable nodes for this chapter.
-                tokenisable_nodes = self.db.fetch_all(self.SQL.get("get_chapter_tokenisable_nodes"), (chapter_occurence_id,))
-                self.log.log_to_file(f"Nodes found to be tokenisable for [{chapter_ref}]: [{tokenisable_nodes}]", "NODE", "DEBUG")
-
-                chapter_text = ""
-
-                for node_id, text in tokenisable_nodes:
-                    start = len(chapter_text)
-                    chapter_text+=text  # Accumulate text for chapter occurence from nodes
-                    end = len(chapter_text)
-
-                    # Update start, end offsets for node
-                    self.db.execute(self.SQL.get("update_node_offsets"), (start, end, node_id))
-
-                # When finished iterating through nodes
-                #       update chapter_occurences with reconstructed chapter_text
-                self.db.execute(self.SQL.get("update_chapter_occurence_text"), (chapter_text, chapter_occurence_id))
-                # print(chapter_text)
-                self.log.log_to_file(f"Reconstructed Chapter [{chapter_ref}] Occurence [{chapter_occurence_id}]: \n[{chapter_text}\n]", "NODE", "TRACE")
+                # Reconstruct for chapter
+                assembled_chapter = Assembler(scope="chapter", occurence_id=chapter_occurence_id, is_nlp=True)
+                
+                self.log.log_to_file(f"Reconstructed Chapter [{chapter_ref}] using Assembler : [{assembled_chapter.get_details()}]", "NODE", "DEBUG")
     
     def create_tokens(self):
         # Init spacy pipeline used for training

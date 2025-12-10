@@ -42,7 +42,7 @@ class DBManager:
         """)
         
         if is_init:
-            print("Database Already Initialised!")
+            # print("Database Already Initialised!")
             return 
 
         db_server_script_path = Path(__file__).parents[2] / "services" / "database" / "server"
@@ -90,6 +90,10 @@ class DBManager:
     def fetch_all(self, query, params=None):
         self.cur.execute(query, params)
         return self.cur.fetchall()
+    
+    def fetch_all_single(self, query, params=None):
+        self.cur.execute(query, params)
+        return [row[0] for row in self.cur.fetchall()]
     
     def set_chunks(self, new_chunk):
         self.CHUNK = new_chunk
