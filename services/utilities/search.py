@@ -18,15 +18,10 @@ class Search():
                 ti.medium,
                 ti.name,
                 ti.namelocal,
-                ti.abbreviationlocal,
-                da.copyright,
-                da.promotion
+                ti.abbreviationlocal
             FROM bible.translations t
             JOIN bible.translationinfo ti
             ON t.dbl_id = ti.dbl_id
-            JOIN bible.dblagreements da
-            ON t.agreement_id = da.id
-            WHERE da.enabled = TRUE
             ORDER BY
                 t.dbl_id,
                 t.revision DESC,   -- highest revision first
@@ -93,7 +88,7 @@ class Search():
         self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
         self.db = self.manager.get_db()
-        self.log = self.manager.create_log_in_folder("search", ["logs", "search"])
+        self.log = self.manager.create_log_in_folder(["logs", "search"], "search")
         self.log.set_logging_level(2)
 
         self.translation_id     = 1
@@ -104,6 +99,8 @@ class Search():
         }
 
         self.results = []
+
+        self.init_filter()
 
     def init_filter(self):
         languages       = self.db.fetch_all(self.SQL.get("get_languages"))
@@ -126,19 +123,63 @@ class Search():
                 "name":             translation[3],
                 "namelocal":        translation[4],
                 "code":             translation[5],
-                "copyright":        translation[6],
-                "promotion":        translation[7],
                 "active":           True
             }#(translation, True)
 
         books           = self.db.fetch_all(self.SQL.get("get_distinct_books"))
         for book in books:
             book_code = book[0]
-            self.filter["translations"][book_code] = {
+            self.filter["books"][book_code] = {
                 "name":             book[1],
                 "active":           True
             }#(book, True)
+
+    def update_filter(self, type:str, key:str, is_active:bool):
+        self.filter[type][key]["active"] = is_active
+
+        match type:
+            case "languages":
+                for translation in self.filter["translations"].keys():
+                    if self.filter[translation]["language_id"] == key:
+                        self.filter[translation]["active"] = is_active
+                
+                print(self.filter["translations"])
+            case "translations":
+                pass
+            case "books":
+                pass
         
+    def apply_filters(self, base_sql:str, filter_types:list):
+        filters = self.filter
+        where_clauses = []
+        params = []
+
+        if filters["translations"] and "translations" in filter_types:
+            where_clauses.append("translation_id = ANY(%s)")
+            params.append(list(filters["translations"].keys()))
+
+        # Languages affects translations
+        if filters["languages"] and "languages" in filter_types:
+            where_clauses.append("""translation_id IN (
+                SELECT id FROM bible.translations WHERE language_id = ANY(%s)
+            )""")
+            params.append(list(filters["languages"].keys()))
+
+        # Translations affects books
+        if filters["books"] and "books" in filter_types:
+            where_clauses.append("""book_map_id IN (
+                SELECT id FROM bible.booktofile WHERE book_code = ANY(%s)
+            )""")
+            params.append(list(filters["books"].keys()))
+
+        if where_clauses:
+            return base_sql + " AND " + " AND ".join(where_clauses), params
+        return base_sql, params
+
+    def modify_search_query(self, query:str, params:list = None, filter_types:list = None):
+        new_query, temp_params = self.apply_filters(query.replace(";", ""), filter_types)
+        params.extend(temp_params)
+        return self.db.fetch_all(new_query, tuple(params))
 
     def set_translation_context(self, translation_id=None):
         self.translation_id = translation_id
@@ -174,7 +215,9 @@ class Search():
         }
     
     def search_word(self, word):
-        nodes_found = self.db.fetch_all(self.SQL.get("get_word_nodes"), (f"%{word}%", self.translation_id))
+        query = self.SQL.get("get_word_nodes")
+
+        nodes_found = self.modify_search_query(query, [f"%{word}%", self.translation_id], ["books", "translations"])
 
         results = self.search_results(nodes_found)
 
