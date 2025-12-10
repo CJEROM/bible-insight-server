@@ -9,9 +9,11 @@ from ingestor.translation import Translation
 from manager.managerhandler import ManagerHandler
 
 class Ingestor:
-    def __init__(self, dbl_id = None, agreement_id = None):
-        self.manager = ManagerHandler()
-        self.manager.get_obj().set_default_bucket("bible-dbl-raw")
+    def __init__(self, manager: ManagerHandler = None, dbl_id = None, agreement_id = None):
+        self.manager = manager
+        if manager == None:
+            self.manager = ManagerHandler()
+            self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
         self.dbl_id = dbl_id
         self.agreement_id = agreement_id
