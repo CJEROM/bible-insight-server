@@ -689,15 +689,16 @@ class Assembler:
         self.assemble_text("REF", valid_nodes, self.is_nlp)
     
     def add_detail(self):
-        self.set_xml()
-        self.get_strongs(self.scope)
+        if self.details != {}:
+            self.set_xml()
+            self.get_strongs(self.scope)
 
-        self.get_entities()
-        self.get_llema()
-        self.get_quotes()
-        self.get_cross_refs()
-        self.get_foot_notes()
-        self.get_user_notes()
+            self.get_entities()
+            self.get_llema()
+            self.get_quotes()
+            self.get_cross_refs()
+            self.get_foot_notes()
+            self.get_user_notes()
 
     def get_file_id(self):
         book_map_id = self.details["book"]
