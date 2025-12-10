@@ -216,6 +216,9 @@ class Assembler:
             SET reconstructed_text = %s
             WHERE id = %s;
         """,
+        "get_strongs_in_range": """
+
+        """
     }
 
     def __init__(
@@ -265,6 +268,9 @@ class Assembler:
 
             # "node": None,               # bible.nodes -> id
             # "node_path": None           # bible.nodes -> canonical_path
+
+            # "xml": None,                # Get from book_xml file
+            # "strongs": None,            # bible.nodes -> strongs (unique set in range)
         }
 
         try:
@@ -637,6 +643,29 @@ class Assembler:
         self.assemble_text("REF", valid_nodes, self.is_nlp)
     
     # Perhaps function to help build on nodes, to display strongs if available?
+    def set_xml(self):
+        pass
+
+    def get_strongs(self):
+        pass
+    
+    def get_entities(self):
+        pass
+    
+    def get_llema(self):
+        pass
+    
+    def get_quotes(self):
+        pass
+    
+    def get_cross_refs(self):
+        pass
+    
+    def get_foot_notes(self):
+        pass
+    
+    def get_user_notes(self):
+        pass
 
 # Used for TESTING
 if __name__ == "__main__":
