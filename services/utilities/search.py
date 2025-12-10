@@ -167,38 +167,49 @@ class Search():
         self.log.log_to_file(f"Applying filters: {filter_types} to [\n{base_sql}\n]", "apply_filters", "DEBUG")
 
         if filters["translations"] and "translations" in filter_types:
-            where_clauses.append("translation_id = ANY(%s)")
             temp_list = []
 
             for key in filters["translations"].keys():
                 if filters["translations"][key]["active"]:
                     temp_list.append(key)
 
-            params.append(temp_list)
+            if len(temp_list) > 0:
+                where_clauses.append("translation_id = ANY(%s)")
+                params.append(temp_list)
+            else:
+                where_clauses.append("FALSE")
 
         # Languages affects translations
         if filters["languages"] and "languages" in filter_types:
-            where_clauses.append("""translation_id IN (
-                SELECT id FROM bible.translations WHERE language_id = ANY(%s)
-            )""")
+            temp_list = []
 
             for key in filters["languages"].keys():
                 if filters["languages"][key]["active"]:
                     temp_list.append(key)
                     
-            params.append(temp_list)
+            if len(temp_list) > 0:
+                where_clauses.append("""translation_id IN (
+                    SELECT id FROM bible.translations WHERE language_id = ANY(%s)
+                )""")
+                params.append(temp_list)
+            else:
+                where_clauses.append("FALSE")
 
         # Translations affects books
         if filters["books"] and "books" in filter_types:
-            where_clauses.append("""book_map_id IN (
-                SELECT id FROM bible.booktofile WHERE book_code = ANY(%s)
-            )""")
+            temp_list = []
 
             for key in filters["books"].keys():
                 if filters["books"][key]["active"]:
                     temp_list.append(key)
-                    
-            params.append(temp_list)
+
+            if len(temp_list) > 0:
+                where_clauses.append("""book_map_id IN (
+                    SELECT id FROM bible.booktofile WHERE book_code = ANY(%s)
+                )""")
+                params.append(temp_list)
+            else:
+                where_clauses.append("FALSE")
 
         if where_clauses:
             new_query = base_sql + " AND " + " AND ".join(where_clauses)
