@@ -91,6 +91,10 @@ class DBManager:
         self.cur.execute(query, params)
         return self.cur.fetchall()
     
+    def fetch_all_single(self, query, params=None):
+        self.cur.execute(query, params)
+        return [row[0] for row in self.cur.fetchall()]
+    
     def set_chunks(self, new_chunk):
         self.CHUNK = new_chunk
     
