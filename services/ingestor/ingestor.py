@@ -132,7 +132,7 @@ class Ingestor:
             else:
                 translations = self.all_translations
 
-            for i, dbl_id, agreement_id in enumerate(translations):
+            for i, (dbl_id, agreement_id) in enumerate(translations):
                 if self.dbl_id != None and self.agreement_id != None:
                     if i == 0:
                         dbl_id = self.dbl_id
@@ -208,4 +208,5 @@ class Ingestor:
             browser.close()
 
 if __name__ == "__main__":
-    Ingestor()
+    # Ingestor()
+    Ingestor(dbl_id="7142879509583d59", agreement_id="240016")
