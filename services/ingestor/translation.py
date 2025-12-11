@@ -39,11 +39,17 @@ class Translation:
         self.translation_name = None
         self.bible_structure_info = None
 
-        self.style_file_id = None
+        self.files = {
+            "metadata": None,
+            "license": None,
+            "ldml": None,
+            "versification": None,
+            "styles": None,
+        }
         self.style_dict = {}
 
         # Initialise logfile
-        self.log = self.manager.create_log(f"{self.translation_id}-{self.translation_title}")
+        self.log = self.manager.create_log_in_folder(["logs", "ingestor"], f"{self.translation_id}-{self.translation_title}")
         self.log.set_logging_level(2)
 
         self.log.log_to_file(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]", "TRANSLATION", "INFO")
@@ -66,7 +72,7 @@ class Translation:
             print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
             self.db.get_connection().rollback()
 
-        self.log.log_to_file("Completed Translation Ingestion!", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Completed Translation [{self.translation_name}] Ingestion!", "TRANSLATION", "INFO")
 
         # Create Label Studio Project for this specific translation of the bible
         label_studio_env = self.env.get_label_studio()
@@ -156,6 +162,9 @@ class Translation:
     
     def get_style_dict(self):
         return self.style_dict
+    
+    def get_file(self, type):
+        return self.files.get(type)
     
     def get_bible_structure_info(self):
         structure = self.bible_structure_info
@@ -317,6 +326,14 @@ class Translation:
         if ldml_file is not None:
             ldml_file_id = self.get_support_files(file_location, object_start, ldml_file, "application/xml")
 
+        self.files = {
+            "metadata": self.get_support_files(file_location, object_start, "metadata.xml", "application/xml"),
+            "license": self.get_support_files(file_location, object_start, "license.xml", "application/xml"),
+            "ldml": ldml_file_id,
+            "versification": self.get_support_files(file_location, object_start, "release/versification.vrs", "application/xml"),
+            "styles": self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml"),
+        }
+
         # Update this information for translation in database
         self.db.execute("""
             UPDATE bible.translations
@@ -331,11 +348,11 @@ class Translation:
         """, (
             self.revision, 
             revision_note, 
-            self.get_support_files(file_location, object_start, "metadata.xml", "application/xml"),
-            self.get_support_files(file_location, object_start, "license.xml", "application/xml"),
-            ldml_file_id,
-            self.get_support_files(file_location, object_start, "release/versification.vrs", "application/xml"),
-            self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml"),
+            self.files["metadata"],
+            self.files["license"],
+            self.files["ldml"],
+            self.files["versification"],
+            self.files["styles"],
             self.translation_id
         ))
         self.log.log_to_file(f"Updated Translation Entry File IDs", "TRANSLATION", "TRACE")

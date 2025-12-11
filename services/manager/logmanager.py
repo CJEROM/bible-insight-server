@@ -21,7 +21,7 @@ class LogManager():
     def __init__(
             self, manager: "ManagerHandler" = None, 
             default_log_path=None, 
-            default_log_folder=None, 
+            default_log_folder:list=None, 
             log_file_name=None, 
             log_file_extension="log", 
             log_level=2,
@@ -38,14 +38,16 @@ class LogManager():
         elif default_log_folder != None:
             self.set_default_log_folder(default_log_folder, False)
         else:
-            self.set_default_log_folder("logs", False)
+            self.set_default_log_folder(["logs"], False)
 
         self.log_file_extension = log_file_extension
 
         self.log_file_name = log_file_name
 
         if log_file_name == None:
-            raise ValueError("Missing required parameter: log_file_name.")
+            dt = datetime.datetime.now()
+            # dt.strftime("%Y-%m-%d %H:%M:%S") => 2025-12-09 20:15:42
+            self.log_file_name = str(dt.strftime("%Y%m%d%H%M%S"))
         
         self.log_file = self.log_path / f"{self.log_file_name}.{self.log_file_extension}"
         self.disable_log = disable_log
@@ -72,19 +74,23 @@ class LogManager():
         try:
             os.makedirs(default_log_path)
         except Exception as e:
-            print("Log File Path Already Exists! Skipping Creation ...")
+            pass
+            # print("Log File Path Already Exists! Skipping Creation ...")
         self.log_path = default_log_path
 
         if update:
             self.update_log_file()
 
-    def set_default_log_folder(self, log_folder, update=True):
-        default_log_path = Path(__file__).parents[2] / log_folder
+    def set_default_log_folder(self, log_folders, update=True):
+        default_log_path = Path(__file__).parents[2]
+        for folder in log_folders:
+            default_log_path = default_log_path / folder
 
         try:
             os.makedirs(default_log_path)
         except Exception as e:
-            print("Log File Path Already Exists! Skipping Creation ...")
+            pass
+            # print("Log File Path Already Exists! Skipping Creation ...")
         self.log_path = default_log_path
 
         if update:

@@ -13,6 +13,7 @@ CREATE SCHEMA bible;
 CREATE SCHEMA lookup;
 CREATE SCHEMA users;
 CREATE SCHEMA nlp;
+CREATE SCHEMA audit;
 
 -- ================================================== Reference Data ==================================================
 
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS bible.sources (
 	note				TEXT,
 	metadata			JSONB
 );
+CREATE INDEX idx_bible_sources_url ON bible.sources (url);
 
 CREATE TABLE IF NOT EXISTS bible.files (
     id              SERIAL PRIMARY KEY,
@@ -51,6 +53,8 @@ CREATE TABLE IF NOT EXISTS bible.styles (
     source_file_id      INTEGER,
     FOREIGN KEY (source_file_id) REFERENCES bible.files (id) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_styles_file ON bible.styles (source_file_id);
+CREATE INDEX idx_bible_styles_style ON bible.styles (style);
 
 CREATE TABLE IF NOT EXISTS bible.properties (
     id                  SERIAL PRIMARY KEY,
@@ -70,6 +74,7 @@ CREATE TABLE IF NOT EXISTS bible.languages (
     nameLocal           TEXT,
     scriptDirection     TEXT
 );
+CREATE INDEX idx_bible_languages_iso ON bible.languages (iso);
 
 CREATE TABLE IF NOT EXISTS bible.dblagreements (
     id                  INTEGER PRIMARY KEY,
@@ -119,6 +124,9 @@ CREATE TABLE IF NOT EXISTS bible.translations (
     FOREIGN KEY (versification_file) REFERENCES bible.files (id) ON DELETE SET NULL,
     FOREIGN KEY (style_file) REFERENCES bible.files (id) ON DELETE SET NULL
 );
+CREATE INDEX idx_bible_translations_dbl_id ON bible.translations (dbl_id);
+CREATE INDEX idx_bible_translations_agreement_id ON bible.translations (agreement_id);
+CREATE INDEX idx_bible_translations_revision ON bible.translations (revision);
 
 CREATE TABLE IF NOT EXISTS bible.translationrelationships (
     id                  SERIAL PRIMARY KEY,
@@ -161,6 +169,7 @@ CREATE TABLE IF NOT EXISTS bible.books (
     code            TEXT UNIQUE,
 	total_chapters	INTEGER
 );
+CREATE INDEX idx_bible_books_code ON bible.books (code);
 
 CREATE TABLE IF NOT EXISTS bible.booktofile (
     id              SERIAL PRIMARY KEY,
@@ -173,6 +182,8 @@ CREATE TABLE IF NOT EXISTS bible.booktofile (
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_booktofile_book_code ON bible.booktofile (book_code);
+CREATE INDEX idx_bible_booktofile_translation_id ON bible.booktofile (translation_id);
 
 CREATE TABLE IF NOT EXISTS bible.bookgroups (
     id              SERIAL PRIMARY KEY,
@@ -206,6 +217,7 @@ CREATE TABLE IF NOT EXISTS bible.strongs (
 	-- Consider either storing bible.strongs Definition or api call to get it?
     FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_strongs_code ON bible.strongs (code);
 
 -- ================================================== bible.chapters ==================================================
 
@@ -287,6 +299,13 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE,
     FOREIGN KEY (strong) REFERENCES bible.strongs (code) ON DELETE SET NULL
 );
+CREATE INDEX idx_bible_nodes_node_text ON bible.nodes (node_text) WHERE is_tokenisable = TRUE;
+CREATE INDEX idx_bible_nodes_sid ON bible.nodes (sid) WHERE sid IS NOT NULL;
+CREATE INDEX idx_bible_nodes_eid ON bible.nodes (eid) WHERE eid IS NOT NULL;
+CREATE INDEX idx_bible_nodes_strong ON bible.nodes (strong) WHERE strong IS NOT NULL;
+CREATE INDEX idx_bible_nodes_parent_node_id ON bible.nodes (parent_node_id);
+CREATE INDEX idx_bible_nodes_book_map_id ON bible.nodes (book_map_id);
+CREATE INDEX idx_bible_nodes_translation_id ON bible.nodes (translation_id);
 
 -- Current nodes table is following stable USX, for new attributes, assign in nodes_extended, to add flexibility
 CREATE TABLE IF Not EXISTS bible.nodes_attributes (
@@ -308,6 +327,8 @@ CREATE TABLE IF NOT EXISTS bible.chapters (
     standard                BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (book_code) REFERENCES bible.books (code) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_chapters_book_code ON bible.chapters (book_code);
+CREATE INDEX idx_bible_chapters_chapter_ref ON bible.chapters (chapter_ref);
 
 -- Either an audio file or text file from book
 CREATE TABLE IF NOT EXISTS bible.chapteroccurences (
@@ -326,6 +347,10 @@ CREATE TABLE IF NOT EXISTS bible.chapteroccurences (
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id),
     FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_chapteroccurences_chapter_ref ON bible.chapteroccurences (chapter_ref);
+CREATE INDEX idx_bible_chapteroccurences_translation_id ON bible.chapteroccurences (translation_id);
+CREATE INDEX idx_bible_chapteroccurences_file_id ON bible.chapteroccurences (file_id) WHERE file_id IS NOT NULL;
+CREATE INDEX idx_bible_chapteroccurences_book_map_id ON bible.chapteroccurences (book_map_id) WHERE book_map_id IS NOT NULL;
 
 -- ================================================== bible.paragraphs & bible.verses ==================================================
 
@@ -350,6 +375,8 @@ CREATE TABLE IF NOT EXISTS bible.verses (
     standard        BOOLEAN DEFAULT TRUE, -- Whether this is standard verse or weird combo verse e.g. GEN 1:1-2
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_verses_chapter_ref ON bible.verses (chapter_ref);
+CREATE INDEX idx_bible_verses_verse_ref ON bible.verses (verse_ref);
 
 -- For linking non standard verses to their normal counter parts e.g. GEN 1:1-2 => GEN 1:1, GEN 1:2
 CREATE TABLE IF NOT EXISTS bible.verse_correction (
@@ -359,6 +386,8 @@ CREATE TABLE IF NOT EXISTS bible.verse_correction (
     FOREIGN KEY (non_standard_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_verse_correction_non_standard_verse_ref ON bible.verse_correction (non_standard_verse_ref);
+CREATE INDEX idx_bible_verse_correction_verse_ref ON bible.verse_correction (verse_ref);
 
 CREATE TABLE IF NOT EXISTS bible.verseoccurences (
     id                      SERIAL PRIMARY KEY,
@@ -375,6 +404,10 @@ CREATE TABLE IF NOT EXISTS bible.verseoccurences (
     FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_verseoccurences_verse_ref ON bible.verseoccurences (verse_ref);
+CREATE INDEX idx_bible_verseoccurences_chapter_id ON bible.verseoccurences (chapter_id);
+CREATE INDEX idx_bible_verseoccurences_book_map_id ON bible.verseoccurences (book_map_id);
+CREATE INDEX idx_bible_verseoccurences_translation_id ON bible.verseoccurences (translation_id);
 
 CREATE TABLE IF NOT EXISTS bible.excludedverses (
     id              SERIAL PRIMARY KEY,
@@ -383,6 +416,7 @@ CREATE TABLE IF NOT EXISTS bible.excludedverses (
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_excludedverses_translation_id ON bible.excludedverses (translation_id);
 
 -- ================================================== Cross References & Footnotes ==================================================
 
@@ -395,6 +429,9 @@ CREATE TABLE IF NOT EXISTS bible.translationfootnotes (
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_translationfootnotes_verse_ref ON bible.translationfootnotes (verse_ref) WHERE verse_ref IS NOT NULL;
+CREATE INDEX idx_bible_translationfootnotes_chapter_ref ON bible.translationfootnotes (chapter_ref) WHERE chapter_ref IS NOT NULL;
+CREATE INDEX idx_bible_translationfootnotes_node_id ON bible.translationfootnotes (node_id);
 
 CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
     id                      SERIAL PRIMARY KEY,
@@ -409,6 +446,10 @@ CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
     FOREIGN KEY (to_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (to_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_translationrefnotes_from_verse_ref ON bible.translationrefnotes (from_verse_ref) WHERE from_verse_ref IS NOT NULL;
+CREATE INDEX idx_bible_translationrefnotes_from_chapter_ref ON bible.translationrefnotes (from_chapter_ref) WHERE from_chapter_ref IS NOT NULL;
+CREATE INDEX idx_bible_translationrefnotes_to_verse_ref ON bible.translationrefnotes (to_verse_ref) WHERE to_verse_ref IS NOT NULL;
+CREATE INDEX idx_bible_translationrefnotes_to_chapter_ref ON bible.translationrefnotes (to_chapter_ref) WHERE to_chapter_ref IS NOT NULL;
 
 -- ================================================== Spacy Look up Tables ==================================================
 
@@ -496,6 +537,15 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     FOREIGN KEY (language_id) REFERENCES bible.languages (id),
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id)
 );
+CREATE INDEX idx_bible_tokens_text ON bible.tokens (text);
+CREATE INDEX idx_bible_tokens_chapter_occurence_id ON bible.tokens (chapter_occurence_id);
+CREATE INDEX idx_bible_tokens_chapter_start_offset ON bible.tokens (chapter_start_offset);
+CREATE INDEX idx_bible_tokens_chapter_end_offset ON bible.tokens (chapter_end_offset);
+CREATE INDEX idx_bible_tokens_head_token_id ON bible.tokens (head_token_id);
+CREATE INDEX idx_bible_tokens_lemma_id ON bible.tokens (lemma_id);
+CREATE INDEX idx_bible_tokens_pos ON bible.tokens (pos);
+CREATE INDEX idx_bible_tokens_language_id ON bible.tokens (language_id);
+CREATE INDEX idx_bible_tokens_translation_id ON bible.tokens (translation_id);
 
 -- ================================================== Entities ==================================================
 

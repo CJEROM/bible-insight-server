@@ -1,4 +1,6 @@
-
+import traceback
+import re
+from bs4 import BeautifulSoup
 
 # Responsible for helping me test token queries and trying to reassemble fragments in a way I might request it from the server
 
@@ -11,6 +13,10 @@
 # This class should be discardable after creation, it won't be changed after its been initialised, you only access the data within instead
 
 from manager.managerhandler import ManagerHandler
+
+VERSE   = "verse"
+CHAPTER = "chapter"
+BOOK    = "book"
 
 class Assembler:
     SQL = {
@@ -178,6 +184,39 @@ class Assembler:
             WHERE n.is_tokenisable = TRUE
             ORDER BY n.id;
         """,
+        "get_matched_verse_ref": """
+            WITH input_ref AS (
+                SELECT %s AS ref
+            ),
+
+            -- 1. Check if canonical verse exists e.g. GEN 3:1
+            direct_match AS (
+                SELECT vo.verse_ref
+                FROM bible.verseoccurences vo
+                JOIN input_ref i ON vo.verse_ref = i.ref
+                WHERE vo.translation_id = %s
+            ),
+
+            -- 2. If not, find non-standard refs that map *to* the input canonical ref e.g. if exists GEN 3:1-2
+            fallback_match AS (
+                SELECT vc.non_standard_verse_ref AS verse_ref
+                FROM bible.verse_correction vc
+                JOIN bible.verseoccurences vo 
+                    ON vo.verse_ref = vc.non_standard_verse_ref
+                JOIN input_ref i ON vc.verse_ref = i.ref
+                WHERE vo.translation_id = %s
+            )
+
+            -- 3. Prefer direct match; if none, return fallback
+            SELECT verse_ref
+            FROM direct_match
+
+            UNION ALL
+
+            SELECT verse_ref
+            FROM fallback_match
+            LIMIT 1;  -- return first match only              
+        """,
         # NOT IN USE YET
         "get_ref_all_verseoccurences": """
             SELECT * 
@@ -204,10 +243,34 @@ class Assembler:
             SELECT id
             FROM bible.nodes
             WHERE canonical_path = %s AND translation_id = %s
-        """
+        """,
+        # Helper Update Queries
+        "update_node_offsets": """
+            UPDATE bible.nodes 
+            SET chapter_start_offset = %s, chapter_end_offset = %s
+            WHERE id = %s;
+        """,
+        "update_chapter_occurence_text": """
+            UPDATE bible.chapteroccurences 
+            SET reconstructed_text = %s
+            WHERE id = %s;
+        """,
+        # Base Classes that are extended
+        "get_strongs_in_range": """
+            SELECT DISTINCT strong
+            FROM bible.nodes
+            WHERE strong IS NOT NULL
+        """,
+        # Helper Classes
     }
 
-    def __init__(self, manager: ManagerHandler = None, occurence_id=None, node_id=None, canonical_path=None, ref=None, scope=None, translation_id=None):
+    def __init__(
+            self, 
+            manager: ManagerHandler = None, 
+            occurence_id=None, node_id=None, canonical_path=None, ref=None, scope=None, translation_id=None, 
+            is_nlp=False
+        ):
+
         self.occurence_id   = occurence_id
         self.node_id        = node_id
         self.canonical_path = canonical_path
@@ -216,14 +279,17 @@ class Assembler:
 
         self.translation_id = translation_id
 
+        self.is_nlp         = is_nlp
+
         self.manager = manager
         if manager == None:
             self.manager = ManagerHandler()
             self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
         self.db = self.manager.get_db()
-        self.log = self.manager.create_log("assembler")
+        self.log = self.manager.create_log_in_folder(["logs", "assembler"], "assembler")
         self.log.set_logging_level(2)
+        self.obj = self.manager.get_obj()
 
         self.nodes  = [] # Represents all (tokenisable) nodes used to reconstruct context
         self.text   = ""
@@ -246,9 +312,18 @@ class Assembler:
 
             # "node": None,               # bible.nodes -> id
             # "node_path": None           # bible.nodes -> canonical_path
+
+            # "xml": None,                # Get from book_xml file
+            # "strongs": None,            # bible.nodes -> strongs (unique set in range)
         }
 
-        self.assemble()
+        try:
+            self.assemble()
+        except Exception as e:
+            self.log.log_to_file("No Tokenisable Nodes for assembly suspected!", "ASSEMBLER", "WARN")
+
+            error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            self.log.log_to_file(error_message, "ASSEMBLER", "ERROR")
     
     def get_details(self, detail=None):
         if detail == None:
@@ -303,6 +378,29 @@ class Assembler:
         
         # Log the resulted reconstruction - if it was successful (no error flagged)
         self.log.log_to_file(f"Reconstruction: [\n{self.text}\n]", "OCCURENCE", "DEBUG")
+
+    def assemble_text(self, source: str, tokenisable_nodes: list, update_offsets:bool = False):
+        self.log.log_to_file(f"Tokens for Reconstruction: f{tokenisable_nodes}", source, "DEBUG")
+
+        temp_offsets = []
+
+        for node in tokenisable_nodes:
+            node_id = node[0]
+            node_text = node[1]
+            self.nodes.append(node_id)
+
+            start = len(self.text)
+            self.text += node_text
+            end = len(self.text)
+
+            temp_offsets.append((start, end, node_id))
+
+        if update_offsets:
+            # Update start, end offsets for node
+            self.db.bulk_insert(self.SQL.get("update_node_offsets"), temp_offsets)
+
+            if self.details.get("scope") == "chapter":
+                self.db.execute(self.SQL.get("update_chapter_occurence_text"), (self.text, self.details.get("chapter")))
     
     def reconstruct_occurence(self, scope, occurence_id):
         valid_nodes = None
@@ -369,12 +467,7 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
         
-        self.log.log_to_file(f"Tokens for Reconstruction: {valid_nodes}", "OCCURENCE", "DEBUG")
-        for node in valid_nodes:
-            node_id = node[0]
-            node_text = node [1]
-            self.nodes.append(node_id)
-            self.text += node_text
+        self.assemble_text("OCCURENCE", valid_nodes, self.is_nlp)
 
     def reconstruct_from_node_id(self, scope, node_id):
         valid_nodes = None
@@ -448,12 +541,7 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.log.log_to_file(f"Tokens for Reconstruction: {valid_nodes}", "NODE_ID", "DEBUG")
-        for node in valid_nodes:
-            node_id = node[0]
-            node_text = node [1]
-            self.nodes.append(node_id)
-            self.text += node_text
+        self.assemble_text("NODE_ID", valid_nodes, self.is_nlp)
 
     def reconstruct_from_node_path(self, scope, translation_id, canonical_path):
         valid_nodes = None
@@ -525,12 +613,7 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.log.log_to_file(f"Tokens for Reconstruction: {valid_nodes}", "CANONICAL_PATH", "DEBUG")
-        for node in valid_nodes:
-            node_id = node[0]
-            node_text = node [1]
-            self.nodes.append(node_id)
-            self.text += node_text
+        self.assemble_text("CANONICAL_PATH", valid_nodes, self.is_nlp)
 
     def reconstruct_from_ref(self, translation_id, ref:str):
         # Find if GEN, GEN 1, GEN 1:1 => Based on that change query
@@ -580,11 +663,13 @@ class Assembler:
                 self.details["full_ref"] += " " + chapter_ref.split(" ")[1]
                 
             case "verse":
-                verse_ref = ref
+                verse_ref = self.db.fetch_clean_one(self.SQL.get("get_matched_verse_ref"), (ref, translation_id, translation_id))
+
                 valid_nodes = self.db.fetch_all(
                     self.SQL.get("get_verse_from_ref"), 
-                    (ref, translation_id)
+                    (verse_ref, translation_id)
                 )
+
                 sample_node = valid_nodes[0]
 
                 book_map_id         = sample_node[2]
@@ -601,39 +686,137 @@ class Assembler:
                 self.set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.log.log_to_file(f"Tokens for Reconstruction: f{valid_nodes}", "REF", "DEBUG")
-        for node in valid_nodes:
-            node_id = node[0]
-            node_text = node [1]
-            self.nodes.append(node_id)
-            self.text += node_text
+        self.assemble_text("REF", valid_nodes, self.is_nlp)
     
+    def add_detail(self):
+        if self.details != {}:
+            self.set_xml()
+            self.get_strongs()
+
+            self.get_entities()
+            self.get_llema()
+            self.get_quotes()
+            self.get_cross_refs()
+            self.get_foot_notes()
+            self.get_user_notes()
+
+    def get_file_id(self):
+        book_map_id = self.details["book"]
+        file_id = self.db.fetch_clean_one("""
+            SELECT file_id FROM bible.booktofile WHERE id = %s;
+        """, (book_map_id,))
+        self.details["file"] = file_id
+        return file_id
+
     # Perhaps function to help build on nodes, to display strongs if available?
+    def set_xml(self):
+        print(self.get_file_id())
+        book_xml = BeautifulSoup(self.obj.stream_file_from_file_id(self.get_file_id()), "xml")
+
+        ref_text = None
+
+        if self.scope != "book":
+            ref = self.details["ref"]
+
+            start_tag = book_xml.find(self.scope, sid=ref)
+            end_tag = book_xml.find(self.scope, eid=ref)
+
+            search_string = f"{start_tag}.*{end_tag}"
+            ref_found = re.search(search_string, str(book_xml), re.DOTALL)
+
+            # In case of WLC for example, Malachi 4 doesn't exist, so skip over chapter
+            #       if it doesn't exist for this book.
+            # Should also account for upper range increased due to non standard chapters (skip over them)
+            if ref_found == None:
+                self.log.log_to_file(f"{ref} XML Not Found...", f"XML", "DEBUG")
+                return
+
+            # Have to add encapsulating tags, since otherwise only first chapter tag, 
+            #       will be included when parsed as xml, ignoring the rest of the text
+            ref_text = """<usx version="3.0">\n"""
+
+            if self.scope == "verse":
+                closing = ""
+                for node in start_tag.parents:
+                    closing += f"\n</{node.name}>"
+                    ref_text += f"{start_tag.parent}\n"
+                    if node.name == "para" or node.name == "table":
+                        break
+                    else: 
+                        ref_text += start_tag.parent 
+
+                ref_text += ref_found.group(0)
+
+                ref_text += closing
+
+            else:
+                ref_text += ref_found.group(0)
+            ref_text += "\n</usx>"
+        else: 
+            ref_text = book_xml
+
+        if ref_text != None:
+            self.details["xml"] = ref_text
+
+    def get_strongs(self):
+        soup = BeautifulSoup(self.get_details("xml"), "xml")
+
+        # Get all nodes with a 'strong' attribute
+        nodes = soup.find_all(attrs={"strong": True})
+
+        # Extract their strong values
+        strong_values = [node.get("strong") for node in nodes]
+
+        # Make them unique
+        unique_strongs = set(strong_values)
+
+        if len(unique_strongs) > 0:
+            self.details["strongs"] = list(unique_strongs)
+    
+    def get_entities(self):
+        pass
+    
+    def get_llema(self):
+        pass
+    
+    def get_quotes(self):
+        pass
+    
+    def get_cross_refs(self):
+        # All cross reference in and out
+        pass
+    
+    def get_foot_notes(self):
+        # Only for this translation
+        pass
+    
+    def get_user_notes(self):
+        pass
 
 # Used for TESTING
 if __name__ == "__main__":
-    test_translation = 1
+    test_translation = 8
     test_occurence = 1
     test_node_id = 22
     test_node_path = "/usx:0/para:13/verse:1"
-    test_scope = "verse"
+    test_scope = "chapter"
     # test_scope = "chapter"
     # test_scope = "verse"
 
     # ======= OCCURENCE =======
     # REQUIRED: scope, occurence_id
-    temp = Assembler(scope=test_scope, occurence_id=test_occurence) # GEN
-    print(temp.get_details())
+    # temp = Assembler(scope=test_scope, occurence_id=test_occurence) # GEN
+    # print(temp.get_details())
 
-    # ======= NODE ID =======
-    # REQUIRED: scope, node_id
-    temp = Assembler(scope=test_scope, node_id=test_node_id) # GEN
-    print(temp.get_details())
+    # # ======= NODE ID =======
+    # # REQUIRED: scope, node_id
+    # temp = Assembler(scope=test_scope, node_id=test_node_id) # GEN
+    # print(temp.get_details())
 
-    # ======= NODE PATH =======
-    # REQUIRED: scope, canonical_path, translation_id
-    temp = Assembler(scope=test_scope, canonical_path=test_node_path, translation_id=test_translation)
-    print(temp.get_details())
+    # # ======= NODE PATH =======
+    # # REQUIRED: scope, canonical_path, translation_id
+    # temp = Assembler(scope=test_scope, canonical_path=test_node_path, translation_id=test_translation)
+    # print(temp.get_details())
 
     # ======= REF =======
     # REQUIRED: ref, translation_id
@@ -650,4 +833,6 @@ if __name__ == "__main__":
             test_ref = f"{test_book} {test_chapter}:{test_verse}"
 
     temp = Assembler(ref=test_ref, translation_id=test_translation)
+    print(temp.get_details())
+    temp.add_detail()
     print(temp.get_details())

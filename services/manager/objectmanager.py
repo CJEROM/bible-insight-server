@@ -15,6 +15,7 @@ class ObjectManager:
             self.env = self.this_manager.get_env()
 
         config = self.env.get_minio_config()
+        self.db = self.this_manager.get_db()
 
         # Passes Minio client connection on to the MinioUSXUpload class
         self.client = Minio(
@@ -56,12 +57,14 @@ class ObjectManager:
 
         return self.client.list_buckets()
 
-    def stream_file(self, object_name):
+    def stream_file(self, object_name, bucket=None):
+        if bucket == None:
+            bucket = self.bucket
         # Get file
         response = None 
         try:
             response = self.client.get_object(
-                bucket_name=self.bucket,
+                bucket_name=bucket,
                 object_name=object_name,
             )
             # Read the data as bytes, then decode as UTF-8
@@ -71,6 +74,12 @@ class ObjectManager:
             if response:
                 response.close()
                 response.release_conn()
+
+    def stream_file_from_file_id(self, file_id):
+        file_object_name, file_bucket = self.db.fetch_one("""
+            SELECT file_path AS object_name, bucket FROM bible.files WHERE id = %s
+        """, (file_id,))
+        return self.stream_file(file_object_name, file_bucket)
 
     def upload_file(self, object_name, file_path, content_type, bucket=None):
         if bucket == None:
