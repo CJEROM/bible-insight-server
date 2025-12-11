@@ -100,7 +100,7 @@ class Search():
 
         self.init_filter()
 
-    def init_filter(self):
+    def init_filter(self, is_active=True):
         languages       = self.db.fetch_all(self.SQL.get("get_languages"))
         for language in languages:
             language_id = language[0]
@@ -109,7 +109,7 @@ class Search():
                 "name":             language[2],
                 "namelocal":        language[3],
                 "scriptdirection":  language[4],
-                "active":           True
+                "active":           is_active
             }#(language, True)
 
         translations    = self.db.fetch_all(self.SQL.get("get_translations"))
@@ -121,7 +121,7 @@ class Search():
                 "name":             translation[3],
                 "namelocal":        translation[4],
                 "code":             translation[5],
-                "active":           True
+                "active":           is_active
             }#(translation, True)
 
         books           = self.db.fetch_all(self.SQL.get("get_distinct_books"))
@@ -129,7 +129,7 @@ class Search():
             book_code = book[0]
             self.filter["books"][book_code] = {
                 "name":             book[1],
-                "active":           True
+                "active":           is_active
             }#(book, True)
 
         language_filter = self.filter["languages"]
@@ -304,7 +304,7 @@ class Search():
 
 if __name__ == "__main__":
     new_search = Search()
-    new_search.update_filter("translations", 1, False)
+    # new_search.update_filter("translations", 1, False)
     new_search.search_word("fruit")
 
     # again_search = Search()
