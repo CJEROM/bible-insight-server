@@ -137,6 +137,11 @@ class Search():
         book_filter = self.filter["books"]
         self.log.log_to_file(f"Initialised filters: [\n{language_filter}\n{translation_filter}\n{book_filter}\n]", "init_filter", "DEBUG")
 
+    def get_filter(self, filter:str=None):
+        if filter:
+            return self.filter.get(filter, {})
+        return self.filter
+
     def update_filter(self, type:str, key:str, is_active:bool):
         self.filter[type][key]["active"] = is_active
         self.log.log_to_file(f"Updating filter type: {type}, with key{key}, to {is_active}", "update_filter", "DEBUG")
