@@ -114,7 +114,7 @@ class Search():
 
         translations    = self.db.fetch_all(self.SQL.get("get_translations"))
         for translation in translations:
-            translation_id = translation[0]
+            translation_id = str(translation[0])
             self.filter["translations"][translation_id] = {
                 "language_id":      translation[1],
                 "medium":           translation[2],
