@@ -35,7 +35,7 @@ def adjust_search_filter(action):
     return f"Adjust search filter: {action}"
 
 if __name__ == "__main__":
-    host_address = "localhost"
+    host_address = "0.0.0.0"
     host_port = 8000
     print(f"✅ Starting Flask server on http://{host_address}:{host_port} ...")
     app.run(host=host_address, port=host_port, debug=True, use_reloader=False)
