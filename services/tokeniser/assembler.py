@@ -262,6 +262,12 @@ class Assembler:
             WHERE strong IS NOT NULL
         """,
         # Helper Classes
+        "get_translation_name": """
+            SELECT ti.name, ti.abbreviationLocal
+            FROM bible.translations t
+            JOIN bible.translationinfo ti ON t.dbl_id = ti.dbl_id
+            WHERE t.id = %s
+        """,
     }
 
     def __init__(
@@ -375,6 +381,16 @@ class Assembler:
         self.details["scope"]   = self.scope
         self.details["text"]    = self.text
         self.details["nodes"]   = self.nodes
+
+        result = self.db.fetch_one(self.SQL.get("get_translation_name"), (self.details.get("translation"),))
+
+        print(result)
+
+        self.details["translation"] = {
+            "name": result[0],
+            "id": self.details.get("translation"),
+            "abbreviation": result[1]
+        }
         
         # Log the resulted reconstruction - if it was successful (no error flagged)
         self.log.log_to_file(f"Reconstruction: [\n{self.text}\n]", "OCCURENCE", "DEBUG")
@@ -795,7 +811,7 @@ class Assembler:
 
 # Used for TESTING
 if __name__ == "__main__":
-    test_translation = 8
+    test_translation = 1
     test_occurence = 1
     test_node_id = 22
     test_node_path = "/usx:0/para:13/verse:1"
