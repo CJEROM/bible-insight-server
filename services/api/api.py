@@ -20,10 +20,22 @@ def get_assembled_ref(translation, ref):
     return jsonify(scripture.get_details())
 
 # Currently used as a way to present navigation options to user, by instantiationg disposable Search object
-@app.route("/info/scripture_filters")
-def get_scripture_params():
+@app.route("/info/<translation>/books")
+def get_books_for_translation(translation):
     search = Search()
+    search.init_filter(is_active=False)
+    search.update_filter("translations", translation, True)
     filters = search.get_filter()
+    formatted_filters = {}
+    for filter_type, filter_data in filters.items():
+        print(filter_type, filter_data)
+
+    return jsonify(filters)
+
+@app.route("/info/translations")
+def get_translations():
+    search = Search()
+    filters = search.get_filter("translations")
     return jsonify(filters)
 
 @app.route("/search/<word>")
