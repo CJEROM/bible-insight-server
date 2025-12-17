@@ -25,18 +25,40 @@ def get_books_for_translation(translation):
     search = Search()
     search.init_filter(is_active=False)
     search.update_filter("translations", translation, True)
-    filters = search.get_filter()
-    formatted_filters = {}
-    for filter_type, filter_data in filters.items():
-        print(filter_type, filter_data)
+    filters = search.get_filter("books")
+    formatted_filters = []
+    # Return filters as {value, label}
+    for book_code, book_data in filters.items():
+        if book_data.get("active"):
+            formatted_filters.append(
+                {   
+                    "label": book_data.get("name"),
+                    "value": book_code
+                }
+            )
+        print(book_code, book_data)
 
-    return jsonify(filters)
+    return jsonify(formatted_filters)
 
 @app.route("/info/translations")
 def get_translations():
     search = Search()
     filters = search.get_filter("translations")
-    return jsonify(filters)
+    formatted_filters = []
+    # Return filters as {value, label}
+    for translation_id, translation_data in filters.items():
+        if translation_data.get("active"):
+            name = translation_data.get("name")
+            code = translation_data.get("code")
+            translation_label = f"{name} [{code}]"
+            formatted_filters.append(
+                {
+                    "label": translation_label,
+                    "value": translation_id
+                }
+            )
+        print(translation_id, translation_data)
+    return jsonify(formatted_filters)
 
 @app.route("/search/<word>")
 def search_word(word):
