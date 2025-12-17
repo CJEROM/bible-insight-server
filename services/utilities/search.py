@@ -79,6 +79,9 @@ class Search():
             AND n.node_text <> ''
             GROUP BY sn.strong, LOWER(n.node_text), n.translation_id
             ORDER BY sn.strong, occurrences DESC;
+        """,
+        "get_translation_books": """
+            SELECT book_code FROM bible.booktofile WHERE translation_id = %s
         """
     }
 
@@ -103,7 +106,7 @@ class Search():
     def init_filter(self, is_active=True):
         languages       = self.db.fetch_all(self.SQL.get("get_languages"))
         for language in languages:
-            language_id = language[0]
+            language_id = str(language[0])
             self.filter["languages"][language_id] = {
                 "code":              language[1],
                 "name":             language[2],
@@ -151,10 +154,15 @@ class Search():
                 for translation in self.filter["translations"].keys():
                     if self.filter["translations"][translation]["language_id"] == key:
                         self.filter["translations"][translation]["active"] = is_active
-                
-                print(self.filter["translations"])
             case "translations":
-                pass
+                translation_id = int(key)
+                existing_books = self.db.fetch_all_single(self.SQL.get("get_translation_books"), (translation_id,))
+                print(existing_books)
+                for book_code in self.filter["books"].keys():
+                    if book_code in existing_books:
+                        self.filter["books"][book_code]["active"] = True
+                    else:
+                        self.filter["books"][book_code]["active"] = False
             case "books":
                 pass
 
