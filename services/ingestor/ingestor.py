@@ -151,7 +151,9 @@ class Ingestor:
 
                 # Go to the DBL translation page
                 url = "https://app.library.bible/content/" + dbl_id + "/download?agreementId=" + str(agreement_id)
-                page.goto(url)  # Replace with your URL
+                page.goto(url, wait_until="domcontentloaded")  # Replace with your URL
+
+                page.wait_for_load_state("networkidle")
 
                 # Wait for the download button to appear
                 # Inspect the page and adjust the selector to match the button
