@@ -79,6 +79,9 @@ class Search():
             AND n.node_text <> ''
             GROUP BY sn.strong, LOWER(n.node_text), n.translation_id
             ORDER BY sn.strong, occurrences DESC;
+        """,
+        "get_translation_books": """
+            SELECT book_code FROM bible.booktofile WHERE translation_id = %s
         """
     }
 
@@ -103,7 +106,7 @@ class Search():
     def init_filter(self, is_active=True):
         languages       = self.db.fetch_all(self.SQL.get("get_languages"))
         for language in languages:
-            language_id = language[0]
+            language_id = str(language[0])
             self.filter["languages"][language_id] = {
                 "code":              language[1],
                 "name":             language[2],
@@ -114,7 +117,7 @@ class Search():
 
         translations    = self.db.fetch_all(self.SQL.get("get_translations"))
         for translation in translations:
-            translation_id = translation[0]
+            translation_id = str(translation[0])
             self.filter["translations"][translation_id] = {
                 "language_id":      translation[1],
                 "medium":           translation[2],
@@ -137,6 +140,11 @@ class Search():
         book_filter = self.filter["books"]
         self.log.log_to_file(f"Initialised filters: [\n{language_filter}\n{translation_filter}\n{book_filter}\n]", "init_filter", "DEBUG")
 
+    def get_filter(self, filter:str=None):
+        if filter:
+            return self.filter.get(filter, {})
+        return self.filter
+
     def update_filter(self, type:str, key:str, is_active:bool):
         self.filter[type][key]["active"] = is_active
         self.log.log_to_file(f"Updating filter type: {type}, with key{key}, to {is_active}", "update_filter", "DEBUG")
@@ -146,10 +154,15 @@ class Search():
                 for translation in self.filter["translations"].keys():
                     if self.filter["translations"][translation]["language_id"] == key:
                         self.filter["translations"][translation]["active"] = is_active
-                
-                print(self.filter["translations"])
             case "translations":
-                pass
+                translation_id = int(key)
+                existing_books = self.db.fetch_all_single(self.SQL.get("get_translation_books"), (translation_id,))
+                print(existing_books)
+                for book_code in self.filter["books"].keys():
+                    if book_code in existing_books:
+                        self.filter["books"][book_code]["active"] = True
+                    else:
+                        self.filter["books"][book_code]["active"] = False
             case "books":
                 pass
 

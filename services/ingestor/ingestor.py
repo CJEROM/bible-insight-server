@@ -210,5 +210,6 @@ class Ingestor:
             browser.close()
 
 if __name__ == "__main__":
-    Ingestor()
+    # Ingestor()
     # Ingestor(dbl_id="7142879509583d59", agreement_id="240016")
+    Ingestor(dbl_id="65eec8e0b60e656b", agreement_id="246069")
