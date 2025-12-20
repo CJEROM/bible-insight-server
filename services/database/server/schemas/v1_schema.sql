@@ -76,33 +76,13 @@ CREATE TABLE IF NOT EXISTS bible.languages (
 );
 CREATE INDEX idx_bible_languages_iso ON bible.languages (iso);
 
-CREATE TABLE IF NOT EXISTS bible.dblagreements (
-    id                  INTEGER PRIMARY KEY,
-	copyright           TEXT,
-    promotion           TEXT,
-    active              TIMESTAMP,
-    expiry              TIMESTAMP,
-    enabled             BOOLEAN
-);
-
-CREATE TABLE IF NOT EXISTS bible.translationinfo (
-    dbl_id              TEXT PRIMARY KEY,
-    medium              TEXT,
-    name                TEXT,
-    nameLocal           TEXT,
-    description         TEXT,
-    abbreviationLocal   TEXT,
-    language_id         INTEGER,
-    FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
-);
-
 CREATE TABLE IF NOT EXISTS bible.dblinfo (
     dbl_id              TEXT,
-    agreement_id         INTEGER,
-	-- revisions            INTEGER, -- Currently duplicated since its seems dbl_id and agreement_id make unique instance (revision) of a bible translation
-	PRIMARY KEY(dbl_id, agreement_id),
-    FOREIGN KEY (agreement_id) REFERENCES bible.dblagreements (id) ON DELETE CASCADE
-    -- FOREIGN KEY (dbl_id) REFERENCES bible.translationinfo (dbl_id)
+    agreement_id        INTEGER, 
+	latest_revision     BOOLEAN,                -- If this is last revision of this translation (based on dbl_id)
+    supported           BOOLEAN DEFAULT TRUE,   -- Is this translation supported by Bible Insight Ingestion.
+    import_time         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY(dbl_id, agreement_id)
 );
 
 CREATE TABLE IF NOT EXISTS bible.translations (
@@ -116,13 +96,24 @@ CREATE TABLE IF NOT EXISTS bible.translations (
     ldml_file           INTEGER,
     versification_file  INTEGER,
     style_file          INTEGER,
-	UNIQUE(dbl_id, agreement_id, revision),
-	FOREIGN KEY (dbl_id) REFERENCES bible.translationinfo (dbl_id) ON DELETE CASCADE,
+    medium              TEXT,
+    name                TEXT,
+    nameLocal           TEXT,
+    description         TEXT,
+    abbreviationLocal   TEXT,
+    language_id         INTEGER,
+    copyright           TEXT,
+    promotion           TEXT,
+    active              TIMESTAMP,
+    expiry              TIMESTAMP
+	UNIQUE(dbl_id, agreement_id),
+    FOREIGN KEY (dbl_id, agreement_id) REFERENCES bible.dblinfo (id) ON DELETE CASCADE
     FOREIGN KEY (license_file) REFERENCES bible.files (id) ON DELETE SET NULL,
     FOREIGN KEY (metadata_file) REFERENCES bible.files (id) ON DELETE SET NULL,
     FOREIGN KEY (ldml_file) REFERENCES bible.files (id) ON DELETE SET NULL,
     FOREIGN KEY (versification_file) REFERENCES bible.files (id) ON DELETE SET NULL,
-    FOREIGN KEY (style_file) REFERENCES bible.files (id) ON DELETE SET NULL
+    FOREIGN KEY (style_file) REFERENCES bible.files (id) ON DELETE SET NULL,
+    FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
 );
 CREATE INDEX idx_bible_translations_dbl_id ON bible.translations (dbl_id);
 CREATE INDEX idx_bible_translations_agreement_id ON bible.translations (agreement_id);
