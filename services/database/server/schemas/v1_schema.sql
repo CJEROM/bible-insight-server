@@ -134,6 +134,8 @@ CREATE TABLE IF NOT EXISTS bible.translationrelationships (
 
 CREATE TABLE IF NOT EXISTS bible.labellingprojects (
     id                  INTEGER PRIMARY KEY,
+    name                TEXT,   
+    description         TEXT,
     exports             INTEGER DEFAULT 0
 );
 
