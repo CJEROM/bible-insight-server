@@ -53,16 +53,19 @@ class LabelManager:
             JOIN bible.labellingprojects lp ON tlp.project_id = lp.id;
         """)
 
+        temp_projects = {}
+
         if not loaded_db_projects:
-            self.labelling_projects = {}
-            return
+            return {}
 
         for project_id, translation_id, project_name, project_description in loaded_db_projects:
-            self.labelling_projects[project_id] = {
+            temp_projects[project_id] = {
                 "translation_id": translation_id,
                 "project_name": project_name,
                 "project_description": project_description
             }
+
+        return temp_projects
 
     def get_labelling_projects(self, translation_id: int=None, project_id: int=None):
         # Either get all projects with translation_id
