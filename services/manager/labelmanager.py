@@ -40,7 +40,7 @@ class LabelManager:
             </View>
         """
 
-        self.labelling_projects = {}
+        self.labelling_projects = self.update_labelling_projects()
 
     def init_container(self):
         # Code that can be used to replace the logic in init_label_studio.py
@@ -52,7 +52,11 @@ class LabelManager:
             FROM bible.translationlabellingprojects tlp
             JOIN bible.labellingprojects lp ON tlp.project_id = lp.id;
         """)
-        
+
+        if not loaded_db_projects:
+            self.labelling_projects = {}
+            return
+
         for project_id, translation_id, project_name, project_description in loaded_db_projects:
             self.labelling_projects[project_id] = {
                 "translation_id": translation_id,
