@@ -77,11 +77,12 @@ CREATE TABLE IF NOT EXISTS bible.languages (
 CREATE INDEX idx_bible_languages_iso ON bible.languages (iso);
 
 CREATE TABLE IF NOT EXISTS bible.dblinfo (
-    dbl_id              TEXT,
-    agreement_id        INTEGER, 
-	latest_revision     BOOLEAN,                -- If this is last revision of this translation (based on dbl_id)
-    supported           BOOLEAN DEFAULT TRUE,   -- Is this translation supported by Bible Insight Ingestion.
-    import_time         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    dbl_id                  TEXT,
+    agreement_id            INTEGER, 
+	latest_revision         BOOLEAN,                -- If this is last revision of this translation (based on dbl_id)
+    supported               BOOLEAN DEFAULT TRUE,   -- Is this translation supported by Bible Insight Ingestion.
+    reason_not_supported    TEXT,                   -- Reason why not supported if applicable  
+    import_time             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY(dbl_id, agreement_id)
 );
 
@@ -105,9 +106,9 @@ CREATE TABLE IF NOT EXISTS bible.translations (
     copyright           TEXT,
     promotion           TEXT,
     active              TIMESTAMP,
-    expiry              TIMESTAMP
+    expiry              TIMESTAMP,
 	UNIQUE(dbl_id, agreement_id),
-    FOREIGN KEY (dbl_id, agreement_id) REFERENCES bible.dblinfo (id) ON DELETE CASCADE
+    FOREIGN KEY (dbl_id, agreement_id) REFERENCES bible.dblinfo (dbl_id, agreement_id) ON DELETE CASCADE,
     FOREIGN KEY (license_file) REFERENCES bible.files (id) ON DELETE SET NULL,
     FOREIGN KEY (metadata_file) REFERENCES bible.files (id) ON DELETE SET NULL,
     FOREIGN KEY (ldml_file) REFERENCES bible.files (id) ON DELETE SET NULL,
