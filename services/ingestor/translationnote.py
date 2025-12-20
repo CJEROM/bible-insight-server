@@ -1,31 +1,12 @@
 from bs4 import BeautifulSoup, Tag
-import psycopg2
 import re
-import os
-from pathlib import Path
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from translation import Translation
-    from book import Book
-    from chapter import Chapter
+    from ingestor.chapter import Chapter
+    from manager.logmanager import LogManager
 
-from verse import Verse
-
-from dotenv import load_dotenv
-
-# Automatically find the project root (folder containing .env)
-current = Path(__file__).resolve()
-for parent in current.parents:
-    if (parent / ".env").exists():
-        load_dotenv(parent / ".env")
-        break
-
-POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+from ingestor.verse import Verse
 
 #region Cases To Handle (both from source and for destination for both cross references and footnotes)
 # 2KI 6:31-7:20
@@ -129,15 +110,11 @@ class TranslationNote:
                 return format, name
 
         return (options[0]), None
-    
-    def execute_and_get_id(self, query, params):
-        self.cur.execute(query, params)
-        return self.cur.fetchone()[0]
 
-    def __init__(self, this_translation: "Translation", this_book: "Book", this_chapter: "Chapter", note_xml, node_id, db_conn):
-        self.this_translation = this_translation
-        self.this_book = this_book
-        self.this_chapter = this_chapter
+    def __init__(self, this_chapter: "Chapter", note_xml, node_id, log: "LogManager"):
+        self.this_chapter =         this_chapter
+        self.this_book =            self.this_chapter.get_this_book()
+        self.this_translation =     self.this_book.get_this_translation()
 
         self.book_map_id = self.this_book.get_book_map_id()
         self.translation_id = self.this_translation.get_translation_id()
@@ -146,8 +123,9 @@ class TranslationNote:
 
         self.parent_note = None
 
-        self.conn = db_conn
-        self.cur = self.conn.cursor()
+        self.log = log
+        self.manager = self.log.get_manager_handler()
+        self.db = self.manager.get_db()
 
         self.note_type = self.get_note_type()
         if self.note_type == None:
@@ -159,11 +137,11 @@ class TranslationNote:
         if self.note_type == "f":
             self.create_footnote()
         elif self.note_type == "x":
-            for i, ref in enumerate(self.note_xml.find_all("ref")):
+            for ref in self.note_xml.find_all("ref"):
                 crossreference_id = self.create_destination_ref(ref, self.node_id)
-                self.this_translation.log_ingestion_activity(f"Created Cross Reference [ID: {crossreference_id}]", "NOTE:CROSSREF", "DEBUG")
+                self.log.log_to_file(f"Created Cross Reference [ID: {crossreference_id}]", "NOTE:CROSSREF", "DEBUG")
 
-        self.conn.commit()
+        self.db.commit()
 
     def get_note_xml(self):
         return self.note_xml
@@ -230,9 +208,9 @@ class TranslationNote:
                 source_ref = partial_ref
         
         if source_type == "verse":
-            Verse(self.this_translation, self.this_book, self.this_chapter, verse_ref=source_ref, db_conn=self.conn, is_special_case=True)
+            Verse(self.this_chapter, verse_ref=source_ref, log=self.log, is_special_case=True)
 
-        self.this_translation.log_ingestion_activity(f"Created [{source_type}] Source Ref: [{note_ref}] -> [{cleaned_ref}] -> [{source_ref}] <=> [Format: {format}] [Format_Name: {format_name}] ", "NOTE", "DEBUG")
+        self.log.log_to_file(f"Created [{source_type}] Source Ref: [{note_ref}] -> [{cleaned_ref}] -> [{source_ref}] <=> [Format: {format}] [Format_Name: {format_name}] ", "NOTE", "DEBUG")
         
         return source_ref, source_type
     
@@ -310,7 +288,7 @@ class TranslationNote:
 
         self.parent_note = None
 
-        self.this_translation.log_ingestion_activity(f"Created [{destination_type}] Source Ref: [{original_ref}] -> [{cleaned_ref}] -> [{destination_ref}] <=> [Format: {format_types}] [Format_Name: {format_name}] ", "NOTE", "DEBUG")
+        self.log.log_to_file(f"Created [{destination_type}] Source Ref: [{original_ref}] -> [{cleaned_ref}] -> [{destination_ref}] <=> [Format: {format_types}] [Format_Name: {format_name}] ", "NOTE", "DEBUG")
 
         # only first fragment is returned, since the others link to first fragment as parent
         return main_note
@@ -321,21 +299,21 @@ class TranslationNote:
 
         # Simpler logic since can only have foot note for a chapter "PSA 46" or verse "LUK 1:17", (verse can be non-standard "MIC 4:14a" or mixed "MAT 12:18-21")
         if self.source_type == "verse":
-            footnote_id = self.execute_and_get_id(self.SQL.get("translation_foot_note"), (self.node_id, None, self.source_ref))
+            footnote_id = self.db.fetch_clean_one(self.SQL.get("translation_foot_note"), (self.node_id, None, self.source_ref))
         elif self.source_type == "chapter":
-            footnote_id = self.execute_and_get_id(self.SQL.get("translation_foot_note"), (self.node_id, self.source_ref, None))
+            footnote_id = self.db.fetch_clean_one(self.SQL.get("translation_foot_note"), (self.node_id, self.source_ref, None))
 
-        self.this_translation.log_ingestion_activity(f"Created Footnote [ID: {footnote_id}] ", "NOTE:FOOTNOTE", "DEBUG")
+        self.log.log_to_file(f"Created Footnote [ID: {footnote_id}] ", "NOTE:FOOTNOTE", "DEBUG")
 
-        for i, ref in enumerate(self.note_xml.find_all("ref")):
+        for ref in self.note_xml.find_all("ref"):
             cross_reference_id = self.create_destination_ref(ref, self.node_id)
-            self.this_translation.log_ingestion_activity(f"Created Cross Reference [ID: {cross_reference_id}] [From:FOOTNOTE]", "NOTE:FOOTNOTE", "DEBUG")
+            self.log.log_to_file(f"Created Cross Reference [ID: {cross_reference_id}] [From:FOOTNOTE]", "NOTE:FOOTNOTE", "DEBUG")
 
     def create_cross_reference(self, node_id, destination_ref, destination_type):
         this_ref = [None] * 5
 
         if destination_type == "verse":
-            Verse(self.this_translation, self.this_book, self.this_chapter, verse_ref=destination_ref, db_conn=self.conn, is_special_case=True)
+            Verse(self.this_chapter, verse_ref=destination_ref, log=self.log, is_special_case=True)
 
         this_ref[0] = node_id # node_id
         # this_ref[1] = # from_verse_ref
@@ -358,7 +336,7 @@ class TranslationNote:
         else:
             return None # if not any of these combos then quit
 
-        cross_reference_id = self.execute_and_get_id(self.SQL.get("translation_ref_note"), this_ref)
+        cross_reference_id = self.db.fetch_clean_one(self.SQL.get("translation_ref_note"), this_ref)
         return cross_reference_id
 
 # ✅ Test examples:
@@ -374,20 +352,20 @@ tests = {
     "GEN 0": "",        # ❌ Invalid
 }
 
-if __name__ == "__main__":
-    note_xml = ""
-    conn = psycopg2.connect(
-        host=POSTGRES_HOST,
-        port=POSTGRES_PORT,
-        dbname=POSTGRES_DB,
-        user=POSTGRES_USERNAME,
-        password=POSTGRES_PASSWORD
-    )
+# if __name__ == "__main__":
+#     note_xml = ""
+#     conn = psycopg2.connect(
+#         host=POSTGRES_HOST,
+#         port=POSTGRES_PORT,
+#         dbname=POSTGRES_DB,
+#         user=POSTGRES_USERNAME,
+#         password=POSTGRES_PASSWORD
+#     )
 
-    cur = conn.cursor()
+#     cur = conn.cursor()
 
-    TranslationNote(None, None, note_xml, conn)
+#     TranslationNote(None, None, note_xml, conn)
 
-    conn.commit()
-    cur.close()
-    conn.close()
+#     conn.commit()
+#     cur.close()
+#     conn.close()

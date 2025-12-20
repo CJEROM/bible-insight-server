@@ -1,13 +1,13 @@
 services:
   db:
-    image: postgis/postgis
+    image: timescale/timescaledb-ha:pg16.11-ts2.24.0-all-oss
     restart: always
-    ports: 
+    ports:
       - "5444:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: postgres # default database
+      POSTGRES_DB: bible-insight # default database
     volumes:
       - pg_data:/var/lib/postgresql/data
 volumes:

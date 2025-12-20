@@ -51,7 +51,7 @@ def run_script(file_name):
     print(file_path)
 
     subprocess.run(
-        ["python3", file_name], 
+        ["python3", "-m", file_name], 
         cwd=scripts_dir
     )
 
@@ -80,22 +80,15 @@ def start_api_server():
     print(response.status_code, response.text)
 
 if __name__ == "__main__":
-    # Check database instance working properly (issue with image on mac)
     try:
         restart_docker("postgres")
-    except Exception as e:
-        restart_docker("postgres-mac")
-
-    try:
         restart_docker("minio")
         restart_docker("label-studio")
         # restart_docker("authentik")
         # restart_docker("memgraph")
-        initialise_script("init_database.py", 5)
-        initialise_script("init_minio.py", 0)
         initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
         # # start_api_server() 
-        run_script("ingestor/ingestor.py")
+        run_script("ingestor.ingestor")
         # create_database_backup()
         # run_script(".\labeller\labeller.py")
         # print("FINISHED Script")

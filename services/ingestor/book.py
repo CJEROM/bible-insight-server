@@ -1,16 +1,21 @@
 from bs4 import BeautifulSoup
 import re
 
-from chapter import Chapter
-from nodes import Nodes
+from ingestor.chapter import Chapter
+from ingestor.nodes import Nodes
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from translation import Translation
+    from ingestor.translation import Translation
+    from manager.logmanager import LogManager
 
 # Changing since will only be relevant for text anyway
 class Book:
-    def __init__(self, this_translation: "Translation", book_code, book_map_id, file_id, book_string, db_conn):
+    def __init__(self, this_translation: "Translation", book_code, book_map_id, file_id, book_string, log: "LogManager"):
+        self.log = log
+        self.manager = self.log.get_manager_handler()
+        self.db = self.manager.get_db()
+
         self.this_translation = this_translation
 
         self.language_id =      self.this_translation.get_language_id()
@@ -19,19 +24,19 @@ class Book:
         self.file_id =          file_id
         self.book_xml =         BeautifulSoup(book_string, "xml")
 
-        # Adds a database connection
-        self.conn =             db_conn
-        self.cur =              self.conn.cursor()
 
         self.book_code =        book_code
 
-        self.this_translation.log_ingestion_activity(f"Created with [book_map_id:{self.book_map_id}]", f"BOOK: {self.book_code}", "INFO")
+        self.log.log_to_file(f"Created with [book_map_id:{self.book_map_id}]", f"BOOK: {self.book_code}", "INFO")
 
-        self.book_nodes =       Nodes(self.this_translation, self, db_conn, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
+        self.book_nodes =       Nodes(self, self.log, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
         
         self.createTextChapters()
 
-        self.conn.commit()
+        self.db.commit()
+
+    def get_this_translation(self):
+        return self.this_translation
 
     def get_book_xml(self):
         return self.book_xml
@@ -49,12 +54,11 @@ class Book:
     def createTextChapters(self):
         additions = 0
         # Grab all chapter_refs for this particular book from database
-        self.cur.execute("""
+        all_chapters = self.db.fetch_all("""
             SELECT chapter_ref FROM bible.chapters WHERE book_code=%s
         """, (self.book_code,))
-        all_chapters = self.cur.fetchall()
 
-        self.this_translation.log_ingestion_activity(f"Creating {len(all_chapters)} Chapters", f"BOOK: {self.book_code}", "DEBUG")
+        self.log.log_to_file(f"Creating {len(all_chapters)} Chapters", f"BOOK: {self.book_code}", "DEBUG")
 
         for chapter in all_chapters:
             chapter_ref = chapter[0]
@@ -68,10 +72,10 @@ class Book:
             #       if it doesn't exist for this book.
             # Should also account for upper range increased due to non standard chapters (skip over them)
             if chapter_found == None:
-                self.this_translation.log_ingestion_activity(f"Chapter {chapter_ref} invalid, skipping...", f"BOOK: {self.book_code}", "DEBUG")
+                self.log.log_to_file(f"Chapter {chapter_ref} invalid, skipping...", f"BOOK: {self.book_code}", "DEBUG")
                 continue
 
-            self.this_translation.log_ingestion_activity(f"Creating {chapter_ref} as Chapter Found in book: {chapter_found.group(0)}", f"BOOK: {self.book_code}", "TRACE")
+            self.log.log_to_file(f"Creating {chapter_ref} as Chapter Found in book: {chapter_found.group(0)}", f"BOOK: {self.book_code}", "TRACE")
 
             # Have to add encapsulating tags, since otherwise only first chapter tag, 
             #       will be included when parsed as xml, ignoring the rest of the text
@@ -80,13 +84,13 @@ class Book:
             chapter_text += "\n</usx>"
 
             # Create Chapter Classes
-            Chapter(self.this_translation, self, chapter_ref, chapter_text, self.conn)
+            Chapter(self, chapter_ref, chapter_text, self.log)
             additions += 1
 
-            self.this_translation.log_ingestion_activity(chapter_ref, f"BOOK: {self.book_code}", "TRACE")
+            self.log.log_to_file(chapter_ref, f"BOOK: {self.book_code}", "TRACE")
         
         if additions > 0:
             # print(f"    [{additions}] Chapters added for {self.book_code}")
-            self.this_translation.log_ingestion_activity(f"Created {additions} Chapter Occurences!", f"BOOK: {self.book_code}", "INFO")
+            self.log.log_to_file(f"Created {additions} Chapter Occurences!", f"BOOK: {self.book_code}", "INFO")
             pass # Ignore this printing for now to just test what translations are robust enough to work in here and which aren't
    

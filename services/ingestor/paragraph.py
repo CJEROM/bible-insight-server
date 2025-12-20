@@ -1,29 +1,28 @@
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from translation import Translation
-    from book import Book
-    from chapter import Chapter
+    from ingestor.chapter import Chapter
+    from manager.logmanager import LogManager
 
 class Paragraph:
-    def __init__(self, this_translation: "Translation", this_book: "Book", this_chapter: "Chapter", paragraph_node_id, para_xml, db_conn):
-        self.this_translation = this_translation
-        self.this_book = this_book
-        self.this_chapter = this_chapter
+    def __init__(self, this_chapter: "Chapter", paragraph_node_id, para_xml, log: "LogManager"):
+        self.this_chapter =         this_chapter
+        self.this_book =            self.this_chapter.get_this_book()
+        self.this_translation =     self.this_book.get_this_translation()
 
         self.translation_id = self.this_translation.get_translation_id()
         self.paragraph_node_id = paragraph_node_id
         self.para_xml = para_xml
 
-        # Adds a database connection
-        self.conn = db_conn
-        self.cur = self.conn.cursor()
+        self.log = log
+        self.manager = self.log.get_manager_handler()
+        self.db = self.manager.get_db()
 
         self.paragraph_id = None
         self.style_id, self.versetext = self.getParagraphStyle()
 
         self.createParagraph()
 
-        self.conn.commit()
+        self.db.commit()
 
     def get_paragraph_id(self):
         return self.paragraph_id
@@ -46,10 +45,9 @@ class Paragraph:
         return style_id, versetext
         
     def createParagraph(self):
-        self.cur.execute("""
+        self.paragraph_id = self.db.fetch_clean_one("""
             INSERT INTO bible.paragraphs (node_id, style_id, parent_para, is_versetext) 
             VALUES (%s, %s, %s, %s)
             RETURNING id;
         """, (self.paragraph_node_id, self.style_id, None, self.versetext))
-        self.paragraph_id = self.cur.fetchone()[0]
-        self.this_translation.log_ingestion_activity(f"Created New Paragraph [ID: {self.paragraph_id}] [Verse_Text: {str(self.versetext).capitalize()}]", f"PARAGRAPH", "DEBUG")
+        self.log.log_to_file(f"Created New Paragraph [ID: {self.paragraph_id}] [Verse_Text: {str(self.versetext).capitalize()}]", f"PARAGRAPH", "DEBUG")

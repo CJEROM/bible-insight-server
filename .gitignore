@@ -20,7 +20,44 @@ backups/
 .git-replacements.txt
 .env
 
-.DS_Store
-
 venv/
 .venv/
+
+# Local .terraform directory
+.terraform/
+.terraform.tfstate*
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Sensitive variable files
+*.tfvars
+*.tfvars.json
+secrets.auto.tfvars
+*.auto.tfvars
+
+# Override files (used for local changes not committed)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Plan files
+*.plan
+
+# Module registry packages
+*.zip
+
+# MacOS / Windows junk
+.DS_Store
+Thumbs.db
+
+# Vim/IDE swap files
+*.swp
+.idea/
+.vscode/
