@@ -3,7 +3,6 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import shutil
 import re
-from label_studio_sdk import LabelStudio
 import traceback
 
 from ingestor.book import Book
@@ -11,7 +10,6 @@ from ingestor.book import Book
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from manager.managerhandler import ManagerHandler
-from manager.logmanager import LogManager
 
 class Translation:
     def __init__(self, manager: "ManagerHandler", medium, process_location, source_url, translation_id, dbl_id, agreement_id):
@@ -19,6 +17,7 @@ class Translation:
         self.env = manager.get_env()
         self.obj = manager.get_obj()
         self.db = manager.get_db()
+        self.label = manager.get_label()
 
         self.medium = medium # Audio | Video | Text (USX)
         self.process_location = process_location
@@ -48,6 +47,8 @@ class Translation:
         }
         self.style_dict = {}
 
+        self.labelproject = None
+
         # Initialise logfile
         self.log = self.manager.create_log_in_folder(["logs", "ingestor"], f"{self.translation_id}-{self.translation_title}")
         self.log.set_logging_level(2)
@@ -75,70 +76,8 @@ class Translation:
         self.log.log_to_file(f"Completed Translation [{self.translation_name}] Ingestion!", "TRANSLATION", "INFO")
 
         # Create Label Studio Project for this specific translation of the bible
-        label_studio_env = self.env.get_label_studio()
-        label_studio_client = LabelStudio(base_url=label_studio_env["endpoint"], api_key=label_studio_env["api_token"])
-        # me = label_studio_client.users.whoami()
-
-        # Should consider how else to do this
-        project_label_config = """
-        <View>
-            <Relations>
-                <Relation value="org:founded_by"/>
-                <Relation value="org:founded"/>
-            </Relations>
-            <Labels name="label" toName="text">
-                <Label value="PER" background="#e74c3c"/>        <!-- Red -->
-                <Label value="LOC" background="#9b59b6"/>      <!-- Purple -->
-                <Label value="GRP" background="#f1c40f"/>         <!-- Yellow -->
-                <Label value="PRON" background="#27ae60"/>       <!-- Green -->
-                <Label value="Divine" background="#3498db"/>   <!-- Light Blue -->
-                <Label value="NOUN" background="#16a085"/>          <!-- Teal -->
-                <Label value="APOS" background="#e67e22"/>  <!-- Orange -->
-                <Label value="Q" background="#d35400"/>         <!-- Dark Orange -->
-            </Labels>
-
-            <Text name="text" value="$text"/>
-        </View>
-        """
-
-        self.translation_project = label_studio_client.projects.create(
-            title=self.translation_title,
-            description=self.translation_name,
-            label_config=project_label_config
-        )
-
-        minio_config = self.env.get_minio_config()
-
-        # For now not sure how this works
-        # export_storage = label_studio_client.export_storage.s3.create(
-        #     s3endpoint=f"http://192.168.0.19:8080", #Updated from localhost to hardcoded IP
-        #     aws_access_key_id=minio_config["username"],
-        #     aws_secret_access_key=minio_config["password"],
-        #     project=self.translation_project.id,
-        #     bucket="bible-nlp",
-        #     prefix=f"{self.translation_title}/exports/",
-        #     title="TEST Export"
-        # )
-
-        self.db.execute("""
-            INSERT INTO bible.labellingprojects (id) 
-            VALUES (%s)
-            RETURNING id;
-        """, (
-            self.translation_project.id,
-        ))
-
-        self.db.execute("""
-            INSERT INTO bible.translationlabellingprojects (translation_id, project_id) 
-            VALUES (%s, %s)
-            RETURNING id;
-        """, (
-            self.translation_id,
-            self.translation_project.id
-        ))
-
-        self.log.log_to_file(f"Created New Label Studio Project [Project_ID: {self.translation_project.id}] [URL: {source_url}]", "TRANSLATION", "INFO")
-
+        self.labelproject = self.label.create_new_translation_project(self.translation_id, self.translation_title, self.translation_name)
+        
     def get_translation_id(self):
         return self.translation_id
     
@@ -152,7 +91,7 @@ class Translation:
         return self.translation_id
     
     def get_translation_project_id(self):
-        return self.translation_project.id
+        return self.labelproject
     
     def get_translation_title(self):
         return self.translation_title
@@ -256,21 +195,27 @@ class Translation:
 
         return new_language_id
     
-    def update_translationinfo_db(self, metadata_xml):
+    def update_translationinfo_db(self, metadata_xml: BeautifulSoup):
         self.language_id = self.check_language(metadata_xml.find("language"))
 
         abbreviation = metadata_xml.find("identification").find("abbreviationLocal").text
         translation_name = metadata_xml.find("identification").find("name").text
+        
+        copyright = str(metadata_xml.find("copyright").find("statementContent"))
+        promotion = str(metadata_xml.find("promotion").find("promoVersionInfo"))
 
         self.db.execute("""
-            UPDATE bible.translationinfo
+            UPDATE bible.translations
             SET medium = %s,
                 name = %s,
                 namelocal = %s,
                 description = %s,
                 abbreviationlocal = %s,
-                language_id = %s
-            WHERE dbl_id = %s;        
+                language_id = %s,
+                        
+                copyright = %s, 
+                promotion = %s
+            WHERE id = %s;        
         """, (
             self.medium, 
             metadata_xml.find("identification").find("name").text, 
@@ -278,13 +223,17 @@ class Translation:
             metadata_xml.find("identification").find("description").text,
             metadata_xml.find("identification").find("abbreviationLocal").text,
             self.language_id,
-            self.dbl_id
+
+            copyright,
+            promotion,
+
+            self.translation_id
         ))
         self.log.log_to_file(f"Created Translation Info: [abbreviationLocal: {abbreviation}] [name: {translation_name}]", "TRANSLATION", "DEBUG")
 
         self.create_translation_relationships(metadata_xml)
 
-    def create_translation_relationships(self, metadata_xml):
+    def create_translation_relationships(self, metadata_xml: BeautifulSoup):
         translation_relationships = metadata_xml.find("relationships")
         for relation in translation_relationships.find_all("relation"):
             # Example: <relation id="9879dbb7cfe39e4d" revision="4" type="text" relationType="source"/>
@@ -547,7 +496,7 @@ class Translation:
         self.bible_structure_info = file_sections[0]
         self.createExcludedVerses(file_sections[2])
     
-    def createExcludedVerses(self, section_text):
+    def createExcludedVerses(self, section_text:str):
         additions = 0
         # Create list of excluded verses
         for line in section_text.splitlines():

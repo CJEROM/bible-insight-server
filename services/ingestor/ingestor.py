@@ -86,14 +86,14 @@ class Ingestor:
         if translation_id != None:
             return -1
         
-        # If not create a new entry and pass along the new id        
+        # If not create a new translation entry and add to supported translations      
         self.db.execute("""
-            INSERT INTO bible.translationinfo (dbl_id) VALUES(%s)
-            ON CONFLICT (dbl_id) DO NOTHING;
-        """, (dbl_id,))
+            INSERT INTO bible.dblinfo (dbl_id, agreement_id, supported) VALUES (%s, %s, TRUE)
+            ON CONFLICT (dbl_id, agreement_id) DO NOTHING;
+        """, (dbl_id,agreement_id))
 
         return self.db.fetch_clean_one("""
-            INSERT INTO bible.translations (dbl_id, agreement_id) VALUES(%s, %s) RETURNING id;
+            INSERT INTO bible.translations (dbl_id, agreement_id) VALUES (%s, %s) RETURNING id;
         """, (dbl_id, agreement_id))
 
     def get_downloads(self):
@@ -128,7 +128,7 @@ class Ingestor:
 
             translations = None
             if self.all_translations == None:
-                translations = self.db.fetch_all("""SELECT dbl_id, agreement_id FROM bible.DBLInfo;""")
+                translations = self.db.fetch_all("""SELECT dbl_id, agreement_id FROM bible.DBLInfo WHERE supported = TRUE;""")
             else:
                 translations = self.all_translations
 

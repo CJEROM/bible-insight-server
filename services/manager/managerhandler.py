@@ -2,6 +2,7 @@ from manager.dbmanager import DBManager
 from manager.envmanager import EnvManager
 from manager.logmanager import LogManager
 from manager.objectmanager import ObjectManager
+from manager.labelmanager import LabelManager
 
 class ManagerHandler:
     def __init__(self):
@@ -10,6 +11,7 @@ class ManagerHandler:
         self.env = EnvManager(self)
         self.db = DBManager(self)
         self.obj = ObjectManager(self)
+        self.label = LabelManager(self)
 
     def get_env(self):
         return self.env
@@ -19,6 +21,9 @@ class ManagerHandler:
     
     def get_obj(self):
         return self.obj
+    
+    def get_label(self):
+        return self.label
 
     def create_log(self, file_name):
         log_manager = LogManager(manager=self, log_file_name=file_name)
