@@ -5,7 +5,7 @@ import pandas
 SOURCE_URL = "https://dl.dropboxusercontent.com/scl/fi/pq1gsb2cf6n7hnp1l378d/Strongs-Numbers.xlsx?rlkey=puni8uqrdgcbikq1fkqg52576&e=1"
 
 # Depening on the source I use, the way I preprocess the data for my project will change
-class Strongs:
+class StrongsIngestor:
     def __init__(self):
         self.strongs_csv_path = Path(__file__).parents[2] / "downloads" / "strongs.xlsx"
         if not self.strongs_csv_path.exists():
@@ -41,4 +41,4 @@ class Strongs:
         # A need to see letter occurence
 
 if __name__ == "__main__":
-    Strongs()
+    StrongsIngestor()
