@@ -200,6 +200,9 @@ class Translation:
 
         abbreviation = metadata_xml.find("identification").find("abbreviationLocal").text
         translation_name = metadata_xml.find("identification").find("name").text
+        
+        copyright = str(metadata_xml.find("copyright").find("statementContent"))
+        promotion = str(metadata_xml.find("promotion").find("promoVersionInfo"))
 
         self.db.execute("""
             UPDATE bible.translations
@@ -208,7 +211,10 @@ class Translation:
                 namelocal = %s,
                 description = %s,
                 abbreviationlocal = %s,
-                language_id = %s
+                language_id = %s,
+                        
+                copyright = %s, 
+                promotion = %s
             WHERE id = %s;        
         """, (
             self.medium, 
@@ -217,6 +223,10 @@ class Translation:
             metadata_xml.find("identification").find("description").text,
             metadata_xml.find("identification").find("abbreviationLocal").text,
             self.language_id,
+
+            copyright,
+            promotion,
+
             self.translation_id
         ))
         self.log.log_to_file(f"Created Translation Info: [abbreviationLocal: {abbreviation}] [name: {translation_name}]", "TRANSLATION", "DEBUG")
