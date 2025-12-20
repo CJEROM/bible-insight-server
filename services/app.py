@@ -10,7 +10,10 @@ def restart_docker(container):
     scripts_dir = base / "devops/docker" / container
 
     # Destroy existing instance + connected volumes
-    subprocess.run(["docker", "compose", "down", "-v"], cwd=scripts_dir)
+    subprocess.run(
+        ["docker", "compose", "down", "-v"], 
+        cwd=scripts_dir
+    )
 
     # Delete any folders inside this containers folder
     for root, dirs, files in os.walk(scripts_dir, topdown=False):
@@ -20,7 +23,11 @@ def restart_docker(container):
             shutil.rmtree(dir_path)  # removes the entire directory and its contents
 
     # Restart Docker instance
-    subprocess.run(["docker", "compose", "up", "-d"], cwd=scripts_dir)
+    subprocess.run(
+        ["docker", "compose", "up", "-d"], 
+        cwd=scripts_dir,
+        check=True # Allows it to catch errors
+    )
 
 def initialise_script(file_name, delay):
     base = Path(__file__).parent
@@ -37,8 +44,14 @@ def run_script(file_name):
     base = Path(__file__).parent
     scripts_dir = base
 
+    file_path = scripts_dir
+    for file_part in file_name.split("/"):
+        file_path = file_path / file_part
+
+    print(file_path)
+
     subprocess.run(
-        ["python3", file_name], 
+        ["python3", "-m", file_name], 
         cwd=scripts_dir
     )
 
@@ -73,14 +86,12 @@ if __name__ == "__main__":
         restart_docker("label-studio")
         # restart_docker("authentik")
         # restart_docker("memgraph")
-        initialise_script("init_database.py", 3)
-        initialise_script("init_minio.py", 0)
         initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
-        # start_api_server() 
-        run_script(".\ingestor\ingestor.py")
-        create_database_backup()
-        run_script(".\labeller\labeller.py")
-        print("FINISHED Script")
-    except:
+        # # start_api_server() 
+        run_script("ingestor.ingestor")
+        # create_database_backup()
+        # run_script(".\labeller\labeller.py")
+        # print("FINISHED Script")
+    except Exception as e:
         pass
     

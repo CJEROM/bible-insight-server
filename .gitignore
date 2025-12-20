@@ -3,14 +3,16 @@ devops/docker/*/*
 !devops/docker/*/
 
 # But not these specific files
-!devops/docker/*/*/docker-compose.yml
+!devops/docker/**/docker-compose.yml
 !devops/docker/**/README.md
 !devops/docker/*/*/.env
 
 # Also, don't ignore subfolders needed for those files (if any)
 !devops/docker/
 
-downloads
+downloads/
+logs/
+backups/
 
 **/__pycache__/
 *.py[cod]
@@ -18,4 +20,44 @@ downloads
 .git-replacements.txt
 .env
 
-backups/
+venv/
+.venv/
+
+# Local .terraform directory
+.terraform/
+.terraform.tfstate*
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Sensitive variable files
+*.tfvars
+*.tfvars.json
+secrets.auto.tfvars
+*.auto.tfvars
+
+# Override files (used for local changes not committed)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Plan files
+*.plan
+
+# Module registry packages
+*.zip
+
+# MacOS / Windows junk
+.DS_Store
+Thumbs.db
+
+# Vim/IDE swap files
+*.swp
+.idea/
+.vscode/

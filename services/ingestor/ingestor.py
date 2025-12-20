@@ -1,72 +1,40 @@
-import requests
-from bs4 import BeautifulSoup
-import psycopg2
 import time
 
 from playwright.sync_api import sync_playwright
 import os
 import time
-from minio import Minio
 from pathlib import Path
 
-from miniousxupload import MinioUSXUpload
-
-from dotenv import load_dotenv
-
-# Automatically find the project root (folder containing .env)
-current = Path(__file__).resolve()
-for parent in current.parents:
-    if (parent / ".env").exists():
-        load_dotenv(parent / ".env")
-        break
-
-POSTGRES_USERNAME = os.getenv("POSTGRES_USERNAME")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB = os.getenv("POSTGRES_DB")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT")
-
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
-MINIO_USERNAME = os.getenv("MINIO_USERNAME")
-MINIO_PASSWORD = os.getenv("MINIO_PASSWORD")
-
-DBL_USERNAME = os.getenv("DBL_USERNAME")
-DBL_PASSWORD = os.getenv("DBL_PASSWORD")
+from ingestor.translation import Translation
+from manager.managerhandler import ManagerHandler
 
 class Ingestor:
-    def __init__(self):
+    def __init__(self, manager: ManagerHandler = None, dbl_id = None, agreement_id = None, all_translations: list = None):
+        self.manager = manager
+        if manager == None:
+            self.manager = ManagerHandler()
+            self.manager.get_obj().set_default_bucket("bible-dbl-raw")
+
+        self.dbl_id = dbl_id
+        self.agreement_id = agreement_id
+        self.all_translations = all_translations
+
+        self.env = self.manager.get_env()
+        self.db = self.manager.get_db()
+
         # Worth adding option, that if dbl_id and agreement_id have been passed in, run just the class for that translation
         #       This would be useful when enforcing foreign key constraints with translation relationships
 
         self.start_time = time.time()
 
         # Folder where you want downloads to go
-        self.download_path = "C:/Users/CephJ/Documents/git/bible-insight-server/downloads"
+        self.download_path = Path(__file__).parents[2] / "downloads"
         os.makedirs(self.download_path, exist_ok=True)
-
-        # Passes Minio client connection on to the MinioUSXUpload class
-        self.client = Minio(
-            MINIO_ENDPOINT,
-            access_key=MINIO_USERNAME,
-            secret_key=MINIO_PASSWORD,
-            secure=False
-        )
-
-        self.conn = psycopg2.connect(
-            host=POSTGRES_HOST,
-            port=POSTGRES_PORT,
-            dbname=POSTGRES_DB,
-            user=POSTGRES_USERNAME,
-            password=POSTGRES_PASSWORD
-        )
-
-        self.cur = self.conn.cursor()
 
         self.get_downloads()
 
-        self.conn.commit()
-        self.cur.close()
-        self.conn.close()
+        self.db.commit()
+        self.db.close()
 
         duration = time.time() - self.start_time
         hours = int(duration // 3600)
@@ -110,33 +78,28 @@ class Ingestor:
 
     def get_translation(self, dbl_id, agreement_id):
         agreement_id = str(agreement_id)
-        self.cur.execute("""
+        translation_id = self.db.fetch_one("""
             SELECT id FROM bible.translations WHERE dbl_id = %s AND agreement_id = %s;
         """, (dbl_id, agreement_id))
 
         # If the translation already exists, then quit processing this translation
-        translation_id = self.cur.fetchone()
         if translation_id != None:
             return -1
         
         # If not create a new entry and pass along the new id        
-        self.cur.execute("""
+        self.db.execute("""
             INSERT INTO bible.translationinfo (dbl_id) VALUES(%s)
             ON CONFLICT (dbl_id) DO NOTHING;
         """, (dbl_id,))
 
-        self.cur.execute("""
+        return self.db.fetch_clean_one("""
             INSERT INTO bible.translations (dbl_id, agreement_id) VALUES(%s, %s) RETURNING id;
         """, (dbl_id, agreement_id))
-        self.conn.commit()
-
-        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.translations",))
-        return self.cur.fetchone()[0] # Return file_id to link to
 
     def get_downloads(self):
         with sync_playwright() as p:
             # Launch browser
-            browser = p.chromium.launch(headless=False)  # headless=False shows the browser
+            browser = p.chromium.launch(headless=False, timeout=999999)  # headless=False shows the browser
             context = browser.new_context(accept_downloads=True)  # Important to handle downloads
 
             page = context.new_page()
@@ -149,8 +112,9 @@ class Ingestor:
             # Do we need to login?
             if page.query_selector("input[name='email']"):
                 # Fill in the username/email and password
-                page.fill("input[name='email']", DBL_USERNAME)
-                page.fill("input[name='password']", DBL_PASSWORD)
+                dbl_credentials = self.env.get_dbl_credentials()
+                page.fill("input[name='email']", dbl_credentials["username"])
+                page.fill("input[name='password']", dbl_credentials["password"])
                 page.click("button#rememberMe") # Try Remember me for 30 days, to prevent excessive logging and checking
 
                 # Click the login button
@@ -162,46 +126,45 @@ class Ingestor:
             else:
                 print("     Already logged in") # Assumes that we couldn't find email field in link means we are logged in already
 
-            self.cur.execute("""
-                SELECT dbl_id, agreement_id FROM bible.DBLInfo;
-            """)
+            translations = None
+            if self.all_translations == None:
+                translations = self.db.fetch_all("""SELECT dbl_id, agreement_id FROM bible.DBLInfo;""")
+            else:
+                translations = self.all_translations
 
-            translations = self.cur.fetchall()
-            # translations = (
-            #     "c89622d31b60c444-272278".split("-"),
-            #     "32339cf2f720ff8e-265856".split("-"),
-            #     "7644de2e4c5188e5-265855".split("-")
-            # )
-
-            for dbl_id, agreement_id in translations:
+            for i, (dbl_id, agreement_id) in enumerate(translations):
+                if self.dbl_id != None and self.agreement_id != None:
+                    if i == 0:
+                        dbl_id = self.dbl_id
+                        agreement_id = self.agreement_id
+                    else:
+                        break
 
                 translation_id = self.get_translation(dbl_id, agreement_id)
                 if translation_id == -1:
                     print(f"❌ Translation {dbl_id}-{agreement_id} already exists! Skipping ...")
                     continue # Skip because its already in our system
 
-                # 32664dc3288a28df-265137
-                # dbl_id = "32664dc3288a28df"
-                # agreement_id = 265137
-
-                print(f"\n✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
+                print(f"\n\n✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
 
                 new_path = None
 
                 # Go to the DBL translation page
                 url = "https://app.library.bible/content/" + dbl_id + "/download?agreementId=" + str(agreement_id)
-                page.goto(url)  # Replace with your URL
+                page.goto(url, wait_until="domcontentloaded")  # Replace with your URL
+
+                page.wait_for_load_state("networkidle")
 
                 # Wait for the download button to appear
                 # Inspect the page and adjust the selector to match the button
-                page.wait_for_selector("button:has-text('Download')")  
+                page.wait_for_selector("button:has-text('Download All')")  
 
-                zip_button = page.query_selector("button:has-text('Download ZIP')")
+                zip_button = page.query_selector("button:has-text('Download All')")
                 if zip_button:
 
                     # Trigger the download
                     with page.expect_download() as download_info:
-                        page.click("button:has-text('Download ZIP')")  # Click the download button
+                        page.click("button:has-text('Download All')")  # Click the download button
                     download = download_info.value
 
                     # Save to your folder
@@ -209,11 +172,11 @@ class Ingestor:
                     download.save_as(os.path.join(self.download_path, download.suggested_filename))
                     print(f"✅ Downloaded ZIP: {new_path}")
 
-                    MinioUSXUpload(self.client, "text", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
+                    Translation(self.manager, "text", new_path, url, translation_id, dbl_id, agreement_id)
                 else:
                     print("⚠️ No ZIP button found, assuming audio download instead")
                     # Expand all folders
-                    self.expand_all_folders(page)
+                    # self.expand_all_folders(page)
 
                     page.wait_for_load_state("networkidle")
                     
@@ -238,17 +201,15 @@ class Ingestor:
                         download = download_info.value
                         download.save_as(os.path.join(folder_path, filename))
 
-                        # print(f"✅ Downloaded {filename} → {folder_path}")
-
                     new_path = Path(self.download_path) / download_folder_name
                     
                     print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
 
-                    MinioUSXUpload(self.client, "audio", new_path, "bible-dbl-raw", url, translation_id, dbl_id, agreement_id)
-
-                # break
+                    Translation(self.manager, "audio", new_path, url, translation_id, dbl_id, agreement_id)
 
             browser.close()
 
 if __name__ == "__main__":
-    Ingestor()
+    # Ingestor()
+    # Ingestor(dbl_id="7142879509583d59", agreement_id="240016")
+    Ingestor(dbl_id="65eec8e0b60e656b", agreement_id="246069")

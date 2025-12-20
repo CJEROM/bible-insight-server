@@ -10,11 +10,14 @@ CREATE EXTENSION pgcrypto;
 -- CREATE EXTENSION unit;
 
 CREATE SCHEMA bible;
+CREATE SCHEMA lookup;
+CREATE SCHEMA users;
 CREATE SCHEMA nlp;
+CREATE SCHEMA audit;
 
 -- ================================================== Reference Data ==================================================
 
-CREATE TABLE IF NOT EXISTS bible.users (
+CREATE TABLE IF NOT EXISTS users.users (
     id                  SERIAL PRIMARY KEY,
     sud                 TEXT UNIQUE
 );
@@ -25,6 +28,7 @@ CREATE TABLE IF NOT EXISTS bible.sources (
 	note				TEXT,
 	metadata			JSONB
 );
+CREATE INDEX idx_bible_sources_url ON bible.sources (url);
 
 CREATE TABLE IF NOT EXISTS bible.files (
     id              SERIAL PRIMARY KEY,
@@ -49,6 +53,8 @@ CREATE TABLE IF NOT EXISTS bible.styles (
     source_file_id      INTEGER,
     FOREIGN KEY (source_file_id) REFERENCES bible.files (id) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_styles_file ON bible.styles (source_file_id);
+CREATE INDEX idx_bible_styles_style ON bible.styles (style);
 
 CREATE TABLE IF NOT EXISTS bible.properties (
     id                  SERIAL PRIMARY KEY,
@@ -68,6 +74,7 @@ CREATE TABLE IF NOT EXISTS bible.languages (
     nameLocal           TEXT,
     scriptDirection     TEXT
 );
+CREATE INDEX idx_bible_languages_iso ON bible.languages (iso);
 
 CREATE TABLE IF NOT EXISTS bible.dblagreements (
     id                  INTEGER PRIMARY KEY,
@@ -117,6 +124,9 @@ CREATE TABLE IF NOT EXISTS bible.translations (
     FOREIGN KEY (versification_file) REFERENCES bible.files (id) ON DELETE SET NULL,
     FOREIGN KEY (style_file) REFERENCES bible.files (id) ON DELETE SET NULL
 );
+CREATE INDEX idx_bible_translations_dbl_id ON bible.translations (dbl_id);
+CREATE INDEX idx_bible_translations_agreement_id ON bible.translations (agreement_id);
+CREATE INDEX idx_bible_translations_revision ON bible.translations (revision);
 
 CREATE TABLE IF NOT EXISTS bible.translationrelationships (
     id                  SERIAL PRIMARY KEY,
@@ -159,6 +169,7 @@ CREATE TABLE IF NOT EXISTS bible.books (
     code            TEXT UNIQUE,
 	total_chapters	INTEGER
 );
+CREATE INDEX idx_bible_books_code ON bible.books (code);
 
 CREATE TABLE IF NOT EXISTS bible.booktofile (
     id              SERIAL PRIMARY KEY,
@@ -171,6 +182,8 @@ CREATE TABLE IF NOT EXISTS bible.booktofile (
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_booktofile_book_code ON bible.booktofile (book_code);
+CREATE INDEX idx_bible_booktofile_translation_id ON bible.booktofile (translation_id);
 
 CREATE TABLE IF NOT EXISTS bible.bookgroups (
     id              SERIAL PRIMARY KEY,
@@ -195,6 +208,115 @@ CREATE TABLE IF NOT EXISTS bible.bookgroupnames (
     FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
 );
 
+-- ================================================== Strongs Components ==================================================
+
+CREATE TABLE IF NOT EXISTS bible.strongs (
+    id              SERIAL PRIMARY KEY,
+    code            TEXT UNIQUE,
+    language_id     INTEGER,
+	-- Consider either storing bible.strongs Definition or api call to get it?
+    FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
+);
+CREATE INDEX idx_bible_strongs_code ON bible.strongs (code);
+
+-- ================================================== bible.chapters ==================================================
+
+CREATE TABLE IF NOT EXISTS lookup.node_attribute_types (
+    id                      SERIAL PRIMARY KEY,
+    attribute               TEXT UNIQUE,
+    description             TEXT,
+    active                  BOOLEAN
+);
+
+-- For all the node types e.g. <para>
+CREATE TABLE IF NOT EXISTS lookup.node_types (
+    id                      SERIAL PRIMARY KEY,
+    node                    TEXT UNIQUE,
+    description             TEXT,
+    active                  BOOLEAN
+);
+
+-- Maps the different attributes to node types
+CREATE TABLE IF NOT EXISTS lookup.node_map (
+    id                      SERIAL PRIMARY KEY,
+    node_type               TEXT,
+    node_attribute          TEXT,
+    UNIQUE(node_type, node_attribute), -- Unique combinations of what attributes and nodes go together
+    FOREIGN KEY (node_type) REFERENCES lookup.node_types (node),
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attribute_types (attribute)
+);
+
+-- Shows what possibilities could happen with a node_type and the parent node to recreate the tree structure
+CREATE TABLE IF NOT EXISTS lookup.node_tree (
+    id                      SERIAL PRIMARY KEY,
+    node_parent             TEXT,
+    node_child              TEXT,
+    FOREIGN KEY (node_parent) REFERENCES lookup.node_types (node),
+    FOREIGN KEY (node_child) REFERENCES lookup.node_types (node)
+);
+
+-- Shows in what combinations a node can come up
+CREATE TABLE IF NOT EXISTS lookup.node_options (
+    id                      SERIAL PRIMARY KEY,
+    node_type               TEXT,
+    node_attribute          TEXT,
+    option                  INTEGER,
+    node_tree_id            INTEGER,
+    FOREIGN KEY (node_type, node_attribute) REFERENCES lookup.node_map (node_type, node_attribute),
+    FOREIGN KEY (node_type) REFERENCES lookup.node_types (node),
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attribute_types (attribute),
+    FOREIGN KEY (node_tree_id) REFERENCES lookup.node_tree (id)
+);
+
+-- Built for speed, so very denormalised and flat which is what it needs to be
+CREATE TABLE IF NOT EXISTS bible.nodes (
+    id                      SERIAL PRIMARY KEY,
+    node_text               TEXT,
+    node_type               TEXT,
+    code                    TEXT,
+    sid                     TEXT,
+    eid                     TEXT,
+    vid                     TEXT,
+    style                   TEXT,
+    number                  TEXT,
+    caller                  TEXT,
+    closed                  TEXT,
+    version                 TEXT,
+    strong                  TEXT,
+    loc                     TEXT,
+    align                   TEXT,
+    parent_node_id          INTEGER, -- Can be null due to usx root node
+    index_in_parent         INTEGER,
+    book_map_id             INTEGER,
+    translation_id          INTEGER,
+    canonical_path          TEXT,
+    is_tokenisable          BOOLEAN,
+    chapter_start_offset    INTEGER,
+    chapter_end_offset      INTEGER,
+    FOREIGN KEY (parent_node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
+    FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE,
+    FOREIGN KEY (strong) REFERENCES bible.strongs (code) ON DELETE SET NULL
+);
+CREATE INDEX idx_bible_nodes_node_text ON bible.nodes (node_text) WHERE is_tokenisable = TRUE;
+CREATE INDEX idx_bible_nodes_sid ON bible.nodes (sid) WHERE sid IS NOT NULL;
+CREATE INDEX idx_bible_nodes_eid ON bible.nodes (eid) WHERE eid IS NOT NULL;
+CREATE INDEX idx_bible_nodes_strong ON bible.nodes (strong) WHERE strong IS NOT NULL;
+CREATE INDEX idx_bible_nodes_parent_node_id ON bible.nodes (parent_node_id);
+CREATE INDEX idx_bible_nodes_book_map_id ON bible.nodes (book_map_id);
+CREATE INDEX idx_bible_nodes_translation_id ON bible.nodes (translation_id);
+
+-- Current nodes table is following stable USX, for new attributes, assign in nodes_extended, to add flexibility
+CREATE TABLE IF Not EXISTS bible.nodes_attributes (
+    id                      SERIAL PRIMARY KEY,
+    node_id                 INTEGER,
+    node_attribute          TEXT,
+    value                   TEXT,
+    FOREIGN KEY (node_id) REFERENCES bible.nodes (id),
+    FOREIGN KEY (node_attribute) REFERENCES lookup.node_attribute_types (attribute)
+);
+
 -- ================================================== bible.chapters ==================================================
 
 CREATE TABLE IF NOT EXISTS bible.chapters (
@@ -205,30 +327,43 @@ CREATE TABLE IF NOT EXISTS bible.chapters (
     standard                BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (book_code) REFERENCES bible.books (code) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_chapters_book_code ON bible.chapters (book_code);
+CREATE INDEX idx_bible_chapters_chapter_ref ON bible.chapters (chapter_ref);
 
+-- Either an audio file or text file from book
 CREATE TABLE IF NOT EXISTS bible.chapteroccurences (
     id                      SERIAL PRIMARY KEY,
     chapter_ref             TEXT,
-    file_id            		INTEGER,
-    book_map_id             INTEGER,
+    translation_id          INTEGER,
+    file_id            		INTEGER, -- audio_file
+    book_map_id             INTEGER, -- usx_file
+    start_node              INTEGER, -- usx_file
+    end_node                INTEGER, -- usx_file
+    reconstructed_text      TEXT,
+    FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref),
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id),
     FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_chapteroccurences_chapter_ref ON bible.chapteroccurences (chapter_ref);
+CREATE INDEX idx_bible_chapteroccurences_translation_id ON bible.chapteroccurences (translation_id);
+CREATE INDEX idx_bible_chapteroccurences_file_id ON bible.chapteroccurences (file_id) WHERE file_id IS NOT NULL;
+CREATE INDEX idx_bible_chapteroccurences_book_map_id ON bible.chapteroccurences (book_map_id) WHERE book_map_id IS NOT NULL;
 
 -- ================================================== bible.paragraphs & bible.verses ==================================================
 
 -- Consider Relative link into Chapter bible.occurences, for easier reference
 
-CREATE TABLE IF NOT EXISTS bible.paragraphs (
+CREATE TABLE IF NOT EXISTS bible.paragraphs ( -- DEPRECATED
     id              SERIAL PRIMARY KEY,
-    chapter_occ_id  INTEGER,
+    node_id         INTEGER,
     style_id        INTEGER,
-    parent_para     INTEGER,
-    xml             XML,
-    versetext       TEXT,
+    parent_para     INTEGER, -- For establishing logical paragraphs through grouping
+    is_versetext    BOOLEAN,
     FOREIGN KEY (parent_para) REFERENCES bible.paragraphs (id) ON DELETE SET NULL,
-    FOREIGN KEY (chapter_occ_id) REFERENCES bible.chapteroccurences (id) ON DELETE CASCADE,
+    FOREIGN KEY (node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (style_id) REFERENCES bible.styles (id) ON DELETE CASCADE
 );
 
@@ -240,6 +375,8 @@ CREATE TABLE IF NOT EXISTS bible.verses (
     standard        BOOLEAN DEFAULT TRUE, -- Whether this is standard verse or weird combo verse e.g. GEN 1:1-2
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_verses_chapter_ref ON bible.verses (chapter_ref);
+CREATE INDEX idx_bible_verses_verse_ref ON bible.verses (verse_ref);
 
 -- For linking non standard verses to their normal counter parts e.g. GEN 1:1-2 => GEN 1:1, GEN 1:2
 CREATE TABLE IF NOT EXISTS bible.verse_correction (
@@ -249,24 +386,28 @@ CREATE TABLE IF NOT EXISTS bible.verse_correction (
     FOREIGN KEY (non_standard_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_verse_correction_non_standard_verse_ref ON bible.verse_correction (non_standard_verse_ref);
+CREATE INDEX idx_bible_verse_correction_verse_ref ON bible.verse_correction (verse_ref);
 
 CREATE TABLE IF NOT EXISTS bible.verseoccurences (
-    id              SERIAL PRIMARY KEY,
-    chapter_occ_id  INTEGER,
-    verse_ref       TEXT,
-    text	       	TEXT,
-    xml             TEXT,
-    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
-    FOREIGN KEY (chapter_occ_id) REFERENCES bible.chapteroccurences (id) ON DELETE CASCADE
+    id                      SERIAL PRIMARY KEY,
+    verse_ref               TEXT,
+    chapter_id              INTEGER, --Chapter Occurence this is under
+    book_map_id             INTEGER,
+    translation_id          INTEGER,
+    start_node              INTEGER,
+    end_node                INTEGER,
+    FOREIGN KEY (chapter_id) REFERENCES bible.chapteroccurences (id) ON DELETE CASCADE,
+    FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
+    FOREIGN KEY (start_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (end_node) REFERENCES bible.nodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE
 );
-
-CREATE TABLE IF NOT EXISTS bible.versesToParagraphs (
-    id              SERIAL PRIMARY KEY,
-    verse_ref       TEXT,
-    paragraph_id    INTEGER,
-    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
-    FOREIGN KEY (paragraph_id) REFERENCES bible.paragraphs (id) ON DELETE CASCADE
-);
+CREATE INDEX idx_bible_verseoccurences_verse_ref ON bible.verseoccurences (verse_ref);
+CREATE INDEX idx_bible_verseoccurences_chapter_id ON bible.verseoccurences (chapter_id);
+CREATE INDEX idx_bible_verseoccurences_book_map_id ON bible.verseoccurences (book_map_id);
+CREATE INDEX idx_bible_verseoccurences_translation_id ON bible.verseoccurences (translation_id);
 
 CREATE TABLE IF NOT EXISTS bible.excludedverses (
     id              SERIAL PRIMARY KEY,
@@ -275,143 +416,77 @@ CREATE TABLE IF NOT EXISTS bible.excludedverses (
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_excludedverses_translation_id ON bible.excludedverses (translation_id);
 
 -- ================================================== Cross References & Footnotes ==================================================
 
 CREATE TABLE IF NOT EXISTS bible.translationfootnotes (
-    id                  SERIAL PRIMARY KEY,
-	book_map_id			INTEGER,
-    translation_id      INTEGER,
-    verse_ref           TEXT,
-    chapter_ref         TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
-    xml                 XML,
-	text			    TEXT,
-	FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
+    id                      SERIAL PRIMARY KEY,
+    verse_ref               TEXT,
+    chapter_ref             TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
+    node_id                 INTEGER,
+    FOREIGN KEY (node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
-    FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
-    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE
+    FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE
 );
+CREATE INDEX idx_bible_translationfootnotes_verse_ref ON bible.translationfootnotes (verse_ref) WHERE verse_ref IS NOT NULL;
+CREATE INDEX idx_bible_translationfootnotes_chapter_ref ON bible.translationfootnotes (chapter_ref) WHERE chapter_ref IS NOT NULL;
+CREATE INDEX idx_bible_translationfootnotes_node_id ON bible.translationfootnotes (node_id);
 
 CREATE TABLE IF NOT EXISTS bible.translationrefnotes (
-    id                  SERIAL PRIMARY KEY,
-	book_map_id			INTEGER,
-    translation_id      INTEGER,
-    from_verse_ref      TEXT,
-    from_chapter_ref    TEXT,
-    to_verse_ref        TEXT,
-    to_chapter_ref      TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
-    parent_ref          INTEGER, -- For when fragmenting ref note
-    xml                 XML,
-	FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
+    id                      SERIAL PRIMARY KEY,
+    from_verse_ref          TEXT,
+    from_chapter_ref        TEXT,
+    to_verse_ref            TEXT,
+    to_chapter_ref          TEXT, -- Footnote can link to chapter instead (e.g. PSA 9:0) which doesn't qualify as non standard verse
+    node_id                 INTEGER,
+    FOREIGN KEY (node_id) REFERENCES bible.nodes (id) ON DELETE CASCADE,
     FOREIGN KEY (from_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
     FOREIGN KEY (from_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
     FOREIGN KEY (to_verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
-    FOREIGN KEY (to_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE,
-    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_ref) REFERENCES bible.translationrefnotes (id) ON DELETE CASCADE -- Link to self 
+    FOREIGN KEY (to_chapter_ref) REFERENCES bible.chapters (chapter_ref) ON DELETE CASCADE
+);
+CREATE INDEX idx_bible_translationrefnotes_from_verse_ref ON bible.translationrefnotes (from_verse_ref) WHERE from_verse_ref IS NOT NULL;
+CREATE INDEX idx_bible_translationrefnotes_from_chapter_ref ON bible.translationrefnotes (from_chapter_ref) WHERE from_chapter_ref IS NOT NULL;
+CREATE INDEX idx_bible_translationrefnotes_to_verse_ref ON bible.translationrefnotes (to_verse_ref) WHERE to_verse_ref IS NOT NULL;
+CREATE INDEX idx_bible_translationrefnotes_to_chapter_ref ON bible.translationrefnotes (to_chapter_ref) WHERE to_chapter_ref IS NOT NULL;
+
+-- ================================================== Spacy Look up Tables ==================================================
+
+CREATE TABLE lookup.nlp_pos_types (
+    id SERIAL PRIMARY KEY,
+    pos_tag VARCHAR(10) NOT NULL UNIQUE,    -- e.g. 'NOUN', 'VERB'
+    description TEXT                        -- e.g. 'Noun, a person, place, or thing'
 );
 
-CREATE TABLE IF NOT EXISTS bible.translation_note_mapping (
-    id              SERIAL PRIMARY KEY,
-    foot_note       INTEGER,
-    cross_ref       INTEGER,
-    FOREIGN KEY (foot_note) REFERENCES bible.translationfootnotes (id),
-    FOREIGN KEY (cross_ref) REFERENCES bible.translationrefnotes (id)
+CREATE TABLE lookup.nlp_tag_types (
+    id SERIAL PRIMARY KEY,
+    tag VARCHAR(10) NOT NULL UNIQUE,
+    description TEXT
 );
 
--- ================================================== Strongs Components ==================================================
-
-CREATE TABLE IF NOT EXISTS bible.strongs (
-    id              SERIAL PRIMARY KEY,
-    code            TEXT UNIQUE,
-    language_id     INTEGER,
-	-- Consider either storing bible.strongs Definition or api call to get it?
-    FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
+CREATE TABLE lookup.nlp_dep_types (
+    id SERIAL PRIMARY KEY,
+    dep VARCHAR(20) NOT NULL UNIQUE,
+    description TEXT
 );
 
-CREATE TABLE IF NOT EXISTS bible.strongsoccurence (
-    id              SERIAL PRIMARY KEY,
-    verse_ref       TEXT,
-    translation_id  INTEGER,
-    text            TEXT,
-    xml             TEXT,
-    strong_code     TEXT,
-    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
-    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref) ON DELETE CASCADE,
-    FOREIGN KEY (strong_code) REFERENCES bible.strongs (code) ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS nlp.spacy_modules (
+    id                  SERIAL PRIMARY KEY,
+    language_iso        TEXT,               -- The code I use for language (iso)
+    spacy_code          TEXT,                  -- The code spacy uses for a language
+    spacy_model         TEXT,                  -- en_core_web_sm
+    supports_pos        BOOLEAN DEFAULT FALSE, -- Model capabilities supported?
+    supports_ner        BOOLEAN DEFAULT FALSE,
+    supports_dep        BOOLEAN DEFAULT FALSE,
+    supports_vectors    BOOLEAN DEFAULT FALSE,
+    supports_lemma      BOOLEAN DEFAULT FALSE,
+    version             TEXT,
+    notes               TEXT,
+    FOREIGN KEY (language_iso) REFERENCES bible.languages (iso)
 );
 
--- ================================================== Text Based Information ==================================================
-
-CREATE TABLE IF NOT EXISTS bible.occurences (
-	id                  SERIAL PRIMARY KEY,
-	text				TEXT,
-	type				TEXT, -- [quote, enitity, location]
-	verse_occ_id	    INTEGER,
-	start_char			INTEGER, -- Relative to Verse (for search)
-	end_char			INTEGER, -- Relative to Verse (for search)
-	paragraph_id		INTEGER,
-	FOREIGN KEY (verse_occ_id) REFERENCES bible.verseoccurences (id) ON DELETE CASCADE,
-	FOREIGN KEY (paragraph_id) REFERENCES bible.paragraphs (id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS bible.quotes (
-    id              SERIAL PRIMARY KEY,
-    text            TEXT,
-    quote_start     INTEGER,
-    quote_end       INTEGER,
-    parent_quote    INTEGER,
-    speaker         TEXT,
-    audience        TEXT,
-    FOREIGN KEY (quote_start) REFERENCES bible.occurences (id) ON DELETE CASCADE,
-    FOREIGN KEY (quote_end) REFERENCES bible.occurences (id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id) ON DELETE CASCADE
-);
-
--- ================================================== Entities ==================================================
-
-CREATE TABLE IF NOT EXISTS bible.entities (
-    id              SERIAL PRIMARY KEY
-);
-
--- This will also count as Entity Names to some degree since we are counting each occurence and mentions of them, but this could have start and end
-CREATE TABLE IF NOT EXISTS bible.entityoccurence (
-    id              SERIAL PRIMARY KEY,
-	entity_id		INTEGER,
-	occurence_id	INTEGER,
-	FOREIGN KEY (entity_id) REFERENCES bible.entities (id) ON DELETE CASCADE,
-	FOREIGN KEY (occurence_id) REFERENCES bible.occurences (id) ON DELETE CASCADE
-);
-
--- Will act as lookup not so much as source of truth, tho it can, and definetly something to work on
-CREATE TABLE IF NOT EXISTS bible.relationship_lookup (
-    id              SERIAL PRIMARY KEY,
-	relationship    TEXT UNIQUE
-);
-
-CREATE TABLE IF NOT EXISTS bible.relationship_map (
-    id              SERIAL PRIMARY KEY,
-	relationship    TEXT,
-    FOREIGN KEY (relationship) REFERENCES bible.relationship_lookup (relationship) ON DELETE SET NULL
-);
-
-CREATE TABLE IF NOT EXISTS bible.entityrelationships (
-    id              SERIAL PRIMARY KEY,
-	from_entity		INTEGER,
-	to_entity	    INTEGER,
-    relationship    TEXT,
-	FOREIGN KEY (from_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
-    FOREIGN KEY (to_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
-	FOREIGN KEY (relationship) REFERENCES bible.relationship_lookup (relationship) ON DELETE CASCADE
-);
-
--- 
--- CREATE VIEW bible.entity_aliases AS
--- SELECT DISTINCT
--- FROM table_name
--- WHERE conditions;
-
--- ================================================== [] ==================================================
+-- ================================================== Token & Word Occurences ==================================================
 
 -- Used to store unique list of words used for this bible translation to use as initial list to check against
 CREATE TABLE IF NOT EXISTS bible.word_list (
@@ -425,63 +500,135 @@ CREATE TABLE IF NOT EXISTS bible.word_list (
     FOREIGN KEY (language_iso) REFERENCES bible.languages (iso)  ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS bible.word_tags (
-    id      SERIAL PRIMARY KEY,
-    name    TEXT UNIQUE NOT NULL -- e.g. "Person", "Location", "Entity"
-);
-
-CREATE TABLE IF NOT EXISTS bible.word_frequencies (
-    id              SERIAL PRIMARY KEY,
-    word_id         INTEGER NOT NULL,
-    translation_id  INTEGER NOT NULL,
-    -- tag             TEXT,  -- OPTIONAL: could use a lookup table (Person, Location, etc.)
-    FOREIGN KEY (word_id) REFERENCES bible.word_list (id) ON DELETE CASCADE,
-    FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE
+-- Meant to be used in labelling for specific tokens to show they are of specific interest to me for labelling or mapping extra information
+CREATE TABLE IF NOT EXISTS lookup.word_tags (
+    id                  SERIAL PRIMARY KEY,
+    name                TEXT UNIQUE NOT NULL, -- e.g. "Person", "Location", "Entity"
+    description         TEXT
 );
 
 -- Only storing important bible.tokens
 CREATE TABLE IF NOT EXISTS bible.tokens (
+    id                      SERIAL PRIMARY KEY,
+    text                    TEXT,
+    chapter_occurence_id    INTEGER,
+    chapter_start_offset    INTEGER,
+    chapter_end_offset      INTEGER, 
+    pos                     TEXT, -- Info that is populate later
+    tag                     TEXT,
+    dep                     TEXT,
+    head_token_id           INTEGER,
+    lemma_id                TEXT,
+    trailing_space          BOOLEAN,
+    is_alpha                BOOLEAN,
+    is_punct                BOOLEAN,
+    is_space                BOOLEAN,
+    is_quote                BOOLEAN,
+    is_left_punct           BOOLEAN,
+    is_right_punct          BOOLEAN,
+    like_num                BOOLEAN,
+    language_id             INTEGER,
+    translation_id          INTEGER,
+    FOREIGN KEY (chapter_occurence_id) REFERENCES bible.chapteroccurences (id),
+    FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id),
+    FOREIGN KEY (pos) REFERENCES lookup.nlp_pos_types (pos_tag),
+    FOREIGN KEY (tag) REFERENCES lookup.nlp_tag_types (tag),
+    FOREIGN KEY (dep) REFERENCES lookup.nlp_dep_types (dep),
+    FOREIGN KEY (language_id) REFERENCES bible.languages (id),
+    FOREIGN KEY (translation_id) REFERENCES bible.translations (id)
+);
+CREATE INDEX idx_bible_tokens_text ON bible.tokens (text);
+CREATE INDEX idx_bible_tokens_chapter_occurence_id ON bible.tokens (chapter_occurence_id);
+CREATE INDEX idx_bible_tokens_chapter_start_offset ON bible.tokens (chapter_start_offset);
+CREATE INDEX idx_bible_tokens_chapter_end_offset ON bible.tokens (chapter_end_offset);
+CREATE INDEX idx_bible_tokens_head_token_id ON bible.tokens (head_token_id);
+CREATE INDEX idx_bible_tokens_lemma_id ON bible.tokens (lemma_id);
+CREATE INDEX idx_bible_tokens_pos ON bible.tokens (pos);
+CREATE INDEX idx_bible_tokens_language_id ON bible.tokens (language_id);
+CREATE INDEX idx_bible_tokens_translation_id ON bible.tokens (translation_id);
+
+-- ================================================== Entities ==================================================
+
+CREATE TABLE IF NOT EXISTS bible.entities (
+    id              SERIAL PRIMARY KEY
+);
+
+-- This will also count as Entity Names to some degree since we are counting each occurence and mentions of them, but this could have start and end
+CREATE TABLE IF NOT EXISTS bible.entityoccurence (
+    id              SERIAL PRIMARY KEY,
+	start_token		INTEGER,
+	end_token   	INTEGER,
+	FOREIGN KEY (start_token) REFERENCES bible.tokens (id) ON DELETE CASCADE,
+	FOREIGN KEY (end_token) REFERENCES bible.tokens (id) ON DELETE CASCADE
+);
+
+-- Will act as lookup not so much as source of truth, tho it can, and definetly something to work on
+-- e.g. CHILD_OF, PARENT_OF, SON_OF, DAUGHTER_OF
+-- CREATE TABLE IF NOT EXISTS lookup.entity_relationship_types (
+--     id              SERIAL PRIMARY KEY,
+-- 	relationship    TEXT UNIQUE,
+--     description     TEXT
+-- );
+
+-- Intended to work on showing relationship in different directions e.g. PARENT_OF, flipped will show CHILD_OF, and can also be SON_OF or DAUGHTER_OF
+-- CREATE TABLE IF NOT EXISTS lookup.entity_relationship_map (
+--     id              SERIAL PRIMARY KEY,
+-- 	relationship    TEXT,
+--     RTL             TEXT,
+--     FOREIGN KEY (relationship) REFERENCES lookup.entity_relationship_types (relationship) ON DELETE SET NULL
+-- );
+
+CREATE TABLE IF NOT EXISTS bible.entity_relationships (
+    id              SERIAL PRIMARY KEY,
+	from_entity		INTEGER,
+	to_entity	    INTEGER,
+    relationship    TEXT,
+	FOREIGN KEY (from_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
+    FOREIGN KEY (to_entity) REFERENCES bible.entities (id) ON DELETE CASCADE
+	-- FOREIGN KEY (relationship) REFERENCES lookup.entity_relationship_types (relationship) ON DELETE CASCADE
+);
+
+-- ================================================== Text Based Information ==================================================
+
+CREATE TABLE IF NOT EXISTS bible.quotes (
+    id              SERIAL PRIMARY KEY,
+    text            TEXT,
+    quote_start     INTEGER,
+    quote_end       INTEGER,
+    parent_quote    INTEGER,
+    speaker         TEXT,
+    audience        TEXT,
+    FOREIGN KEY (quote_start) REFERENCES bible.tokens (id) ON DELETE CASCADE,
+    FOREIGN KEY (quote_end) REFERENCES bible.tokens (id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS bible.quote_attribution (
     id                  SERIAL PRIMARY KEY,
-    text                TEXT,
-    llema_id            INTEGER,
-    paragraph_id        INTEGER,
-    verse_ref           TEXT,
-    pos                 TEXT,
-    tag                 TEXT,
-    dep                 TEXT,
-    head_token_id       INTEGER,
-    trailing_space      BOOLEAN,
-    is_alpha            BOOLEAN,
-    is_punct            BOOLEAN,
-    like_num            BOOLEAN,
-    FOREIGN KEY (paragraph_id) REFERENCES bible.paragraphs (id),
-    FOREIGN KEY (verse_ref) REFERENCES bible.verses (verse_ref),
-    FOREIGN KEY (head_token_id) REFERENCES bible.tokens (id)
+    quote_id            INTEGER,
+    entity_id           INTEGER,
+    attribution         INTEGER, -- whether Speaker or audience or writer
+    type                TEXT,
+    FOREIGN KEY (entity_id) REFERENCES bible.entities (id) ON DELETE CASCADE,
+    FOREIGN KEY (quote_id) REFERENCES bible.quotes (id) ON DELETE CASCADE
 );
 
--- ================================================== Spacy Look up Tables ==================================================
-
-CREATE TABLE public.pos_lookup (
-    id SERIAL PRIMARY KEY,
-    pos_tag VARCHAR(10) NOT NULL UNIQUE,  -- e.g. 'NOUN', 'VERB'
-    description TEXT NOT NULL             -- e.g. 'Noun, a person, place, or thing'
-);
-
-CREATE TABLE public.tag_lookup (
-    id SERIAL PRIMARY KEY,
-    tag VARCHAR(10) NOT NULL UNIQUE,
-    description TEXT NOT NULL
-);
-
-CREATE TABLE public.dep_lookup (
-    id SERIAL PRIMARY KEY,
-    dep VARCHAR(20) NOT NULL UNIQUE,
-    description TEXT NOT NULL
+-- Look up table for quote attributions
+CREATE TABLE IF NOT EXISTS lookup.quote_attribution_types (
+    id                  SERIAL PRIMARY KEY,
+    attribution         TEXT,
+    type                TEXT,
+    description         TEXT
 );
 
 -- ================================================== User Based Data ==================================================
 
-CREATE TABLE IF NOT EXISTS bible.usernotes (
+-- This could potentially be used for publically shared notes for example
+
+-- Audit type notes could potentially be compressed to save on storage + enhance security, or kept raw.
+-- Could perhaps differentiate between when shared and when created by local and server versions
+
+CREATE TABLE IF NOT EXISTS users.notes (
     id              SERIAL PRIMARY KEY,
     created_at      TIMESTAMP,
     modified_at     TIMESTAMP,
@@ -490,44 +637,67 @@ CREATE TABLE IF NOT EXISTS bible.usernotes (
     content         TEXT,
     tags            TEXT,
 	user_id			INTEGER,
-	FOREIGN KEY (user_id) REFERENCES bible.users (id) ON DELETE SET NULL
+	FOREIGN KEY (user_id) REFERENCES users.users (id) ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS bible.noterelationships (
+CREATE TABLE IF NOT EXISTS users.note_audits (
+    id              SERIAL PRIMARY KEY,
+    modified_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    title           TEXT,
+    content         TEXT,
+    tags            TEXT,
+	user_id			INTEGER,
+    note_id         INTEGER,
+	FOREIGN KEY (user_id) REFERENCES users.users (id) ON DELETE SET NULL,
+    FOREIGN KEY (note_id) REFERENCES users.notes (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS users.note_relationships (
     id              SERIAL PRIMARY KEY,
     note_from    	INTEGER,
     note_to         INTEGER, 
 	type			TEXT,
-    FOREIGN KEY (note_from) REFERENCES bible.usernotes (id),
-	FOREIGN KEY (note_to) REFERENCES bible.usernotes (id)
+    FOREIGN KEY (note_from) REFERENCES users.notes (id),
+	FOREIGN KEY (note_to) REFERENCES users.notes (id)
 );
 
-CREATE TABLE IF NOT EXISTS bible.userhighlightsanchors (
+CREATE TABLE IF NOT EXISTS users.note_relationship_audits (
+    id                      SERIAL PRIMARY KEY,
+    note_from    	        INTEGER,
+    note_to                 INTEGER, 
+	type			        TEXT,
+    modified_at             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    note_relationship_id    INTEGER,
+    FOREIGN KEY (note_from) REFERENCES users.notes (id),
+	FOREIGN KEY (note_to) REFERENCES users.notes (id),
+    FOREIGN KEY (note_relationship_id) REFERENCES users.note_relationships (id)
+);
+
+CREATE TABLE IF NOT EXISTS users.userhighlightsanchors (
     id              SERIAL PRIMARY KEY,
-    book_map_id     INTEGER,
-    verse_occ_id    INTEGER, 
+    node_id         INTEGER, 
 	start_char		INTEGER,
 	end_char		INTEGER,
-	FOREIGN KEY (verse_occ_id) REFERENCES bible.verseoccurences (id)
+	FOREIGN KEY (node_id) REFERENCES bible.nodes (id)
 );
 
-CREATE TABLE IF NOT EXISTS bible.userhighlights (
+CREATE TABLE IF NOT EXISTS users.userhighlights (
     id              SERIAL PRIMARY KEY,
     start_anchor	INTEGER,
     end_anchor      INTEGER,
 	color			TEXT,
-    FOREIGN KEY (start_anchor) REFERENCES bible.userhighlightsanchors (id) ON DELETE CASCADE,
-	FOREIGN KEY (end_anchor) REFERENCES bible.userhighlightsanchors (id) ON DELETE CASCADE
+    FOREIGN KEY (start_anchor) REFERENCES users.userhighlightsanchors (id) ON DELETE CASCADE,
+	FOREIGN KEY (end_anchor) REFERENCES users.userhighlightsanchors (id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS bible.readhistory (
+CREATE TABLE IF NOT EXISTS users.readhistory (
     history_id              SERIAL PRIMARY KEY,
     date_time               TEXT DEFAULT CURRENT_TIMESTAMP,
     book_map_id             INTEGER,
     scripture_reference     TEXT,
 	user_id					INTEGER,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
-	FOREIGN KEY (user_id) REFERENCES bible.users (id)
+	FOREIGN KEY (user_id) REFERENCES users.users (id)
 );
 
 -- ================================================== Imported Location Data (OpenBible.info) ==================================================
