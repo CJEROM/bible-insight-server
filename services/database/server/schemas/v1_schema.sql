@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS bible.properties (
 
 CREATE TABLE IF NOT EXISTS bible.languages (
     id                  SERIAL PRIMARY KEY,
-    iso                 TEXT UNIQUE,
+    iso                 TEXT UNIQUE, -- Follows ISO 639-3:2007 format? 
     name                TEXT,
     nameLocal           TEXT,
     scriptDirection     TEXT
