@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS bible.dblinfo (
 CREATE TABLE IF NOT EXISTS bible.translations (
     id                  SERIAL PRIMARY KEY,
     dbl_id              TEXT,
-    agreement_id        TEXT,
+    agreement_id        INTEGER,
 	revision            INTEGER,
 	revision_note		TEXT, -- For storing what has changed in the revision
     license_file        INTEGER,
