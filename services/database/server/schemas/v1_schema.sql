@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS bible.translations (
     language_id         INTEGER,
     copyright           TEXT,
     promotion           TEXT,
+    license_type        TEXT,       -- Extracted from website
     active              TIMESTAMP,
     expiry              TIMESTAMP,
 	UNIQUE(dbl_id, agreement_id),
