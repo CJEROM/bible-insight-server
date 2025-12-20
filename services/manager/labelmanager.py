@@ -94,6 +94,14 @@ class LabelManager:
             label_config=self.project_label_config
         )
 
+        traslation_project_id = translation_project.id
+
+        self.labelling_projects[traslation_project_id] = {
+            "translation_id": translation_id,
+            "project_name": project_name,
+            "project_description": project_description
+        }
+
         minio_config = self.env.get_minio_config()
 
         # For now not sure how this works
@@ -113,7 +121,7 @@ class LabelManager:
             VALUES (%s, %s, %s)
             RETURNING id;
         """, (
-            translation_project.id,
+            traslation_project_id,
             project_name,
             project_description
         ))
@@ -125,15 +133,9 @@ class LabelManager:
             RETURNING id;
         """, (
             translation_id,
-            translation_project.id
+            traslation_project_id
         ))
 
-        self.log.log_to_file(f"Created New Label Studio Project [Project_ID: {translation_project.id}] [Translation_ID: {translation_id}]", "LABEL", "INFO")
+        self.log.log_to_file(f"Created New Label Studio Project [Project_ID: {traslation_project_id}] [Translation_ID: {translation_id}]", "LABEL", "INFO")
 
-        self.labelling_projects[translation_project.id] = {
-            "translation_id": translation_id,
-            "project_name": project_name,
-            "project_description": project_description
-        }
-
-        return translation_project.id
+        return traslation_project_id
