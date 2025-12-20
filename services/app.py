@@ -80,13 +80,8 @@ def start_api_server():
     print(response.status_code, response.text)
 
 if __name__ == "__main__":
-    # Check database instance working properly (issue with image on mac)
     try:
         restart_docker("postgres")
-    except Exception as e:
-        restart_docker("postgres-mac")
-
-    try:
         restart_docker("minio")
         restart_docker("label-studio")
         # restart_docker("authentik")
