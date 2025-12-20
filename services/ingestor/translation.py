@@ -3,7 +3,6 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import shutil
 import re
-from label_studio_sdk import LabelStudio
 import traceback
 
 from ingestor.book import Book
@@ -11,7 +10,6 @@ from ingestor.book import Book
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from manager.managerhandler import ManagerHandler
-from manager.logmanager import LogManager
 
 class Translation:
     def __init__(self, manager: "ManagerHandler", medium, process_location, source_url, translation_id, dbl_id, agreement_id):
@@ -197,21 +195,21 @@ class Translation:
 
         return new_language_id
     
-    def update_translationinfo_db(self, metadata_xml):
+    def update_translationinfo_db(self, metadata_xml: BeautifulSoup):
         self.language_id = self.check_language(metadata_xml.find("language"))
 
         abbreviation = metadata_xml.find("identification").find("abbreviationLocal").text
         translation_name = metadata_xml.find("identification").find("name").text
 
         self.db.execute("""
-            UPDATE bible.translationinfo
+            UPDATE bible.translations
             SET medium = %s,
                 name = %s,
                 namelocal = %s,
                 description = %s,
                 abbreviationlocal = %s,
                 language_id = %s
-            WHERE dbl_id = %s;        
+            WHERE id = %s;        
         """, (
             self.medium, 
             metadata_xml.find("identification").find("name").text, 
@@ -219,13 +217,13 @@ class Translation:
             metadata_xml.find("identification").find("description").text,
             metadata_xml.find("identification").find("abbreviationLocal").text,
             self.language_id,
-            self.dbl_id
+            self.translation_id
         ))
         self.log.log_to_file(f"Created Translation Info: [abbreviationLocal: {abbreviation}] [name: {translation_name}]", "TRANSLATION", "DEBUG")
 
         self.create_translation_relationships(metadata_xml)
 
-    def create_translation_relationships(self, metadata_xml):
+    def create_translation_relationships(self, metadata_xml: BeautifulSoup):
         translation_relationships = metadata_xml.find("relationships")
         for relation in translation_relationships.find_all("relation"):
             # Example: <relation id="9879dbb7cfe39e4d" revision="4" type="text" relationType="source"/>
@@ -488,7 +486,7 @@ class Translation:
         self.bible_structure_info = file_sections[0]
         self.createExcludedVerses(file_sections[2])
     
-    def createExcludedVerses(self, section_text):
+    def createExcludedVerses(self, section_text:str):
         additions = 0
         # Create list of excluded verses
         for line in section_text.splitlines():
