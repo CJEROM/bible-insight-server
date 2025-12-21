@@ -42,22 +42,44 @@ class StrongsIngestor:
 
         # A need to see letter occurence
 
-    def process_hebrew_sheet(self):
+    def get_sheet(self, sheet_name: str, columns:list):
         sheet = pandas.read_excel(
             self.strongs_csv_path,
-            sheet_name="Hebrew",
-            engine="openpyxl"
+            sheet_name=sheet_name,
+            engine="openpyxl",
+            usecols=columns,
+            dtype=str
+        )
+        # Clean Up column names
+        sheet.columns = (
+            sheet.columns
+            .str.strip()
+            .str.lower()
+            .str.replace(" ", "_")
+            .str.replace(".", "_")
         )
         print(sheet.columns)
+        return sheet
+
+    def process_hebrew_sheet(self):
+        sheet = self.get_sheet(
+            "Hebrew",
+            ['#', 'Word', 'Gloss', 'Root', 'Pic Root',
+            '1st Root Strongs', '1st Root Hebrew', '2nd Root Strongs',
+            '2nd Root Hebrew2', '3rd Root Strongs', '3rd Root Hebrew',
+            'Part of Speech', 'cl.Gk.eqt.']
+        )
         pass
 
     def process_greek_sheet(self):
-        sheet = pandas.read_excel(
-            self.strongs_csv_path,
-            sheet_name="Greek",
-            engine="openpyxl"
+        sheet = self.get_sheet(
+            "Greek",
+            ['#', 'Word', 'Gloss', 'Root',
+            'Occ in other words', 'prep1', 'prep2', 'R1', 'R1-Gk', 'R2', 'R2-Gk',
+            'R3', 'R3-Gk', 'Part of Speech', 'cl.Heb.eqt.']
         )
-        print(sheet.columns)
+        for row in sheet.itertuples(index=False):
+            print(row.word)
         pass
 
 if __name__ == "__main__":
