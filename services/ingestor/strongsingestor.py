@@ -12,6 +12,8 @@ class StrongsIngestor:
             self.download_strongs_csv()
 
         self.pre_process_xlsx()
+        self.process_hebrew_sheet()
+        self.process_greek_sheet()
 
     def download_strongs_csv(self):
         # In the future considering checking differences, and downloading based on that? if source requires
@@ -39,6 +41,24 @@ class StrongsIngestor:
         # No need to do occurences
 
         # A need to see letter occurence
+
+    def process_hebrew_sheet(self):
+        sheet = pandas.read_excel(
+            self.strongs_csv_path,
+            sheet_name="Hebrew",
+            engine="openpyxl"
+        )
+        print(sheet.columns)
+        pass
+
+    def process_greek_sheet(self):
+        sheet = pandas.read_excel(
+            self.strongs_csv_path,
+            sheet_name="Greek",
+            engine="openpyxl"
+        )
+        print(sheet.columns)
+        pass
 
 if __name__ == "__main__":
     StrongsIngestor()
