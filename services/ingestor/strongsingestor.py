@@ -35,7 +35,7 @@ class StrongsIngestor:
 
         self.pre_process_xlsx()
         self.process_hebrew_sheet()
-        # self.process_greek_sheet()
+        self.process_greek_sheet()
 
         self.bulk_export_strongs()
 
@@ -52,19 +52,11 @@ class StrongsIngestor:
                     if chunk:
                         f.write(chunk)
 
-        print("Downloaded CSV file")
+        self.log.log_to_file(f"Downloaded Strongs Concordance Data with XLSX file", "STRONGS_INGESTOR", "DEBUG")
 
     def pre_process_xlsx(self):
-        pass
         xls = pandas.ExcelFile(self.strongs_csv_path)
         print(xls.sheet_names) # Allows for reading .xlsx files
-        # Sheets of interst: ['Hebrew', 'Greek', 'letters', 'BibleBook Numbers']
-        # Next Steps
-        # Remove specific mentions of english word occurence from Gloss (our system will handle that for translations that support this)
-
-        # No need to do occurences
-
-        # A need to see letter occurence
 
     def get_sheet(self, sheet_name: str, columns:list):
         sheet = pandas.read_excel(
@@ -94,7 +86,7 @@ class StrongsIngestor:
             this_lexeme[1] = strongs_code
             this_lexeme[2] = language_id
 
-            if row.root != "":
+            if row.root != "" and row.root != "NaN":
                 this_lexeme[3] = row.root
 
             this_lexeme[4] = row.part_of_speech
@@ -124,12 +116,14 @@ class StrongsIngestor:
                     elif line.startswith("Root(s): "):
                         all_roots_raw = line[8:].split(",")
                         for root in all_roots_raw:
+                            if root.strip() == '': continue
                             temp_relations.append((root.strip(), "root"))
                             
                     elif line.startswith("Compare: "):
                         all_compares_raw = line[8:].split(",")
                         for compare in all_compares_raw:
                             compare_str = compare.strip()
+                            if compare_str == '': continue
                             if (compare_str.startswith("H") or compare_str.startswith("G")) and compare_str[1:].isdigit():
                                 temp_relations.append((compare_str, "compare"))
                     
@@ -169,13 +163,33 @@ class StrongsIngestor:
 
     def bulk_export_strongs(self):
         self.db.bulk_insert(self.SQL.get("create_strongs"), self.strongs_data)
+        self.db.commit()
 
         for from_lexeme_id, to_strongs_relations in self.lexeme_relation_mapping.items():
+            from_strongs = next((k for k, v in self.lexeme_mapping.items() if v == from_lexeme_id), None)
+
             for to_strong, relation_type in to_strongs_relations:
-                to_lexeme_id = self.lexeme_mapping[to_strong]
-                self.strongs_relations.append((from_lexeme_id, to_lexeme_id, relation_type))
+
+                to_lexeme_id = self.lexeme_mapping.get(to_strong)
+                if to_lexeme_id == None:
+                    self.log.log_to_file(f"{to_strong} doesn't exist", "STRONGS_INGESTOR", "WARN")
+                    continue
+
+                self.log.log_to_file(f"{from_strongs}:{from_lexeme_id} <= {relation_type} => {to_strong}:{to_lexeme_id}", "STRONGS_INGESTOR", "DEBUG")
+                
+                new_relation = (from_lexeme_id, to_lexeme_id, relation_type)
+
+                # Remove duplicates
+                if new_relation in self.strongs_relations:
+                    print(f"=======> {new_relation}")
+                    continue
+
+                self.strongs_relations.append(new_relation)
 
         self.db.bulk_insert(self.SQL.get("create_strongs_relation"), self.strongs_relations)
+        self.db.commit()
+
+        self.log.log_to_file(f"Completed Strongs Data Import", "STRONGS_INGESTOR", "DEBUG")
 
 if __name__ == "__main__":
     StrongsIngestor(ManagerHandler())
