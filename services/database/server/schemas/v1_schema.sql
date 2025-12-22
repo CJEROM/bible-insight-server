@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS bible.properties (
     FOREIGN KEY (style_id) REFERENCES bible.styles (id) ON DELETE CASCADE
 );
 
--- ================================================== Translation ==================================================
+-- ================================================== Languages ==================================================
 
 CREATE TABLE IF NOT EXISTS bible.languages (
     id                  SERIAL PRIMARY KEY,
@@ -75,6 +75,64 @@ CREATE TABLE IF NOT EXISTS bible.languages (
     scriptDirection     TEXT
 );
 CREATE INDEX idx_bible_languages_iso ON bible.languages (iso);
+
+CREATE TABLE IF NOT EXISTS bible.language_letters (
+    id              SERIAL PRIMARY KEY,
+    letter          TEXT,  
+    phoneme         TEXT, -- Whether 'vowel' or 'consonant'
+    parent_letter   INTEGER,
+    ancient_symbol  INTEGER,
+    symbol_def      TEXT,
+    language_id     INTEGER,
+    FOREIGN KEY (parent_letter) REFERENCES bible.language_letters (id),
+    FOREIGN KEY (ancient_symbol) REFERENCES bible.files (id),
+    FOREIGN KEY (language_id) REFERENCES bible.languages (id)
+);
+
+-- ================================================== Strongs Components ==================================================
+
+CREATE TABLE IF NOT EXISTS bible.lexemes (
+    id              SERIAL PRIMARY KEY,
+    source          TEXT,   -- 'strongs', 'bdb', 'manual'
+    source_version  TEXT,
+    strongs_code    TEXT UNIQUE, 
+    -- EXAMPLES of different sources:
+    -- BDB          (Brown–Driver–Briggs)
+    -- HALOT        (Hebrew and Aramaic Lexicon of the Old Testament))
+    -- TDOT         (Theological Dictionary of the Old Testament)
+    -- BDAG         (A Greek–English Lexicon of the New Testament and Other Early Christian Literature)
+    -- LSJ          (Liddell–Scott–Jones)
+    -- TDNT         (The Theological Dictionary of the New Testament)
+    -- Louw-Nida    (The Louw–Nida Greek-English Lexicon of the New Testament Based on Semantic Domains)
+    -- Manual       (I can add some lexemes manually?)
+    -- Wiktionary
+    -- NLP? -> through tokens table
+    language_id     INTEGER,
+    native_word     TEXT,
+    lemma           TEXT,
+    raw_pos         TEXT,
+    transliteration TEXT,
+    pronunciation   TEXT,
+    audio_file      INTEGER, -- Pronounciation audio file link
+    raw_gloss       TEXT,
+    FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE,
+    FOREIGN KEY (audio_file) REFERENCES bible.files (id)
+);
+CREATE INDEX idx_bible_lexemes_strongs_code ON bible.lexemes (strongs_code) WHERE strongs_code IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS bible.lexeme_relations (
+    id              SERIAL PRIMARY KEY,
+    from_lexeme     INTEGER,
+    to_lexeme       INTEGER,
+    relation_type   TEXT,
+    confidence      TEXT, -- Scholarly honesty? Don't need to use yet
+    notes           TEXT,
+    FOREIGN KEY (from_lexeme) REFERENCES bible.lexemes (id) ON DELETE CASCADE,
+    FOREIGN KEY (to_lexeme) REFERENCES bible.lexemes (id) ON DELETE CASCADE,
+    UNIQUE (from_lexeme, to_lexeme, relation_type)
+);
+
+-- ================================================== Translation ==================================================
 
 CREATE TABLE IF NOT EXISTS bible.dblinfo (
     dbl_id                  TEXT,
@@ -203,17 +261,6 @@ CREATE TABLE IF NOT EXISTS bible.bookgroupnames (
     FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
 );
 
--- ================================================== Strongs Components ==================================================
-
-CREATE TABLE IF NOT EXISTS bible.strongs (
-    id              SERIAL PRIMARY KEY,
-    code            TEXT UNIQUE,
-    language_id     INTEGER,
-	-- Consider either storing bible.strongs Definition or api call to get it?
-    FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
-);
-CREATE INDEX idx_bible_strongs_code ON bible.strongs (code);
-
 -- ================================================== bible.chapters ==================================================
 
 CREATE TABLE IF NOT EXISTS lookup.node_attribute_types (
@@ -292,7 +339,7 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE,
-    FOREIGN KEY (strong) REFERENCES bible.strongs (code) ON DELETE SET NULL
+    FOREIGN KEY (strong) REFERENCES bible.lexemes (strongs_code) ON DELETE CASCADE
 );
 CREATE INDEX idx_bible_nodes_node_text ON bible.nodes (node_text) WHERE is_tokenisable = TRUE;
 CREATE INDEX idx_bible_nodes_sid ON bible.nodes (sid) WHERE sid IS NOT NULL;
