@@ -52,19 +52,6 @@ class Search():
             FROM bible.nodes
             WHERE strong = %s
         """,
-        "get_unique_strong_text": """
-            WITH strongs_nodes AS (
-                SELECT id
-                FROM bible.nodes
-                WHERE strong = %s
-            )
-            SELECT DISTINCT n.node_text
-            FROM bible.nodes n
-            JOIN strongs_nodes sn
-            ON n.parent_node_id = sn.id
-            WHERE n.node_text IS NOT NULL
-            AND n.node_text <> '';
-        """,
         "get_strongs_occurences_per_translation" : """
             SELECT 
                 sn.strong,
@@ -277,11 +264,6 @@ class Search():
     def search_strongs(self, strong):
         # Find strongs occurences
         nodes_found = self.db.fetch_all(self.SQL.get("get_strong_nodes"), (strong,))
-
-        # Find all unique words that use this strong code
-        unique_words = self.db.fetch_all(self.SQL.get("get_unique_strong_text"), (strong,))
-        for word in unique_words:
-            print(word)
 
         results = self.search_results(nodes_found, config=["full_ref", "translation", "text"])
 
