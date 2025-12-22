@@ -19,7 +19,7 @@ class StrongsIngestor:
     }
     def __init__(self, manager: ManagerHandler):
         self.manager = manager
-        self.log = manager.create_log_in_folder()
+        self.log = manager.create_log_in_folder(["logs", "strongsingestor"], "strongs")
         self.db = manager.get_db()
         self.obj = manager.get_obj()
 
@@ -99,16 +99,24 @@ class StrongsIngestor:
 
             raw_gloss = ""
 
-            for i, line in enumerate(row.gloss.splitlines()):
-                if i == 0:  
-                    split_bracket = line.split("(")
-                    transliteration = split_bracket[0].strip()
-                    this_lexeme[5] = transliteration
+            if type(row.gloss) == str:
+                for i, line in enumerate(row.gloss.splitlines()):
+                    if i == 0:  
+                        print(line)
+                        split_bracket = line.split("(")
 
-                    pronunciation = split_bracket[1].split(")")[0]
-                    this_lexeme[6] = pronunciation
-                elif not line.startswith("KJV") and not line.startswith("Root"):
-                    raw_gloss += f"{line}\n"
+                        if len(split_bracket) < 2:
+                            continue
+
+                        transliteration = split_bracket[0].strip()
+                        this_lexeme[5] = transliteration
+
+                        pronunciation = split_bracket[1].split(")")[0]
+                        this_lexeme[6] = pronunciation
+                        
+                        raw_gloss += f"{line}\n"
+                    elif not line.startswith("KJV") and not line.startswith("Root"):
+                        raw_gloss += f"{line}\n"
             
             this_lexeme[7] = raw_gloss
             self.strongs_data.append(tuple(this_lexeme))
@@ -142,8 +150,9 @@ class StrongsIngestor:
         self.extract_strongs(sheet, language_id)
 
     def bulk_export_strongs(self):
-        self.db.bulk_insert(self.SQL.get("create_strongs"), self.strongs_data)
+        print(self.strongs_data)
+        # self.db.bulk_insert(self.SQL.get("create_strongs"), self.strongs_data)
         # self.db.bulk_insert(self.SQL.get("create_strongs_relation"), self.strongs_relations)
 
 if __name__ == "__main__":
-    StrongsIngestor()
+    StrongsIngestor(ManagerHandler())
