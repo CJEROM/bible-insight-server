@@ -2,11 +2,18 @@ import requests
 from pathlib import Path
 import pandas
 
+from manager.managerhandler import ManagerHandler
+
 SOURCE_URL = "https://dl.dropboxusercontent.com/scl/fi/pq1gsb2cf6n7hnp1l378d/Strongs-Numbers.xlsx?rlkey=puni8uqrdgcbikq1fkqg52576&e=1"
 
 # Depening on the source I use, the way I preprocess the data for my project will change
 class StrongsIngestor:
-    def __init__(self):
+    def __init__(self, manager: ManagerHandler):
+        self.manager = manager
+        self.log = manager.create_log_in_folder()
+        self.db = manager.get_db()
+        self.obj = manager.get_obj()
+
         self.strongs_csv_path = Path(__file__).parents[2] / "downloads" / "strongs.xlsx"
         if not self.strongs_csv_path.exists():
             self.download_strongs_csv()
@@ -70,6 +77,9 @@ class StrongsIngestor:
             '2nd Root Hebrew2', '3rd Root Strongs', '3rd Root Hebrew',
             'Part of Speech', 'cl.Gk.eqt.']
         )
+        language_id = self.db.fetch_clean_one("""
+            SELECT id FROM bible.languages WHERE name LIKE 'Hebrew%'
+        """)
         for row in sheet.itertuples(index=False):
             strongs_code = f"H{row.number}"
             print(strongs_code)
@@ -81,6 +91,9 @@ class StrongsIngestor:
             'Occ in other words', 'prep1', 'prep2', 'R1', 'R1-Gk', 'R2', 'R2-Gk',
             'R3', 'R3-Gk', 'Part of Speech', 'cl.Heb.eqt.']
         )
+        language_id = self.db.fetch_clean_one("""
+            SELECT id FROM bible.languages WHERE name LIKE 'Greek%'
+        """)
         for row in sheet.itertuples(index=False):
             # print(row.word)
             pass
