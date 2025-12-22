@@ -168,17 +168,14 @@ class StrongsIngestor:
         self.extract_strongs(sheet, language_id, "G")
 
     def bulk_export_strongs(self):
-        # self.strongs_data
-        # self.db.bulk_insert(self.SQL.get("create_strongs"), self.strongs_data)
-        print(self.lexeme_mapping)
+        self.db.bulk_insert(self.SQL.get("create_strongs"), self.strongs_data)
 
         for from_lexeme_id, to_strongs_relations in self.lexeme_relation_mapping.items():
             for to_strong, relation_type in to_strongs_relations:
                 to_lexeme_id = self.lexeme_mapping[to_strong]
                 self.strongs_relations.append((from_lexeme_id, to_lexeme_id, relation_type))
 
-        print(self.strongs_relations)
-        # self.db.bulk_insert(self.SQL.get("create_strongs_relation"), self.strongs_relations)
+        self.db.bulk_insert(self.SQL.get("create_strongs_relation"), self.strongs_relations)
 
 if __name__ == "__main__":
     StrongsIngestor(ManagerHandler())
