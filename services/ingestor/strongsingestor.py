@@ -56,7 +56,7 @@ class StrongsIngestor:
 
     def pre_process_xlsx(self):
         xls = pandas.ExcelFile(self.strongs_csv_path)
-        print(xls.sheet_names) # Allows for reading .xlsx files
+        # print(xls.sheet_names) # Allows for reading .xlsx files
 
     def get_sheet(self, sheet_name: str, columns:list):
         sheet = pandas.read_excel(
@@ -75,7 +75,7 @@ class StrongsIngestor:
             .str.replace(".", "_")
             .str.replace("#", "number")
         )
-        print(sheet.columns)
+        # print(sheet.columns)
         return sheet
 
     def extract_strongs(self, sheet, language_id, language):
@@ -182,7 +182,7 @@ class StrongsIngestor:
 
                 # Remove duplicates
                 if new_relation in self.strongs_relations:
-                    print(f"=======> {new_relation}")
+                    self.log.log_to_file(f"Entry is Duplicate: {new_relation}", "STRONGS_INGESTOR", "WARN")
                     continue
 
                 self.strongs_relations.append(new_relation)
