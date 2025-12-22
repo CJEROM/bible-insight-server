@@ -86,10 +86,6 @@ class Nodes:
                 this_node[12] = node.get("loc") # loc, 12
                 this_node[17] = node.get("align") # align, 17 
 
-                # Consider creating init for all strongs numbers instead
-                if strong != None:
-                    self.createStrongs(strong)
-
             if isinstance(node, NavigableString):  
                 node_type = "text"
 
@@ -191,30 +187,6 @@ class Nodes:
         nodes = self.created_nodes["note"]
         self.log.log_to_file(f"Requested Note Nodes: {nodes}", f"NODE", "DEBUG")
         return nodes
-    
-    # May remove if I choose to initialise it in a different way e.g. init script
-    def createStrongs(self, strong_code):
-        # Write any new unique strongs that haven't been added to database yet
-        strong_id = self.db.fetch_one("""
-            SELECT id FROM bible.strongs WHERE code=%s
-        """, (strong_code,))
-
-        if strong_id == None:
-            # check what language the code belongs to 
-            language_id = None
-            if strong_code[0:1] == "G": # Greek
-                language_id = self.db.fetch_clean_one("""
-                    SELECT id FROM bible.languages WHERE name LIKE 'Greek%'
-                """)
-            elif strong_code[0:1] == "H": # Hebrew
-                language_id = self.db.fetch_clean_one("""
-                    SELECT id FROM bible.languages WHERE name LIKE 'Hebrew%'
-                """)
-
-            self.db.execute("""
-                INSERT INTO bible.strongs (code, language_id) 
-                VALUES (%s, %s)
-            """, (strong_code, language_id))
 
 # if __name__ == "__main__":
 #     test_book_xml = None
