@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS bible.language_letters (
     FOREIGN KEY (parent_letter) REFERENCES bible.language_letters (id),
     FOREIGN KEY (ancient_symbol) REFERENCES bible.files (id),
     FOREIGN KEY (language_id) REFERENCES bible.languages (id)
-)
+);
 
 -- ================================================== Strongs Components ==================================================
 
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS bible.lexeme_relations (
     FOREIGN KEY (from_lexeme) REFERENCES bible.lexemes (id) ON DELETE CASCADE,
     FOREIGN KEY (to_lexeme) REFERENCES bible.lexemes (id) ON DELETE CASCADE,
     UNIQUE (from_lexeme, to_lexeme, relation_type)
-)
+);
 
 -- ================================================== Translation ==================================================
 
