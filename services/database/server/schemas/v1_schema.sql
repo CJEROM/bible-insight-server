@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS bible.lexemes (
     -- Wiktionary
     -- NLP? -> through tokens table
     language_id     INTEGER,
+    native_word     TEXT,
     lemma           TEXT,
     raw_pos         TEXT,
     transliteration TEXT,

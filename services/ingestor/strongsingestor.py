@@ -11,7 +11,7 @@ SOURCE_URL = "https://dl.dropboxusercontent.com/scl/fi/pq1gsb2cf6n7hnp1l378d/Str
 class StrongsIngestor:
     SQL = {
         "create_strongs": """
-            INSERT INTO bible.lexemes (source, strongs_code, language_id, lemma, raw_pos, transliteration, pronunciation, raw_gloss) VALUES %s
+            INSERT INTO bible.lexemes (source, strongs_code, language_id, lemma, raw_pos, transliteration, pronunciation, raw_gloss, native_word) VALUES %s
         """,
         "create_strongs_relation": """
             INSERT INTO bible.lexeme_relations (from_lexeme, to_lexeme, relation_type) VALUES %s
@@ -80,7 +80,7 @@ class StrongsIngestor:
 
     def extract_strongs(self, sheet, language_id, language):
         for row in sheet.itertuples(index=False):
-            this_lexeme = [None] * 8
+            this_lexeme = [None] * 9
             this_lexeme[0] = "strongs"
             strongs_code = f"{language}{row.number}"
             this_lexeme[1] = strongs_code
@@ -131,6 +131,7 @@ class StrongsIngestor:
                         self.lexeme_relation_mapping[self.lexeme_id] = temp_relations
             
             this_lexeme[7] = raw_gloss
+            this_lexeme[8] = row.word
             self.strongs_data.append(tuple(this_lexeme))
             self.lexeme_mapping[strongs_code] = self.lexeme_id
             # print(row.word)
