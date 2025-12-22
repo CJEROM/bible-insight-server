@@ -11,10 +11,10 @@ SOURCE_URL = "https://dl.dropboxusercontent.com/scl/fi/pq1gsb2cf6n7hnp1l378d/Str
 class StrongsIngestor:
     SQL = {
         "create_strongs": """
-            INSERT INTO bible.lexemes (source, strongs_code, language_id, lemma, raw_pos, transliteration, pronunciation, raw_gloss) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO bible.lexemes (source, strongs_code, language_id, lemma, raw_pos, transliteration, pronunciation, raw_gloss) VALUES %s
         """,
         "create_strongs_relation": """
-            INSERT INTO bible.lexeme_relations (from_lexeme, to_lexeme, relation_type, confidence, notes) VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO bible.lexeme_relations (from_lexeme, to_lexeme, relation_type) VALUES %s
         """,
     }
     def __init__(self, manager: ManagerHandler):
@@ -28,13 +28,15 @@ class StrongsIngestor:
             self.download_strongs_csv()
 
         self.lexeme_mapping = {}
+        self.lexeme_relation_mapping = {}
         self.strongs_data = []
         self.strongs_relations = []
         self.lexeme_id = 1
 
         self.pre_process_xlsx()
         self.process_hebrew_sheet()
-        self.process_greek_sheet()
+        # self.process_greek_sheet()
+
         self.bulk_export_strongs()
 
     def download_strongs_csv(self):
@@ -84,11 +86,11 @@ class StrongsIngestor:
         print(sheet.columns)
         return sheet
 
-    def extract_strongs(self, sheet, language_id):
+    def extract_strongs(self, sheet, language_id, language):
         for row in sheet.itertuples(index=False):
             this_lexeme = [None] * 8
             this_lexeme[0] = "strongs"
-            strongs_code = f"G{row.number}"
+            strongs_code = f"{language}{row.number}"
             this_lexeme[1] = strongs_code
             this_lexeme[2] = language_id
 
@@ -101,8 +103,8 @@ class StrongsIngestor:
 
             if type(row.gloss) == str:
                 for i, line in enumerate(row.gloss.splitlines()):
+                    temp_relations = []
                     if i == 0:  
-                        print(line)
                         split_bracket = line.split("(")
 
                         if len(split_bracket) < 2:
@@ -115,8 +117,24 @@ class StrongsIngestor:
                         this_lexeme[6] = pronunciation
                         
                         raw_gloss += f"{line}\n"
-                    elif not line.startswith("KJV") and not line.startswith("Root"):
+
+                    elif not line.startswith("KJV") and not line.startswith("Root") and not line.startswith("Compare"):
                         raw_gloss += f"{line}\n"
+
+                    elif line.startswith("Root(s): "):
+                        all_roots_raw = line[8:].split(",")
+                        for root in all_roots_raw:
+                            temp_relations.append((root.strip(), "root"))
+                            
+                    elif line.startswith("Compare: "):
+                        all_compares_raw = line[8:].split(",")
+                        for compare in all_compares_raw:
+                            compare_str = compare.strip()
+                            if (compare_str.startswith("H") or compare_str.startswith("G")) and compare_str[1:].isdigit():
+                                temp_relations.append((compare_str, "compare"))
+                    
+                    if len(temp_relations) > 0:
+                        self.lexeme_relation_mapping[self.lexeme_id] = temp_relations
             
             this_lexeme[7] = raw_gloss
             self.strongs_data.append(tuple(this_lexeme))
@@ -135,7 +153,7 @@ class StrongsIngestor:
         language_id = self.db.fetch_clean_one("""
             SELECT id FROM bible.languages WHERE name LIKE 'Hebrew%'
         """)
-        self.extract_strongs(sheet, language_id)
+        self.extract_strongs(sheet, language_id, "H")
 
     def process_greek_sheet(self):
         sheet = self.get_sheet(
@@ -147,11 +165,19 @@ class StrongsIngestor:
         language_id = self.db.fetch_clean_one("""
             SELECT id FROM bible.languages WHERE name LIKE 'Greek%'
         """)
-        self.extract_strongs(sheet, language_id)
+        self.extract_strongs(sheet, language_id, "G")
 
     def bulk_export_strongs(self):
-        print(self.strongs_data)
+        # self.strongs_data
         # self.db.bulk_insert(self.SQL.get("create_strongs"), self.strongs_data)
+        print(self.lexeme_mapping)
+
+        for from_lexeme_id, to_strongs_relations in self.lexeme_relation_mapping.items():
+            for to_strong, relation_type in to_strongs_relations:
+                to_lexeme_id = self.lexeme_mapping[to_strong]
+                self.strongs_relations.append((from_lexeme_id, to_lexeme_id, relation_type))
+
+        print(self.strongs_relations)
         # self.db.bulk_insert(self.SQL.get("create_strongs_relation"), self.strongs_relations)
 
 if __name__ == "__main__":
