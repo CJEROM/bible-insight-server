@@ -57,6 +57,7 @@ class StrongsIngestor:
             .str.lower()
             .str.replace(" ", "_")
             .str.replace(".", "_")
+            .str.replace("#", "number")
         )
         print(sheet.columns)
         return sheet
@@ -69,7 +70,9 @@ class StrongsIngestor:
             '2nd Root Hebrew2', '3rd Root Strongs', '3rd Root Hebrew',
             'Part of Speech', 'cl.Gk.eqt.']
         )
-        pass
+        for row in sheet.itertuples(index=False):
+            strongs_code = f"H{row.number}"
+            print(strongs_code)
 
     def process_greek_sheet(self):
         sheet = self.get_sheet(
@@ -79,7 +82,16 @@ class StrongsIngestor:
             'R3', 'R3-Gk', 'Part of Speech', 'cl.Heb.eqt.']
         )
         for row in sheet.itertuples(index=False):
-            print(row.word)
+            # print(row.word)
+            pass
+        pass
+
+    def create_strongs(self):
+        # Write New Strongs entry to the database
+        pass
+
+    def create_strongs_relation(self):
+        # Write New Strongs Relation to the database e.g. from Root strongs etc.
         pass
 
 if __name__ == "__main__":
