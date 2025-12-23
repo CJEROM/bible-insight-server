@@ -95,7 +95,7 @@ class StrongsIngestor:
             this_lexeme[1] = strongs_code
             this_lexeme[2] = language_id
 
-            if row.root != "" and row.root != "NaN":
+            if str(row.root) != "" and str(row.root) != "NaN":
                 this_lexeme[3] = row.root
 
             this_lexeme[4] = row.part_of_speech
@@ -125,14 +125,15 @@ class StrongsIngestor:
                     elif line.startswith("Root(s): "):
                         all_roots_raw = line[8:].split(",")
                         for root in all_roots_raw:
-                            if root.strip() == '': continue
-                            temp_relations.append((root.strip(), "root"))
+                            root_str = root.strip()
+                            if root_str == '' or root_str == 'NaN': continue
+                            temp_relations.append((root_str, "root"))
                             
                     elif line.startswith("Compare: "):
                         all_compares_raw = line[8:].split(",")
                         for compare in all_compares_raw:
                             compare_str = compare.strip()
-                            if compare_str == '': continue
+                            if compare_str == '' or compare_str == 'NaN': continue
                             if (compare_str.startswith("H") or compare_str.startswith("G")) and compare_str[1:].isdigit():
                                 temp_relations.append((compare_str, "compare"))
                     
