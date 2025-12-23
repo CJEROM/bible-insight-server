@@ -6,14 +6,18 @@ class Strongs():
             WITH strongs_nodes AS (
                 SELECT id
                 FROM bible.nodes
-                WHERE strong = %s
+                WHERE strong = %s AND translation_id = %s
             )
-            SELECT DISTINCT n.node_text
+            SELECT
+                n.node_text,
+                COUNT(*) AS occurrence_count
             FROM bible.nodes n
             JOIN strongs_nodes sn
             ON n.parent_node_id = sn.id
             WHERE n.node_text IS NOT NULL
-            AND n.node_text <> '';
+            AND n.node_text <> ''
+            GROUP BY n.node_text
+            ORDER BY occurrence_count DESC;
         """,
     }
 
@@ -32,9 +36,9 @@ class Strongs():
 
     def search_strongs(self):
         # Find all unique words that use this strong code
-        unique_words = self.db.fetch_all(self.SQL.get("get_unique_strong_text"), (self.strong,))
+        unique_words = self.db.fetch_all(self.SQL.get("get_unique_strong_text"), (self.strong, self.translation_id))
         for word in unique_words:
             print(word)
 
-if __name__ == "__main":
-    Strongs(ManagerHandler())
+if __name__ == "__main__":
+    Strongs(ManagerHandler(), "H1254", 1)
