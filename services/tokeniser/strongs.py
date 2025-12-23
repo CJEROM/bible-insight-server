@@ -19,6 +19,9 @@ class Strongs():
             GROUP BY n.node_text
             ORDER BY occurrence_count DESC;
         """,
+        "get_strong_data": """
+            SELECT * FROM bible.lexemes WHERE strongs_code = %s
+        """
     }
 
     def __init__(self, manager: ManagerHandler, strong, translation_id):
@@ -33,12 +36,17 @@ class Strongs():
         }
 
         self.search_strongs()
+        self.get_strong_data()
 
     def search_strongs(self):
         # Find all unique words that use this strong code
         unique_words = self.db.fetch_all(self.SQL.get("get_unique_strong_text"), (self.strong, self.translation_id))
         for word in unique_words:
             print(word)
+
+    def get_strong_data(self):
+        info = self.db.fetch_all(self.SQL.get("get_strong_data"), (self.strong,))
+        print(info)
 
 if __name__ == "__main__":
     Strongs(ManagerHandler(), "H1254", 1)
