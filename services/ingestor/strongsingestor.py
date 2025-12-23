@@ -16,6 +16,9 @@ class StrongsIngestor:
         "create_strongs_relation": """
             INSERT INTO bible.lexeme_relations (from_lexeme, to_lexeme, relation_type) VALUES %s
         """,
+        "check_lexemes": """
+            SELECT id FROM bible.lexemes WHERE strongs_code IS NOT NULL LIMIT 1
+        """
     }
     def __init__(self, manager: ManagerHandler):
         self.manager = manager
@@ -23,6 +26,12 @@ class StrongsIngestor:
         self.db = manager.get_db()
         self.obj = manager.get_obj()
 
+        initalised = self.db.fetch_clean_one(self.SQL.get("check_lexemes"))
+        if initalised: # If query returns a value
+            self.log.log_to_file(f"Skipping Ingestion, Data already present!", "STRONGS_INGESTOR", "INFO")
+            return # It's already been loaded so skip Ingestion of Strongs
+
+        self.log.log_to_file(f"Starting Ingestion", "STRONGS_INGESTOR", "INFO")
         self.strongs_csv_path = Path(__file__).parents[2] / "downloads" / "strongs.xlsx"
         if not self.strongs_csv_path.exists():
             self.download_strongs_csv()
