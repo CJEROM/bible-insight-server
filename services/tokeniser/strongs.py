@@ -22,7 +22,7 @@ class Strongs():
             ORDER BY p.id ASC;
         """,
         "get_strong_data": """
-            SELECT * FROM bible.lexemes WHERE strongs_code = %s
+            SELECT id, source, source_version, strongs_code, language_id, lemma, raw_pos, transliteration, pronunciation, audio_file, raw_gloss FROM bible.lexemes WHERE strongs_code = %s
         """,
         "get_strongs_to_relation": """
             SELECT 
@@ -58,11 +58,12 @@ class Strongs():
     }
 
     def __init__(self, manager: ManagerHandler, strong, translation_id):
-        self.manager = manager
-        self.db = manager.get_db()
-
         self.strong = strong
         self.translation_id = translation_id
+
+        self.manager = manager
+        self.db = manager.get_db()
+        self.log = manager.create_log_in_folder(["logs", "strongs"], self.strong)
         
         self.details = {}
 
@@ -169,19 +170,20 @@ class Strongs():
 
     def get_strong_data(self):
         info = self.db.fetch_one(self.SQL.get("get_strong_data"), (self.strong,))
-        print(info)
-        self.details["id"] = info[0] # Lexeme_id
-        self.details["code"] = self.strong
-        self.details["pos"] = info[7]
-        self.details["gloss"] = info[11]
+
+        # Mirror SELECT DB Query
+        id, source, source_version, strongs_code, language_id, lemma, raw_pos, transliteration, pronunciation, audio_file, raw_gloss = info
+
+        self.details["id"] = id # Lexeme_id
+        self.details["code"] = self.strong # or strongs_code
+        self.details["pos"] = raw_pos
+        self.details["gloss"] = raw_gloss
 
     def strongs_recursion(self):
         lexeme_id = self.details["id"]
         to_relations = self.db.fetch_all(self.SQL.get("get_strongs_to_relation"), (lexeme_id,))
         from_relations = self.db.fetch_all(self.SQL.get("get_strongs_from_relation"), (lexeme_id,))
         relations = to_relations + from_relations
-        print(relations)
-        # print("===========================")
 
         all_relations = set()
 
