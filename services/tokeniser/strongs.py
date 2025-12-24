@@ -86,6 +86,8 @@ class Strongs():
         return self.connected_relations
     
     def get_occurences(self, key:str=None, display=False, count=False, unique=False):
+        if not self.details.get("occurences"): return None
+        
         valid = True
         unique_counts = []
         for this_key in self.details["occurences"].keys():
