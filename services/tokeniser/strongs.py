@@ -150,6 +150,9 @@ class Strongs():
         for relation_lexeme_id, strongs_code, native_word, lemma, raw_pos, transliteration, pronunciation, raw_gloss in relations:
             if strongs_code != self.strong:
                 all_relations.add(strongs_code)
+
+    def write_to_obsidian(self):
+        pass
         
 if __name__ == "__main__":
     Strongs(ManagerHandler(), "H1254", 1)
