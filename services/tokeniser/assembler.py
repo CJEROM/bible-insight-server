@@ -263,10 +263,9 @@ class Assembler:
         """,
         # Helper Classes
         "get_translation_name": """
-            SELECT ti.name, ti.abbreviationLocal
-            FROM bible.translations t
-            JOIN bible.translationinfo ti ON t.dbl_id = ti.dbl_id
-            WHERE t.id = %s
+            SELECT name, abbreviationLocal
+            FROM bible.translations
+            WHERE id = %s
         """,
     }
 
