@@ -86,57 +86,68 @@ class Strongs():
     def get_connected_relations(self):
         return self.connected_relations
     
-    def get_occurences(self, key:str=None, display=False, count=False, unique=False):
-        # Combinations:
-        #   - count + unique    =>  Unique Word Occurences + Number of occurences for each unique word
+    def get_occurences(self, key:str=None, display=False, count=False, verses=False, words=False):
+        # Combinations (priority order):
+        #   - words             =>  Unique Word Occurences
         #   - count + key       =>  Number of unique occurences for specified Unique Word
-        #   - unique            =>  Unique Verses with Occurences
-        #   - unique + key      =>  Unique Word Occurences (any key that is NOT None)
-
-        #   - display (doesn't affect others) -> Print Each occurence to console (MODIFY IN FUTURE TO EXPORT TO MARKDOWN IN OBSIDIAN)
+        #   - display           -> Print Each occurence to console (MODIFY IN FUTURE TO EXPORT TO MARKDOWN IN OBSIDIAN), EXCEPTIONS: [words, count + key]
+        #   - count + words     =>  Unique Word Occurences + Number of occurences for each unique word
+        #   - verses            =>  Unique Verses with Occurences
+        #   - verses + key      =>  Unique Verses with specified Unique Word
+        #   - display + verses  -> To see specifically the unique verses included
+        #   - NONE              =>  Unique Word Occurences with their Unique Verse Occurences (one verse can be mentioned multiple times across unique words)
 
         if not self.details.get("occurences"): return None
+        if key and words: return None
+        if verses and words: return None
 
         valid = True
         unique_counts = []
         unique_verses = set()
 
+        #  =>  Unique Word Occurences
+        if words and not count: 
+            return self.details["occurences"].keys()
+
         for this_key in self.details["occurences"].keys():
+            results = self.details["occurences"].get(this_key)
+
             if key:
                 if key == this_key:
                     valid = True
                 else:
                     valid = False
 
-            if valid:
-                results = self.details["occurences"].get(this_key)
-                # if count and unique active, return the count of each unique occurence
-                if count and unique:
-                    unique_counts.append([this_key, len(results)])
+                #  =>  Number of unique occurences for specified Unique Word
+                if count: 
+                    return len(self.details["occurences"].get(key))
 
-                # Can only properly return count of occurence when selecting specific one
-                elif count and key: 
-                    return len(results)
-                
-                # Returns all unique text occurences
-                elif unique:
-                    if key:
-                        return results.keys()
-                    else:
-                        for assembled_verse in results:
-                            unique_verses.add(assembled_verse)
-                
-                # If display enable, will print results to console for viewing
-                if display:
+            if valid:
+                #  -> Print Each occurence to console
+                if display and not verses:
                     for assembled_verse in results:
                         full_ref = assembled_verse.get_details("full_ref")
                         text = assembled_verse.get_details("text")
                         print(f"\n{full_ref} => [{this_key}] => [{text}]\n")
 
-        if unique:
+                #  =>  Unique Word Occurences + Number of occurences for each unique word
+                if count and words: 
+                    unique_counts.append([this_key, len(results)])
+                
+                # ONE OF:
+                #        =>  Unique Verses with Occurences
+                # [key]  =>  Unique Verses with specified Unique Word
+                elif verses:
+                    for assembled_verse in results:
+                        unique_verses.add(assembled_verse)
+
+        if verses:
+            if display:
+                for verse in unique_verses:
+                    print(verse.get_details("full_ref"))
             return unique_verses
 
-        if count and unique:
+        if count and words:
             return unique_counts
         
         return results
@@ -183,5 +194,94 @@ class Strongs():
         
 if __name__ == "__main__":
     temp = Strongs(ManagerHandler(), "H1254", 1)
-    # print(temp.get_details())
-    temp.get_occurences(display=True)
+    test_case = -1
+        
+    match test_case:
+        # ==================================================== SUCCESS Test Cases ====================================================
+        case 0: #   - words             =>  Unique Word Occurences
+            print(temp.get_occurences(
+                key=None, 
+                count=False, 
+                verses=False, 
+                words=True,
+                display=False
+            ))
+        case 1: #   - count + key       =>  Number of unique occurences for specified Unique Word
+            print(temp.get_occurences(
+                key="created", 
+                count=True, 
+                verses=False, 
+                words=False,
+                display=False
+            ))
+        case 2: #   - display           -> Print Each occurence to console (MODIFY IN FUTURE TO EXPORT TO MARKDOWN IN OBSIDIAN), EXCEPTIONS: [words, count + key]
+            print(temp.get_occurences(
+                key=None, 
+                count=False, 
+                verses=False, 
+                words=False,
+                display=True
+            ))
+        case 3: #   - count + words     =>  Unique Word Occurences + Number of occurences for each unique word
+            print(temp.get_occurences(
+                key=None, 
+                count=True, 
+                verses=False, 
+                words=True,
+                display=False
+            ))
+        case 4: #   - verses            =>  Unique Verses with Occurences
+            print(temp.get_occurences(
+                key=None, 
+                count=False, 
+                verses=True, 
+                words=False,
+                display=False
+            ))
+        case 5: #   - verses + key      =>  Unique Verses with specified Unique Word
+            print(temp.get_occurences(
+                key="created", 
+                count=False, 
+                verses=True, 
+                words=False,
+                display=False
+            ))
+        case 6: #   - display + verses  -> To see specifically the unique verses included
+            print(temp.get_occurences(
+                key=None, 
+                count=False, 
+                verses=True, 
+                words=False,
+                display=True
+            ))
+        case 7: #   - NONE              =>  Unique Word Occurences with their Unique Verse Occurences (one verse can be mentioned multiple times across unique words)
+            print(temp.get_occurences(
+                key=None, 
+                count=False, 
+                verses=False, 
+                words=False,
+                display=False
+            ))
+    
+    # match test_case:
+        # ==================================================== EDGE Test Cases ====================================================
+        # I considered setting these up, but too cumbersome to validate, so will set to return null if conflicting configs set
+
+    match test_case:
+        # ==================================================== FAILED Test Cases ====================================================
+        case 8: #   - verses + words
+            print(temp.get_occurences(
+                key=None, 
+                count=False, 
+                verses=True, 
+                words=True,
+                display=False
+            ))
+        case 8: #   - key + words
+            print(temp.get_occurences(
+                key=None, 
+                count=False, 
+                verses=True, 
+                words=True,
+                display=False
+            ))
