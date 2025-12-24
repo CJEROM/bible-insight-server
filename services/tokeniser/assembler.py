@@ -300,9 +300,12 @@ class Assembler:
         self.text   = ""
 
         self.assembler_type = None
+
+        self.valid_object = True
         # Commented out details init, so that only return what is relevant (no empty details returned on request)
+        # ---> Kept type for better user feedback on Assembly failure
         self.details = {
-            # "type": None,               # What type of assembly
+            "type": "UNKNOWN",            # What type of assembly
             # "scope": None,              # Scope it tried to reconstruct BOOK, CHAPTER, VERSE
             # "nodes": None,              # Tokenisable Nodes used in reconstruction
             # "text": None,               # Reconstructed Text from Tokenisable Nodes
@@ -329,6 +332,11 @@ class Assembler:
 
             error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
             self.log.log_to_file(error_message, "ASSEMBLER", "ERROR")
+
+            self.details["type"] = "ERROR"
+
+        if self.details == {'type': 'UNKNOWN'} or self.details == {'type': 'INVALID'} or self.details == {'type': 'ERROR'}:
+            self.valid_object = False
 
     def __eq__(self, other):
         return (
@@ -394,6 +402,7 @@ class Assembler:
                 self.assembler_type = "canonical_path"
             else:
                 self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. Scope Defined, but no occurence, node_id or canonical_path!", "ASSEMBLER", "ERROR")
+                self.details["type"]    = "INVALID"
                 # raise ValueError("Insufficient parameters provided for reconstruction.")
         elif self.ref != None and self.translation_id != None:
             self.log.log_to_file("Assembling through Ref", "ASSEMBLER", "INFO")
@@ -401,9 +410,11 @@ class Assembler:
             self.assembler_type = "ref"
         else:
             self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. No Scope or Ref Defined!", "ASSEMBLER", "ERROR")
+            self.details["type"]    = "INVALID"
             # raise ValueError("Insufficient parameters provided for reconstruction.")
 
-        self.details["type"]    = self.assembler_type
+        if self.details.get("type") == "UNKNOWN": # Check if something forced value early
+            self.details["type"]    = self.assembler_type
         self.details["scope"]   = self.scope
         self.details["text"]    = self.text
         self.details["nodes"]   = self.nodes
@@ -729,7 +740,7 @@ class Assembler:
         self.assemble_text("REF", valid_nodes, self.is_nlp)
     
     def add_detail(self):
-        if self.details != {}:
+        if self.valid_object:
             self.set_xml()
             self.get_strongs()
 
@@ -741,12 +752,13 @@ class Assembler:
             self.get_user_notes()
 
     def get_file_id(self):
-        book_map_id = self.details["book"]
-        file_id = self.db.fetch_clean_one("""
-            SELECT file_id FROM bible.booktofile WHERE id = %s;
-        """, (book_map_id,))
-        self.details["file"] = file_id
-        return file_id
+        if self.valid_object:
+            book_map_id = self.details["book"]
+            file_id = self.db.fetch_clean_one("""
+                SELECT file_id FROM bible.booktofile WHERE id = %s;
+            """, (book_map_id,))
+            self.details["file"] = file_id
+            return file_id
 
     # Perhaps function to help build on nodes, to display strongs if available?
     def set_xml(self):
