@@ -26,42 +26,36 @@ class Strongs():
         "get_strong_data": """
             SELECT * FROM bible.lexemes WHERE strongs_code = %s
         """,
-        "get_strongs_relation": """
-            WITH target AS (
-                SELECT id
-                FROM bible.lexemes
-                WHERE strongs_code = %s
-            ),
-            edges AS (
-                SELECT
-                    lr.relation_type,
-                    lr.from_lexeme AS source_id,
-                    lr.to_lexeme   AS target_id
-                FROM bible.lexeme_relations lr
-                JOIN target t ON lr.from_lexeme = t.id
+        "get_strongs_to_relation": """
+            SELECT 
+                lr.to_lexeme, 
+                l.strongs_code,
+                l.native_word,
+                l.lemma,
+                l.raw_pos,
+                l.transliteration,
+                l.pronunciation,
+                l.raw_gloss
+            FROM bible.lexemes l
+            JOIN bible.lexeme_relations lr ON l.id = lr.to_lexeme
+            WHERE lr.from_lexeme = %s
+        """,
+        "get_strongs_from_relation": """
+            SELECT 
+                lr.from_lexeme, 
+                l.strongs_code,
+                l.native_word,
+                l.lemma,
+                l.raw_pos,
+                l.transliteration,
+                l.pronunciation,
+                l.raw_gloss
+            FROM bible.lexemes l
+            JOIN bible.lexeme_relations lr ON l.id = lr.from_lexeme
+            WHERE lr.to_lexeme = %s
+        """,
+        "": """"
 
-                UNION ALL
-
-                SELECT
-                    lr.relation_type,
-                    lr.to_lexeme   AS source_id,
-                    lr.from_lexeme AS target_id
-                FROM bible.lexeme_relations lr
-                JOIN target t ON lr.to_lexeme = t.id
-            )
-            SELECT DISTINCT
-                e.relation_type,
-
-                lf.id           AS from_id,
-                lf.strongs_code AS from_strongs,
-                lf.lemma        AS from_lemma,
-
-                lt.id           AS to_id,
-                lt.strongs_code AS to_strongs,
-                lt.lemma        AS to_lemma
-            FROM edges e
-            JOIN bible.lexemes lf ON lf.id = e.source_id
-            JOIN bible.lexemes lt ON lt.id = e.target_id;
         """
     }
 
@@ -111,20 +105,20 @@ class Strongs():
 
     def strongs_recursion(self):
         lexeme_id = self.details["id"]
-        relations = self.db.fetch_all(self.SQL.get("get_strongs_relation"), (self.strong,))
-        # print(relations)
+        to_relations = self.db.fetch_all(self.SQL.get("get_strongs_to_relation"), (lexeme_id,))
+        from_relations = self.db.fetch_all(self.SQL.get("get_strongs_from_relation"), (lexeme_id,))
+        relations = to_relations + from_relations
+        print(relations)
         # print("===========================")
 
         all_relations = set()
+
+        for relation_lexeme_id, strongs_code, native_word, lemma, raw_pos, transliteration, pronunciation, raw_gloss in relations:
+            if strongs_code != self.strong:
+                all_relations.add(strongs_code)
+
+    def write_to_obsidian(self):
+        pass
         
-        for relation_type, from_id, from_strongs, from_lemma, to_id, to_strongs, to_lemma in relations:
-            if from_strongs != self.strong:
-                all_relations.add(from_strongs)
-            
-            if to_strongs != self.strong:
-                all_relations.add(to_strongs)
-
-        self.connected_relations = all_relations
-
 if __name__ == "__main__":
     Strongs(ManagerHandler(), "H1254", 1)
