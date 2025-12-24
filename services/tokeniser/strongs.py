@@ -85,6 +85,42 @@ class Strongs():
     def get_connected_relations(self):
         return self.connected_relations
     
+    def get_occurences(self, key:str=None, display=False, count=False, unique=False):
+        valid = True
+        unique_counts = []
+        for this_key in self.details["occurences"].keys():
+            if key:
+                if key == this_key:
+                    valid = True
+                else:
+                    valid = False
+
+            if valid:
+                results = self.details["occurences"].get(this_key)
+                # if count and unique active, return the count of each unique occurence
+                if count and unique:
+                    unique_counts.append([this_key, len(results)])
+
+                # Can only properly return count of occurence when selecting specific one
+                elif count and key: 
+                    return len(results)
+                
+                # Returns all unique text occurences
+                elif unique:
+                    return results.keys()
+                
+                # If display enable, will print results to console for viewing
+                if display:
+                    for assembled_verse in results:
+                        full_ref = assembled_verse.get_details("full_ref")
+                        text = assembled_verse.get_details("text")
+                        print(f"\n{full_ref} => [{text}]\n")
+
+        if count and unique:
+            return 
+        
+        return results
+    
     def search_strongs(self):
         # Find all unique words that use this strong code
         all_occurences = self.db.fetch_all(self.SQL.get("get_unique_strong_text"), (self.strong, self.translation_id))
@@ -126,4 +162,5 @@ class Strongs():
         
 if __name__ == "__main__":
     temp = Strongs(ManagerHandler(), "H1254", 1)
-    print(temp.get_details())
+    # print(temp.get_details())
+    temp.get_occurences(display=True)
