@@ -87,10 +87,20 @@ class Strongs():
         return self.connected_relations
     
     def get_occurences(self, key:str=None, display=False, count=False, unique=False):
+        # Combinations:
+        #   - count + unique    =>  Unique Word Occurences + Number of occurences for each unique word
+        #   - count + key       =>  Number of unique occurences for specified Unique Word
+        #   - unique            =>  Unique Verses with Occurences
+        #   - unique + key      =>  Unique Word Occurences (any key that is NOT None)
+
+        #   - display (doesn't affect others) -> Print Each occurence to console (MODIFY IN FUTURE TO EXPORT TO MARKDOWN IN OBSIDIAN)
+
         if not self.details.get("occurences"): return None
 
         valid = True
         unique_counts = []
+        unique_verses = set()
+
         for this_key in self.details["occurences"].keys():
             if key:
                 if key == this_key:
@@ -110,7 +120,11 @@ class Strongs():
                 
                 # Returns all unique text occurences
                 elif unique:
-                    return results.keys()
+                    if key:
+                        return results.keys()
+                    else:
+                        for assembled_verse in results:
+                            unique_verses.add(assembled_verse)
                 
                 # If display enable, will print results to console for viewing
                 if display:
@@ -119,8 +133,11 @@ class Strongs():
                         text = assembled_verse.get_details("text")
                         print(f"\n{full_ref} => [{this_key}] => [{text}]\n")
 
+        if unique:
+            return unique_verses
+
         if count and unique:
-            return 
+            return unique_counts
         
         return results
     
