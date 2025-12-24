@@ -193,11 +193,9 @@ class Strongs():
 
     def write_to_obsidian(self):
         pass
-        
-if __name__ == "__main__":
-    temp = Strongs(ManagerHandler(), "H1254", 1)
-    test_case = -1
-        
+
+def test_Strongs(object: Strongs, test_case):
+       
     match test_case:
         # ==================================================== SUCCESS Test Cases ====================================================
         case 0: #   - words             =>  Unique Word Occurences
@@ -279,7 +277,7 @@ if __name__ == "__main__":
                 words=True,
                 display=False
             ))
-        case 8: #   - key + words
+        case 9: #   - key + words
             print(temp.get_occurences(
                 key=None, 
                 count=False, 
@@ -287,3 +285,11 @@ if __name__ == "__main__":
                 words=True,
                 display=False
             ))
+        
+if __name__ == "__main__":
+    temp = Strongs(ManagerHandler(), "H1254", 1)
+    test_case = -1
+
+    for test_case in range(0, 10):
+        print(f"\n==================================================== TEST: {test_case} ====================================================\n")
+        test_Strongs(temp, test_case)
