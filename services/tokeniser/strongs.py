@@ -26,30 +26,36 @@ class Strongs():
         "get_strong_data": """
             SELECT * FROM bible.lexemes WHERE strongs_code = %s
         """,
-        "get_strongs_relation": """
-            WITH target_lexeme AS (
-                SELECT id
-                FROM bible.lexemes
-                WHERE strongs_code = %s
-            )
-            SELECT
-                lr.relation_type,
-                --lr.confidence,
-                --lr.notes,
+        "get_strongs_to_relation": """
+            SELECT 
+                lr.to_lexeme, 
+                l.strongs_code,
+                l.native_word,
+                l.lemma,
+                l.raw_pos,
+                l.transliteration,
+                l.pronunciation,
+                l.raw_gloss
+            FROM bible.lexemes l
+            JOIN bible.lexeme_relations lr ON l.id = lr.to_lexeme
+            WHERE lr.from_lexeme = %s
+        """,
+        "get_strongs_from_relation": """
+            SELECT 
+                lr.from_lexeme, 
+                l.strongs_code,
+                l.native_word,
+                l.lemma,
+                l.raw_pos,
+                l.transliteration,
+                l.pronunciation,
+                l.raw_gloss
+            FROM bible.lexemes l
+            JOIN bible.lexeme_relations lr ON l.id = lr.from_lexeme
+            WHERE lr.to_lexeme = %s
+        """,
+        "": """"
 
-                l_from.id            AS from_id,
-                l_from.strongs_code  AS from_strongs,
-                l_from.lemma         AS from_lemma,
-
-                l_to.id              AS to_id,
-                l_to.strongs_code    AS to_strongs,
-                l_to.lemma           AS to_lemma
-            FROM bible.lexeme_relations lr
-            JOIN target_lexeme t
-            ON lr.from_lexeme = t.id
-            OR lr.to_lexeme   = t.id
-            JOIN bible.lexemes l_from ON l_from.id = lr.from_lexeme
-            JOIN bible.lexemes l_to   ON l_to.id   = lr.to_lexeme;
         """
     }
 
@@ -133,28 +139,17 @@ class Strongs():
 
     def strongs_recursion(self):
         lexeme_id = self.details["id"]
-        relations = self.db.fetch_all(self.SQL.get("get_strongs_relation"), (self.strong,))
-        # print(relations)
+        to_relations = self.db.fetch_all(self.SQL.get("get_strongs_to_relation"), (lexeme_id,))
+        from_relations = self.db.fetch_all(self.SQL.get("get_strongs_from_relation"), (lexeme_id,))
+        relations = to_relations + from_relations
+        print(relations)
         # print("===========================")
 
         all_relations = set()
-        
-        for relation_type, from_id, from_strongs, from_lemma, to_id, to_strongs, to_lemma in relations:
-            if from_strongs != self.strong:
-                all_relations.add(from_strongs)
-            
-            if to_strongs != self.strong:
-                all_relations.add(to_strongs)
-        
-        # Before creating a new object find out whether it's already been created in the recursive stack by someone else
-        for relation in all_relations:
-            new_depth = self.recursive_depth+1
-            if new_depth <= self.recursive_limit:
-                existing_object = self.get_root().get_object_in_root(relation)
-                if existing_object:
-                    self.connected_relations[relation] = existing_object
-                else:
-                    self.connected_relations[relation] = Strongs(self.manager, relation, self.translation_id, self.recursive_limit, new_depth)
 
+        for relation_lexeme_id, strongs_code, native_word, lemma, raw_pos, transliteration, pronunciation, raw_gloss in relations:
+            if strongs_code != self.strong:
+                all_relations.add(strongs_code)
+        
 if __name__ == "__main__":
     Strongs(ManagerHandler(), "H1254", 1)
