@@ -18,7 +18,8 @@ class Strongs():
             WHERE p.strong = %s
             AND p.translation_id = %s
             AND c.node_text IS NOT NULL
-            AND c.node_text <> '';
+            AND c.node_text <> ''
+            ORDER BY p.id ASC;
         """,
         "get_strong_data": """
             SELECT * FROM bible.lexemes WHERE strongs_code = %s
@@ -87,7 +88,7 @@ class Strongs():
     
     def get_occurences(self, key:str=None, display=False, count=False, unique=False):
         if not self.details.get("occurences"): return None
-        
+
         valid = True
         unique_counts = []
         for this_key in self.details["occurences"].keys():
@@ -116,7 +117,7 @@ class Strongs():
                     for assembled_verse in results:
                         full_ref = assembled_verse.get_details("full_ref")
                         text = assembled_verse.get_details("text")
-                        print(f"\n{full_ref} => [{text}]\n")
+                        print(f"\n{full_ref} => [{this_key}] => [{text}]\n")
 
         if count and unique:
             return 
@@ -131,9 +132,10 @@ class Strongs():
 
         for strong_node_id, text_node_id, strongs_text in all_occurences:
             if cleaned_occurences.get(strongs_text):
-                cleaned_occurences[strongs_text].append(Assembler(manager=self.manager, node_id=strong_node_id, scope="verse"))
+                cleaned_occurences[strongs_text].add(Assembler(manager=self.manager, node_id=strong_node_id, scope="verse"))
             else:
-                cleaned_occurences[strongs_text] = [Assembler(manager=self.manager, node_id=strong_node_id, scope="verse")]
+                cleaned_occurences[strongs_text] = set()
+                cleaned_occurences[strongs_text].add(Assembler(manager=self.manager, node_id=strong_node_id, scope="verse"))
         
         self.details["occurences"] = cleaned_occurences
 

@@ -329,6 +329,18 @@ class Assembler:
 
             error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
             self.log.log_to_file(error_message, "ASSEMBLER", "ERROR")
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, Assembler)
+            and self.get_details("ref") != None
+            and self.get_details("translation") != None
+            and self.get_details("ref") == other.get_details("ref")
+            and self.get_details("translation") == other.get_details("translation")
+        )
+
+    def __hash__(self):
+        return hash((self.get_details("ref"), self.get_details("translation").get("id")))
     
     def get_details(self, detail=None):
         if detail == None:
@@ -397,8 +409,6 @@ class Assembler:
         self.details["nodes"]   = self.nodes
 
         result = self.db.fetch_one(self.SQL.get("get_translation_name"), (self.details.get("translation"),))
-
-        print(result)
 
         self.details["translation"] = {
             "name": result[0],
@@ -740,7 +750,6 @@ class Assembler:
 
     # Perhaps function to help build on nodes, to display strongs if available?
     def set_xml(self):
-        print(self.get_file_id())
         book_xml = BeautifulSoup(self.obj.stream_file_from_file_id(self.get_file_id()), "xml")
 
         ref_text = None
