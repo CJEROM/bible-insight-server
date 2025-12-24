@@ -341,6 +341,21 @@ class Assembler:
             else:
                 return None
             
+    def get_parent_context(self):
+        cur_ref = self.details.get("ref")
+        if not cur_ref: return None # if we can't access ref from details, don't create parent
+
+        local_verse = cur_ref.split("-")[0]
+        local_chapter = local_verse.split(":")[0]
+        local_book = local_chapter.split(" ")[0]
+
+        if self.scope == "chapter":
+            return Assembler(ref=local_book, translation_id=self.details.get("translation"))
+        elif self.scope == "verse":
+            return Assembler(ref=local_chapter, translation_id=self.details.get("translation"))
+
+        return None
+            
     def set_full_reference(self, book_map_id, is_book=False):
         book_details    = self.db.fetch_one(self.SQL.get("get_book_details"), (book_map_id,))
         book_code       = book_details[0]
@@ -848,7 +863,11 @@ if __name__ == "__main__":
         case "verse":
             test_ref = f"{test_book} {test_chapter}:{test_verse}"
 
+    print(test_ref)
+
     temp = Assembler(ref=test_ref, translation_id=test_translation)
+    
     print(temp.get_details())
-    temp.add_detail()
-    print(temp.get_details())
+    print(temp.get_parent_context().get_details())
+    # temp.add_detail()
+    # print(temp.get_details())
