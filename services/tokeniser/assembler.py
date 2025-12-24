@@ -335,7 +335,7 @@ class Assembler:
 
             self.details["type"] = "ERROR"
 
-        if self.details == {'type': 'UNKNOWN'} or self.details == {'type': 'INVALID'} or self.details == {'type': 'ERROR'}:
+        if self.details == {'type': 'INVALID'} or self.details == {'type': 'ERROR'}:
             self.valid_object = False
 
     def __eq__(self, other):
@@ -734,7 +734,7 @@ class Assembler:
         self.assemble_text("REF", valid_nodes, self.is_nlp)
     
     def add_detail(self):
-        if self.valid_object:
+        if self.valid_object and self.details != {'type': 'UNKNOWN'}:
             self.set_xml()
             self.get_strongs()
 
