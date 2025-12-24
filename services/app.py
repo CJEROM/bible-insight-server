@@ -81,10 +81,11 @@ def start_api_server():
     print(response.status_code, response.text)
 
 if __name__ == "__main__":
+    RESET = True
     try:
-        restart_docker("postgres", False)
-        restart_docker("minio", False)
-        restart_docker("label-studio", False)
+        restart_docker("postgres", RESET)
+        restart_docker("minio", RESET)
+        restart_docker("label-studio", RESET)
         # restart_docker("authentik")
         # restart_docker("memgraph")
         initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
