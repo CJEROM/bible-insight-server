@@ -1,5 +1,6 @@
 from manager.managerhandler import ManagerHandler
 
+from tokeniser.assembler import Assembler
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from tokeniser.strongs import Strongs
@@ -7,21 +8,17 @@ if TYPE_CHECKING:
 class Strongs():
     SQL = {
         "get_unique_strong_text": """
-            WITH strongs_nodes AS (
-                SELECT id
-                FROM bible.nodes
-                WHERE strong = %s AND translation_id = %s
-            )
             SELECT
-                n.node_text,
-                COUNT(*) AS occurrence_count
-            FROM bible.nodes n
-            JOIN strongs_nodes sn
-            ON n.parent_node_id = sn.id
-            WHERE n.node_text IS NOT NULL
-            AND n.node_text <> ''
-            GROUP BY n.node_text
-            ORDER BY occurrence_count DESC;
+                p.id        AS strong_node_id,
+                c.id        AS text_node_id,
+                c.node_text AS text
+            FROM bible.nodes p
+            JOIN bible.nodes c
+                ON c.parent_node_id = p.id
+            WHERE p.strong = %s
+            AND p.translation_id = %s
+            AND c.node_text IS NOT NULL
+            AND c.node_text <> '';
         """,
         "get_strong_data": """
             SELECT * FROM bible.lexemes WHERE strongs_code = %s
@@ -90,10 +87,17 @@ class Strongs():
     
     def search_strongs(self):
         # Find all unique words that use this strong code
-        unique_words = self.db.fetch_all_single(self.SQL.get("get_unique_strong_text"), (self.strong, self.translation_id))
-        self.details["occurences"] = unique_words
-        for word in unique_words:
-            print(word)
+        all_occurences = self.db.fetch_all(self.SQL.get("get_unique_strong_text"), (self.strong, self.translation_id))
+        
+        cleaned_occurences = {}
+
+        for strong_node_id, text_node_id, strongs_text in all_occurences:
+            if cleaned_occurences.get(strongs_text):
+                cleaned_occurences[strongs_text].append(Assembler(manager=self.manager, node_id=strong_node_id, scope="verse"))
+            else:
+                cleaned_occurences[strongs_text] = [Assembler(manager=self.manager, node_id=strong_node_id, scope="verse")]
+        
+        self.details["occurences"] = cleaned_occurences
 
     def get_strong_data(self):
         info = self.db.fetch_one(self.SQL.get("get_strong_data"), (self.strong,))
@@ -121,4 +125,5 @@ class Strongs():
         pass
         
 if __name__ == "__main__":
-    Strongs(ManagerHandler(), "H1254", 1)
+    temp = Strongs(ManagerHandler(), "H1254", 1)
+    print(temp.get_details())
