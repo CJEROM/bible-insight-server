@@ -351,27 +351,21 @@ class Assembler:
         return hash((self.get_details("ref"), self.get_details("translation").get("id")))
     
     def get_details(self, detail=None):
-        if detail == None:
-            return self.details
-        else:
-            found_detail = self.details.get(detail)
-            if found_detail:
-                return found_detail
-            else:
-                return None
+        return self.details.get(detail)
             
     def get_parent_context(self):
-        cur_ref = self.details.get("ref")
-        if not cur_ref: return None # if we can't access ref from details, don't create parent
+        if self.valid_object:
+            cur_ref = self.details.get("ref")
+            if not cur_ref: return None # if we can't access ref from details, don't create parent
 
-        local_verse = cur_ref.split("-")[0]
-        local_chapter = local_verse.split(":")[0]
-        local_book = local_chapter.split(" ")[0]
+            local_verse = cur_ref.split("-")[0]
+            local_chapter = local_verse.split(":")[0]
+            local_book = local_chapter.split(" ")[0]
 
-        if self.scope == "chapter":
-            return Assembler(manager=self.manager, ref=local_book, translation_id=self.details.get("translation"))
-        elif self.scope == "verse":
-            return Assembler(manager=self.manager, ref=local_chapter, translation_id=self.details.get("translation"))
+            if self.scope == "chapter":
+                return Assembler(manager=self.manager, ref=local_book, translation_id=self.details.get("translation"))
+            elif self.scope == "verse":
+                return Assembler(manager=self.manager, ref=local_chapter, translation_id=self.details.get("translation"))
 
         return None
             
