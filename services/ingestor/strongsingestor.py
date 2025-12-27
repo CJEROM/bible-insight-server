@@ -16,6 +16,9 @@ class StrongsIngestor:
         "create_strongs_relation": """
             INSERT INTO bible.lexeme_relations (from_lexeme, to_lexeme, relation_type) VALUES %s
         """,
+        "check_lexemes": """
+            SELECT id FROM bible.lexemes WHERE strongs_code IS NOT NULL LIMIT 1
+        """
     }
     def __init__(self, manager: ManagerHandler):
         self.manager = manager
@@ -23,6 +26,12 @@ class StrongsIngestor:
         self.db = manager.get_db()
         self.obj = manager.get_obj()
 
+        initalised = self.db.fetch_clean_one(self.SQL.get("check_lexemes"))
+        if initalised: # If query returns a value
+            self.log.log_to_file(f"Skipping Ingestion, Data already present!", "STRONGS_INGESTOR", "INFO")
+            return # It's already been loaded so skip Ingestion of Strongs
+
+        self.log.log_to_file(f"Starting Ingestion", "STRONGS_INGESTOR", "INFO")
         self.strongs_csv_path = Path(__file__).parents[2] / "downloads" / "strongs.xlsx"
         if not self.strongs_csv_path.exists():
             self.download_strongs_csv()
@@ -86,7 +95,7 @@ class StrongsIngestor:
             this_lexeme[1] = strongs_code
             this_lexeme[2] = language_id
 
-            if row.root != "" and row.root != "NaN":
+            if str(row.root) != "" and str(row.root) != "NaN":
                 this_lexeme[3] = row.root
 
             this_lexeme[4] = row.part_of_speech
@@ -116,14 +125,15 @@ class StrongsIngestor:
                     elif line.startswith("Root(s): "):
                         all_roots_raw = line[8:].split(",")
                         for root in all_roots_raw:
-                            if root.strip() == '': continue
-                            temp_relations.append((root.strip(), "root"))
+                            root_str = root.strip()
+                            if root_str == '' or root_str == 'NaN': continue
+                            temp_relations.append((root_str, "root"))
                             
                     elif line.startswith("Compare: "):
                         all_compares_raw = line[8:].split(",")
                         for compare in all_compares_raw:
                             compare_str = compare.strip()
-                            if compare_str == '': continue
+                            if compare_str == '' or compare_str == 'NaN': continue
                             if (compare_str.startswith("H") or compare_str.startswith("G")) and compare_str[1:].isdigit():
                                 temp_relations.append((compare_str, "compare"))
                     

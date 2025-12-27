@@ -5,7 +5,7 @@ import time
 import os
 import shutil
 
-def restart_docker(container):
+def restart_docker(container, clear:bool = True):
     base = Path(__file__).parent.parent
     scripts_dir = base / "devops/docker" / container
 
@@ -15,12 +15,13 @@ def restart_docker(container):
         cwd=scripts_dir
     )
 
-    # Delete any folders inside this containers folder
-    for root, dirs, files in os.walk(scripts_dir, topdown=False):
-        for d in dirs:
-            dir_path = os.path.join(root, d)
-            print(f"Deleting folder: {dir_path}")
-            shutil.rmtree(dir_path)  # removes the entire directory and its contents
+    if clear:
+        # Delete any folders inside this containers folder
+        for root, dirs, files in os.walk(scripts_dir, topdown=False):
+            for d in dirs:
+                dir_path = os.path.join(root, d)
+                print(f"Deleting folder: {dir_path}")
+                shutil.rmtree(dir_path)  # removes the entire directory and its contents
 
     # Restart Docker instance
     subprocess.run(
@@ -80,10 +81,11 @@ def start_api_server():
     print(response.status_code, response.text)
 
 if __name__ == "__main__":
+    RESET = True
     try:
-        restart_docker("postgres")
-        restart_docker("minio")
-        restart_docker("label-studio")
+        restart_docker("postgres", RESET)
+        restart_docker("minio", RESET)
+        restart_docker("label-studio", RESET)
         # restart_docker("authentik")
         # restart_docker("memgraph")
         initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational

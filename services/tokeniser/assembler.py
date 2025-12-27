@@ -263,10 +263,9 @@ class Assembler:
         """,
         # Helper Classes
         "get_translation_name": """
-            SELECT ti.name, ti.abbreviationLocal
-            FROM bible.translations t
-            JOIN bible.translationinfo ti ON t.dbl_id = ti.dbl_id
-            WHERE t.id = %s
+            SELECT name, abbreviationLocal
+            FROM bible.translations
+            WHERE id = %s
         """,
     }
 
@@ -301,9 +300,12 @@ class Assembler:
         self.text   = ""
 
         self.assembler_type = None
+
+        self.valid_object = True
         # Commented out details init, so that only return what is relevant (no empty details returned on request)
+        # ---> Kept type for better user feedback on Assembly failure
         self.details = {
-            # "type": None,               # What type of assembly
+            "type": "UNKNOWN",            # What type of assembly
             # "scope": None,              # Scope it tried to reconstruct BOOK, CHAPTER, VERSE
             # "nodes": None,              # Tokenisable Nodes used in reconstruction
             # "text": None,               # Reconstructed Text from Tokenisable Nodes
@@ -324,24 +326,52 @@ class Assembler:
         }
 
         try:
-            self.assemble()
+            self.__assemble()
         except Exception as e:
             self.log.log_to_file("No Tokenisable Nodes for assembly suspected!", "ASSEMBLER", "WARN")
 
             error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
             self.log.log_to_file(error_message, "ASSEMBLER", "ERROR")
+
+            self.details["type"] = "ERROR"
+
+        if self.details == {'type': 'INVALID'} or self.details == {'type': 'ERROR'}:
+            self.valid_object = False
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, Assembler)
+            and self.get_details("ref") != None
+            and self.get_details("translation") != None
+            and self.get_details("ref") == other.get_details("ref")
+            and self.get_details("translation") == other.get_details("translation")
+        )
+
+    def __hash__(self):
+        return hash((self.get_details("ref"), self.get_details("translation").get("id")))
     
     def get_details(self, detail=None):
-        if detail == None:
-            return self.details
+        if detail:
+            return self.details.get(detail)
         else:
-            found_detail = self.details.get(detail)
-            if found_detail:
-                return found_detail
-            else:
-                return None
+            return self.details
             
-    def set_full_reference(self, book_map_id, is_book=False):
+    def get_parent_context(self):
+        cur_ref = self.details.get("ref")
+        if not cur_ref: return None # if we can't access ref from details, don't create parent
+
+        local_verse = cur_ref.split("-")[0]
+        local_chapter = local_verse.split(":")[0]
+        local_book = local_chapter.split(" ")[0]
+
+        if self.scope == "chapter":
+            return Assembler(manager=self.manager, ref=local_book, translation_id=self.details.get("translation"))
+        elif self.scope == "verse":
+            return Assembler(manager=self.manager, ref=local_chapter, translation_id=self.details.get("translation"))
+
+        return None
+            
+    def __set_full_reference(self, book_map_id, is_book=False):
         book_details    = self.db.fetch_one(self.SQL.get("get_book_details"), (book_map_id,))
         book_code       = book_details[0]
         book_name       = book_details[1]
@@ -351,40 +381,41 @@ class Assembler:
 
         self.details["full_ref"] = book_name
     
-    def assemble(self):
+    def __assemble(self):
         # Attempt to automatically determine what reconstruction method to use
         if self.scope != None:
             if self.occurence_id != None:
                 self.log.log_to_file("Assembling through Occurence", "ASSEMBLER", "INFO")
-                self.reconstruct_occurence(self.scope, self.occurence_id)
+                self.__reconstruct_occurence(self.scope, self.occurence_id)
                 self.assembler_type = "occurence"
             elif self.node_id != None:
                 self.log.log_to_file("Assembling from Node ID", "ASSEMBLER", "INFO")
-                self.reconstruct_from_node_id(self.scope, self.node_id)
+                self.__reconstruct_from_node_id(self.scope, self.node_id)
                 self.assembler_type = "node_id"
             elif self.canonical_path != None and self.translation_id != None:
                 self.log.log_to_file("Assembling through Node Canonical Path", "ASSEMBLER", "INFO")
-                self.reconstruct_from_node_path(self.scope, self.translation_id, self.canonical_path)
+                self.__reconstruct_from_node_path(self.scope, self.translation_id, self.canonical_path)
                 self.assembler_type = "canonical_path"
             else:
                 self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. Scope Defined, but no occurence, node_id or canonical_path!", "ASSEMBLER", "ERROR")
+                self.details["type"]    = "INVALID"
                 # raise ValueError("Insufficient parameters provided for reconstruction.")
         elif self.ref != None and self.translation_id != None:
             self.log.log_to_file("Assembling through Ref", "ASSEMBLER", "INFO")
-            self.reconstruct_from_ref(self.translation_id, self.ref)
+            self.__reconstruct_from_ref(self.translation_id, self.ref)
             self.assembler_type = "ref"
         else:
             self.log.log_to_file("Assembling failed! Insufficient parameters provided for reconstruction. No Scope or Ref Defined!", "ASSEMBLER", "ERROR")
+            self.details["type"]    = "INVALID"
             # raise ValueError("Insufficient parameters provided for reconstruction.")
 
-        self.details["type"]    = self.assembler_type
+        if self.details.get("type") == "UNKNOWN": # Check if something forced value early
+            self.details["type"]    = self.assembler_type
         self.details["scope"]   = self.scope
         self.details["text"]    = self.text
         self.details["nodes"]   = self.nodes
 
         result = self.db.fetch_one(self.SQL.get("get_translation_name"), (self.details.get("translation"),))
-
-        print(result)
 
         self.details["translation"] = {
             "name": result[0],
@@ -395,7 +426,7 @@ class Assembler:
         # Log the resulted reconstruction - if it was successful (no error flagged)
         self.log.log_to_file(f"Reconstruction: [\n{self.text}\n]", "OCCURENCE", "DEBUG")
 
-    def assemble_text(self, source: str, tokenisable_nodes: list, update_offsets:bool = False):
+    def __assemble_text(self, source: str, tokenisable_nodes: list, update_offsets:bool = False):
         self.log.log_to_file(f"Tokens for Reconstruction: f{tokenisable_nodes}", source, "DEBUG")
 
         temp_offsets = []
@@ -418,7 +449,7 @@ class Assembler:
             if self.details.get("scope") == "chapter":
                 self.db.execute(self.SQL.get("update_chapter_occurence_text"), (self.text, self.details.get("chapter")))
     
-    def reconstruct_occurence(self, scope, occurence_id):
+    def __reconstruct_occurence(self, scope, occurence_id):
         valid_nodes = None
         match scope:
             case "book":
@@ -437,7 +468,7 @@ class Assembler:
 
                 self.details["book"]        = book_map_id
 
-                self.set_full_reference(book_map_id)
+                self.__set_full_reference(book_map_id)
                         
             case "chapter":
                 chapter_occurence_id = occurence_id
@@ -457,7 +488,7 @@ class Assembler:
                 self.details["book"]        = book_map_id
                 self.details["chapter"]     = chapter_occurence_id
 
-                self.set_full_reference(book_map_id)
+                self.__set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + chapter_ref.split(" ")[1]
 
             case "verse":
@@ -480,12 +511,12 @@ class Assembler:
                 self.details["chapter"]     = chapter_occurence_id
                 self.details["verse"]       = verse_occurence_id
 
-                self.set_full_reference(book_map_id)
+                self.__set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
         
-        self.assemble_text("OCCURENCE", valid_nodes, self.is_nlp)
+        self.__assemble_text("OCCURENCE", valid_nodes, self.is_nlp)
 
-    def reconstruct_from_node_id(self, scope, node_id):
+    def __reconstruct_from_node_id(self, scope, node_id):
         valid_nodes = None
         match scope:
             case "book":
@@ -505,7 +536,7 @@ class Assembler:
                 self.details["node"]        = node_id
                 self.details["node_path"]   = self.db.fetch_clean_one(self.SQL.get("get_canonical_path_for_node"), (node_id,))
 
-                self.set_full_reference(book_map_id, True)
+                self.__set_full_reference(book_map_id, True)
 
             case "chapter":
                 valid_nodes = self.db.fetch_all(
@@ -528,7 +559,7 @@ class Assembler:
                 self.details["node"]        = node_id
                 self.details["node_path"]   = self.db.fetch_clean_one(self.SQL.get("get_canonical_path_for_node"), (node_id,))
 
-                self.set_full_reference(book_map_id)
+                self.__set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + chapter_ref.split(" ")[1]
 
             case "verse":
@@ -554,12 +585,12 @@ class Assembler:
                 self.details["node"]        = node_id
                 self.details["node_path"]   = self.db.fetch_clean_one(self.SQL.get("get_canonical_path_for_node"), (node_id,))
 
-                self.set_full_reference(book_map_id)
+                self.__set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.assemble_text("NODE_ID", valid_nodes, self.is_nlp)
+        self.__assemble_text("NODE_ID", valid_nodes, self.is_nlp)
 
-    def reconstruct_from_node_path(self, scope, translation_id, canonical_path):
+    def __reconstruct_from_node_path(self, scope, translation_id, canonical_path):
         valid_nodes = None
         match scope:
             case "book":
@@ -579,7 +610,7 @@ class Assembler:
                 self.details["node"]        = self.db.fetch_clean_one(self.SQL.get("get_node_id_for_canonical_path"), (canonical_path, translation_id))
                 self.details["node_path"]   = canonical_path
 
-                self.set_full_reference(book_map_id, True)
+                self.__set_full_reference(book_map_id, True)
                 
             case "chapter":
                 valid_nodes = self.db.fetch_all(
@@ -601,7 +632,7 @@ class Assembler:
                 self.details["node"]        = self.db.fetch_clean_one(self.SQL.get("get_node_id_for_canonical_path"), (canonical_path, translation_id))
                 self.details["node_path"]   = canonical_path
 
-                self.set_full_reference(book_map_id)
+                self.__set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + chapter_ref.split(" ")[1]
 
             case "verse":
@@ -626,12 +657,12 @@ class Assembler:
                 self.details["node"]        = self.db.fetch_clean_one(self.SQL.get("get_node_id_for_canonical_path"), (canonical_path, translation_id))
                 self.details["node_path"]   = canonical_path
 
-                self.set_full_reference(book_map_id)
+                self.__set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.assemble_text("CANONICAL_PATH", valid_nodes, self.is_nlp)
+        self.__assemble_text("CANONICAL_PATH", valid_nodes, self.is_nlp)
 
-    def reconstruct_from_ref(self, translation_id, ref:str):
+    def __reconstruct_from_ref(self, translation_id, ref:str):
         # Find if GEN, GEN 1, GEN 1:1 => Based on that change query
         scope = None
         if len(ref.split(" ")) == 1: # No space so book
@@ -656,7 +687,7 @@ class Assembler:
                 self.details["translation"] = translation_id
                 self.details["book"]        = book_map_id
 
-                self.set_full_reference(book_map_id, True)
+                self.__set_full_reference(book_map_id, True)
 
             case "chapter":
                 chapter_ref = ref
@@ -675,7 +706,7 @@ class Assembler:
                 self.details["book"]        = book_map_id
                 self.details["chapter"]     = chapter_occurence_id
 
-                self.set_full_reference(book_map_id)
+                self.__set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + chapter_ref.split(" ")[1]
                 
             case "verse":
@@ -699,13 +730,13 @@ class Assembler:
                 self.details["chapter"]     = chapter_occurence_id
                 self.details["verse"]       = verse_occurence_id
 
-                self.set_full_reference(book_map_id)
+                self.__set_full_reference(book_map_id)
                 self.details["full_ref"] += " " + verse_ref.split(" ")[1]
 
-        self.assemble_text("REF", valid_nodes, self.is_nlp)
+        self.__assemble_text("REF", valid_nodes, self.is_nlp)
     
     def add_detail(self):
-        if self.details != {}:
+        if self.valid_object and self.details != {'type': 'UNKNOWN'}:
             self.set_xml()
             self.get_strongs()
 
@@ -716,7 +747,7 @@ class Assembler:
             self.get_foot_notes()
             self.get_user_notes()
 
-    def get_file_id(self):
+    def __get_file_id(self):
         book_map_id = self.details["book"]
         file_id = self.db.fetch_clean_one("""
             SELECT file_id FROM bible.booktofile WHERE id = %s;
@@ -726,8 +757,7 @@ class Assembler:
 
     # Perhaps function to help build on nodes, to display strongs if available?
     def set_xml(self):
-        print(self.get_file_id())
-        book_xml = BeautifulSoup(self.obj.stream_file_from_file_id(self.get_file_id()), "xml")
+        book_xml = BeautifulSoup(self.obj.stream_file_from_file_id(self.__get_file_id()), "xml")
 
         ref_text = None
 
@@ -815,7 +845,7 @@ if __name__ == "__main__":
     test_occurence = 1
     test_node_id = 22
     test_node_path = "/usx:0/para:13/verse:1"
-    test_scope = "chapter"
+    test_scope = "verse"
     # test_scope = "chapter"
     # test_scope = "verse"
 
@@ -848,7 +878,11 @@ if __name__ == "__main__":
         case "verse":
             test_ref = f"{test_book} {test_chapter}:{test_verse}"
 
+    print(test_ref)
+
     temp = Assembler(ref=test_ref, translation_id=test_translation)
+    
     print(temp.get_details())
+    # print(temp.get_parent_context().get_details())
     temp.add_detail()
     print(temp.get_details())
