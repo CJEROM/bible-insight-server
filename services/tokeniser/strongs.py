@@ -208,69 +208,83 @@ def test_Strongs(object: Strongs, test_case, excluded=[]):
     match test_case:
         # ==================================================== SUCCESS Test Cases ====================================================
         case 0: #   - words             =>  Unique Word Occurences
-            print(object.get_occurences(
+            result = object.get_occurences(
                 key=None, 
                 count=False, 
                 verses=False, 
                 words=True,
                 display=False
-            ))
+            )
+            print(result)
         case 1: #   - count + key       =>  Number of unique occurences for specified Unique Word
-            print(object.get_occurences(
+            result = object.get_occurences(
                 key="created", 
                 count=True, 
                 verses=False, 
                 words=False,
                 display=False
-            ))
+            )
+            print(result)
         case 2: #   - display           -> Print Each occurence to console (MODIFY IN FUTURE TO EXPORT TO MARKDOWN IN OBSIDIAN), EXCEPTIONS: [words, count + key]
-            print(object.get_occurences(
+            result = object.get_occurences(
                 key=None, 
                 count=False, 
                 verses=False, 
                 words=False,
                 display=True
-            ))
+            )
+            print(result)
         case 3: #   - count + words     =>  Unique Word Occurences + Number of occurences for each unique word
-            print(object.get_occurences(
+            result = object.get_occurences(
                 key=None, 
                 count=True, 
                 verses=False, 
                 words=True,
                 display=False
-            ))
+            )
+            print(result)
         case 4: #   - verses            =>  Unique Verses with Occurences
-            print(object.get_occurences(
+            result = object.get_occurences(
                 key=None, 
                 count=False, 
                 verses=True, 
                 words=False,
                 display=False
-            ))
+            )
+            for r in result:
+                print(r.get_details("full_ref"))
+            print(result)
         case 5: #   - verses + key      =>  Unique Verses with specified Unique Word
-            print(object.get_occurences(
+            result = object.get_occurences(
                 key="created", 
                 count=False, 
                 verses=True, 
                 words=False,
                 display=False
-            ))
+            )
+            for r in result:
+                print(r.get_details("full_ref"))
+            print(result)
         case 6: #   - display + verses  -> To see specifically the unique verses included
-            print(object.get_occurences(
+            result = object.get_occurences(
                 key=None, 
                 count=False, 
                 verses=True, 
                 words=False,
                 display=True
-            ))
+            )
+            print(result)
         case 7: #   - NONE              =>  Unique Word Occurences with their Unique Verse Occurences (one verse can be mentioned multiple times across unique words)
-            print(object.get_occurences(
+            result = object.get_occurences(
                 key=None, 
                 count=False, 
                 verses=False, 
                 words=False,
                 display=False
-            ))
+            )
+            for r in result:
+                print(r.get_details("full_ref"))
+            print(result)
     
     # match test_case:
         # ==================================================== EDGE Test Cases ====================================================
@@ -279,21 +293,23 @@ def test_Strongs(object: Strongs, test_case, excluded=[]):
     match test_case:
         # ==================================================== FAILED Test Cases ====================================================
         case 8: #   - verses + words
-            print(object.get_occurences(
+            result = object.get_occurences(
                 key=None, 
                 count=False, 
                 verses=True, 
                 words=True,
                 display=False
-            ))
+            )
+            print(result)
         case 9: #   - key + words
-            print(object.get_occurences(
+            result = object.get_occurences(
                 key=None, 
                 count=False, 
                 verses=True, 
                 words=True,
                 display=False
-            ))
+            )
+            print(result)
         
 if __name__ == "__main__":
     temp = Strongs(ManagerHandler(), "H1254", 1)
