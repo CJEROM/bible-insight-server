@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from manager.managerhandler import ManagerHandler
 
 from tokeniser.assembler import Assembler
@@ -148,7 +150,7 @@ class Strongs():
                         unique_verses.add(assembled_verse)
 
         if verses:
-            sorted_unqiue_verses = sorted(unique_verses, key=lambda v: (v.get_details("book"), v.get_details("chapter"), v.get_details("verse")))
+            sorted_unqiue_verses = sorted(unique_verses, key=lambda v: self.assembler_key(v))
             if display:
                 for verse in sorted_unqiue_verses:
                     print(verse.get_details("full_ref"))
@@ -157,7 +159,49 @@ class Strongs():
         if count and words:
             return sorted(unique_counts, key=lambda c: c[0].lower())
         
-        return results
+        # FOR WHEN NOTHING SET, return all occurences by verse and the words that occur
+
+        verse_index = defaultdict(lambda: {
+            "assembler": set(),
+            "words": set(),
+        })
+
+        # Set new dict structure where we store results by key (GEN 1:1) with assembler and words as the values
+        for word, assemblers in self.details["occurences"].items():
+            for assembler in assemblers:
+                verse_ref = assembler.get_details("ref")   # e.g. "GEN 1:1"
+
+                verse_index[verse_ref]["assembler"].add(assembler)
+                verse_index[verse_ref]["words"].add(word)
+
+        # OLD METHOD, just returns sorted version of self.details["occurences"]
+        # for k in sorted_keys:
+        #     occurences = self.details["occurences"].get(k)
+        #     sorted_results[k] = sorted(occurences, key=lambda v: (v.get_details("book"), v.get_details("chapter"), v.get_details("verse")))
+        
+        sorted_results = {}
+        # Then we sort the new dict by key, which retuns a list
+        sorted_results = sorted(
+            verse_index.items(), 
+            key=lambda item: self.assembler_key(
+                next(
+                    iter(
+                        item[1]["assembler"]
+                    )
+                )
+            )
+        )
+
+        final_dict = {}
+
+        # we then turn it back into a dict
+        for k, d in sorted_results:
+            final_dict[k] = d
+
+        return final_dict
+    
+    def assembler_key(self, a):
+        return (a.get_details("book"), a.get_details("chapter"), a.get_details("verse"))
     
     def search_strongs(self):
         # Find all unique words that use this strong code
@@ -282,8 +326,8 @@ def test_Strongs(object: Strongs, test_case, excluded=[]):
                 words=False,
                 display=False
             )
-            for r in result:
-                print(r.get_details("full_ref"))
+            for k, r in result.items():
+                print(k, r)
             print(result)
     
     # match test_case:
@@ -315,10 +359,10 @@ if __name__ == "__main__":
     temp = Strongs(ManagerHandler(), "H1254", 1)
     test_case = -1
 
-    excluded_test = [2]
+    excluded_test = []
     all_tests = range(0, 10)
+    # all_tests = [7]
 
-    all_tests = [7]
     for test_case in all_tests:
         if test_case in excluded_test: continue
         print(f"\n==================================================== TEST: {test_case} ====================================================\n")
