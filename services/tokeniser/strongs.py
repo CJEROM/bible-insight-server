@@ -315,6 +315,11 @@ if __name__ == "__main__":
     temp = Strongs(ManagerHandler(), "H1254", 1)
     test_case = -1
 
-    for test_case in range(0, 10):
+    excluded_test = [2]
+    all_tests = range(0, 10)
+
+    all_tests = [7]
+    for test_case in all_tests:
+        if test_case in excluded_test: continue
         print(f"\n==================================================== TEST: {test_case} ====================================================\n")
-        test_Strongs(temp, test_case, [2])
+        test_Strongs(temp, test_case, excluded_test)
