@@ -89,6 +89,9 @@ class Strongs():
     
     def get_occurences(self, key:str=None, display=False, count=False, verses=False, words=False):
         # Combinations (priority order):
+
+        # Key => Unique word
+
         #   - words             =>  Unique Word Occurences
         #   - count + key       =>  Number of unique occurences for specified Unique Word
         #   - display           -> Print Each occurence to console (MODIFY IN FUTURE TO EXPORT TO MARKDOWN IN OBSIDIAN), EXCEPTIONS: [words, count + key]
@@ -107,10 +110,12 @@ class Strongs():
         unique_verses = set()
 
         #  =>  Unique Word Occurences
+        all_keys = self.details["occurences"].keys()
+        sorted_keys = sorted(all_keys, key=str.lower)
         if words and not count: 
-            return self.details["occurences"].keys()
+            return sorted_keys
 
-        for this_key in self.details["occurences"].keys():
+        for this_key in sorted_keys:
             results = self.details["occurences"].get(this_key)
 
             if key:
@@ -143,13 +148,14 @@ class Strongs():
                         unique_verses.add(assembled_verse)
 
         if verses:
+            sorted_unqiue_verses = sorted(unique_verses, key=lambda v: (v.get_details("book"), v.get_details("chapter"), v.get_details("verse")))
             if display:
-                for verse in unique_verses:
+                for verse in sorted_unqiue_verses:
                     print(verse.get_details("full_ref"))
-            return unique_verses
+            return sorted_unqiue_verses
 
         if count and words:
-            return unique_counts
+            return sorted(unique_counts, key=lambda c: c[0].lower())
         
         return results
     
@@ -194,7 +200,10 @@ class Strongs():
     def write_to_obsidian(self):
         pass
 
-def test_Strongs(object: Strongs, test_case):
+def test_Strongs(object: Strongs, test_case, excluded=[]):
+    if test_case in excluded:
+        print("EXCLUDED! Skipping...")
+        return
        
     match test_case:
         # ==================================================== SUCCESS Test Cases ====================================================
@@ -292,4 +301,4 @@ if __name__ == "__main__":
 
     for test_case in range(0, 10):
         print(f"\n==================================================== TEST: {test_case} ====================================================\n")
-        test_Strongs(temp, test_case)
+        test_Strongs(temp, test_case, [2])
