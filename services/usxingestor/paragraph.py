@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from ingestor.chapter import Chapter
+    from usxingestor.chapter import Chapter
     from manager.logmanager import LogManager
 
 class Paragraph:

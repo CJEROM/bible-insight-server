@@ -5,7 +5,7 @@ import shutil
 import re
 import traceback
 
-from ingestor.book import Book
+from usxingestor.book import Book
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

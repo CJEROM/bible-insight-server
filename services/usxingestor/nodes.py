@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup, Tag, NavigableString
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from ingestor.book import Book
+    from usxingestor.book import Book
     from manager.logmanager import LogManager
 
 # Will be created from books class

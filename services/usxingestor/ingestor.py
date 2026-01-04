@@ -5,8 +5,8 @@ import os
 import time
 from pathlib import Path
 
-from ingestor.translation import Translation
-from ingestor.strongsingestor import StrongsIngestor
+from usxingestor.translation import Translation
+from usxingestor.strongsingestor import StrongsIngestor
 from manager.managerhandler import ManagerHandler
 
 class Ingestor:

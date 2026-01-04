@@ -1,12 +1,12 @@
 from bs4 import BeautifulSoup
 import re
 
-from ingestor.chapter import Chapter
-from ingestor.nodes import Nodes
+from usxingestor.chapter import Chapter
+from usxingestor.nodes import Nodes
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from ingestor.translation import Translation
+    from usxingestor.translation import Translation
     from manager.logmanager import LogManager
 
 # Changing since will only be relevant for text anyway
