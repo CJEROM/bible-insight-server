@@ -2,12 +2,12 @@ from bs4 import BeautifulSoup
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from usxingestor.book import Book
+    from ingestor.usx.book import Book
     from manager.logmanager import LogManager
 
-from usxingestor.paragraph import Paragraph
-from usxingestor.verse import Verse
-from usxingestor.translationnote import TranslationNote
+from ingestor.usx.paragraph import Paragraph
+from ingestor.usx.verse import Verse
+from ingestor.usx.translationnote import TranslationNote
 
 class Chapter:
     def __init__(self, this_book: "Book", chapter_ref, chapter_text, log: "LogManager"):

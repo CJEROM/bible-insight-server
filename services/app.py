@@ -90,10 +90,11 @@ if __name__ == "__main__":
         # restart_docker("memgraph")
         initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
         # # start_api_server() 
-        run_script("ingestor.ingestor")
+        run_script("ingestor.usx.ingestor")
         # create_database_backup()
         # run_script(".\labeller\labeller.py")
         # print("FINISHED Script")
     except Exception as e:
         pass
+    
     
