@@ -1,5 +1,5 @@
 
-CREATE TABLE IF NOT EXISTS bible.quotes (
+CREATE TABLE IF NOT EXISTS nlp.quotes (
     id              SERIAL PRIMARY KEY,
     text            TEXT,
     quote_start     INTEGER,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS bible.quotes (
     FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS bible.quote_attribution (
+CREATE TABLE IF NOT EXISTS nlp.quote_attribution (
     id                  SERIAL PRIMARY KEY,
     quote_id            INTEGER,
     entity_id           INTEGER,

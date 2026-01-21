@@ -1,9 +1,9 @@
-CREATE TABLE IF NOT EXISTS bible.entities (
+CREATE TABLE IF NOT EXISTS entity.entities (
     id              SERIAL PRIMARY KEY
 );
 
 -- This will also count as Entity Names to some degree since we are counting each occurence and mentions of them, but this could have start and end
-CREATE TABLE IF NOT EXISTS bible.entityoccurence (
+CREATE TABLE IF NOT EXISTS entity.entityoccurence (
     id              SERIAL PRIMARY KEY,
 	start_token		INTEGER,
 	end_token   	INTEGER,
@@ -27,12 +27,12 @@ CREATE TABLE IF NOT EXISTS bible.entityoccurence (
 --     FOREIGN KEY (relationship) REFERENCES lookup.entity_relationship_types (relationship) ON DELETE SET NULL
 -- );
 
-CREATE TABLE IF NOT EXISTS bible.entity_relationships (
+CREATE TABLE IF NOT EXISTS entity.entity_relationships (
     id              SERIAL PRIMARY KEY,
 	from_entity		INTEGER,
 	to_entity	    INTEGER,
     relationship    TEXT,
-	FOREIGN KEY (from_entity) REFERENCES bible.entities (id) ON DELETE CASCADE,
-    FOREIGN KEY (to_entity) REFERENCES bible.entities (id) ON DELETE CASCADE
+	FOREIGN KEY (from_entity) REFERENCES entity.entities (id) ON DELETE CASCADE,
+    FOREIGN KEY (to_entity) REFERENCES entity.entities (id) ON DELETE CASCADE
 	-- FOREIGN KEY (relationship) REFERENCES lookup.entity_relationship_types (relationship) ON DELETE CASCADE
 );
