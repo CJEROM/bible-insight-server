@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS bible.lexemes (
     pronunciation   TEXT,
     audio_file      INTEGER, -- Pronounciation audio file link
     raw_gloss       TEXT,
-    FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE,
+    FOREIGN KEY (language_id) REFERENCES language.languages (id) ON DELETE CASCADE,
     FOREIGN KEY (audio_file) REFERENCES bible.files (id)
 );
 CREATE INDEX idx_bible_lexemes_strongs_code ON bible.lexemes (strongs_code) WHERE strongs_code IS NOT NULL;

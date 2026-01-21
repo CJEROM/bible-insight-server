@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS bible.translations (
     FOREIGN KEY (ldml_file) REFERENCES bible.files (id) ON DELETE SET NULL,
     FOREIGN KEY (versification_file) REFERENCES bible.files (id) ON DELETE SET NULL,
     FOREIGN KEY (style_file) REFERENCES bible.files (id) ON DELETE SET NULL,
-    FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
+    FOREIGN KEY (language_id) REFERENCES language.languages (id) ON DELETE CASCADE
 );
 CREATE INDEX idx_bible_translations_dbl_id ON bible.translations (dbl_id);
 CREATE INDEX idx_bible_translations_agreement_id ON bible.translations (agreement_id);

@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS bible.word_list (
     type            TEXT,
     language_iso    TEXT,
     FOREIGN KEY (lemma_id) REFERENCES bible.word_list (id) ON DELETE SET NULL,
-    FOREIGN KEY (language_iso) REFERENCES bible.languages (iso)  ON DELETE CASCADE
+    FOREIGN KEY (language_iso) REFERENCES language.languages (iso)  ON DELETE CASCADE
 );
 
 -- Meant to be used in labelling for specific tokens to show they are of specific interest to me for labelling or mapping extra information
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS bible.tokens (
     FOREIGN KEY (pos) REFERENCES lookup.nlp_pos_types (pos_tag),
     FOREIGN KEY (tag) REFERENCES lookup.nlp_tag_types (tag),
     FOREIGN KEY (dep) REFERENCES lookup.nlp_dep_types (dep),
-    FOREIGN KEY (language_id) REFERENCES bible.languages (id),
+    FOREIGN KEY (language_id) REFERENCES language.languages (id),
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id)
 );
 CREATE INDEX idx_bible_tokens_text ON bible.tokens (text);

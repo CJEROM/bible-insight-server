@@ -80,7 +80,7 @@ class Labeller:
         """
 
         if self.translation_id == None:
-            self.cur.execute("""SELECT id, iso, name FROM bible.languages;""")
+            self.cur.execute("""SELECT id, iso, name FROM language.languages;""")
             languages = self.cur.fetchall()
 
             for language_id, iso, name in languages:
@@ -146,7 +146,7 @@ class Labeller:
                     JOIN bible.files f ON btf.file_id = f.id
                     JOIN bible.translations t ON tl.translation_id = t.id
                     JOIN bible.translationinfo ti ON t.dbl_id = ti.dbl_id
-                    JOIN bible.languages l ON l.id = ti.language_id
+                    JOIN language.languages l ON l.id = ti.language_id
                 WHERE l.iso = %s;
             """, (language_iso,))
         else:

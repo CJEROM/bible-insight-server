@@ -28,5 +28,5 @@ CREATE TABLE IF NOT EXISTS nlp.spacy_modules (
     supports_lemma      BOOLEAN DEFAULT FALSE,
     version             TEXT,
     notes               TEXT,
-    FOREIGN KEY (language_iso) REFERENCES bible.languages (iso)
+    FOREIGN KEY (language_iso) REFERENCES language.languages (iso)
 );

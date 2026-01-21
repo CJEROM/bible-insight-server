@@ -39,5 +39,5 @@ CREATE TABLE IF NOT EXISTS bible.bookgroupnames (
     language_id     INTEGER,
     name            TEXT,
     FOREIGN KEY (book_group_id) REFERENCES bible.bookgroups (id) ON DELETE CASCADE,
-    FOREIGN KEY (language_id) REFERENCES bible.languages (id) ON DELETE CASCADE
+    FOREIGN KEY (language_id) REFERENCES language.languages (id) ON DELETE CASCADE
 );

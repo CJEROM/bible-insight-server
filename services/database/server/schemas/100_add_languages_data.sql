@@ -1,5 +1,5 @@
 
-INSERT INTO bible.languages (iso, name, nameLocal, scriptDirection) VALUES 
+INSERT INTO language.languages (iso, name, nameLocal, scriptDirection) VALUES 
     ('eng', 'English', 'English', 'LTR'),
     ('hbo', 'Hebrew, Ancient', 'עברית', 'RTL'),
     ('heb', 'Hebrew, Modern', 'עברית', 'RTL'),
