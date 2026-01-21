@@ -3,3 +3,6 @@ CREATE SCHEMA lookup;
 CREATE SCHEMA users;
 CREATE SCHEMA nlp;
 CREATE SCHEMA audit;
+
+CREATE SCHEMA language;
+CREATE SCHEMA entities;
