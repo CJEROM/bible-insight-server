@@ -141,7 +141,7 @@ class Labeller:
                     f.file_path,
                     f.bucket,
                     tl.translation_id
-                FROM bible.translationlabellingprojects tl 
+                FROM nlp.translationlabellingprojects tl 
                     JOIN bible.booktofile btf ON tl.translation_id = btf.translation_id
                     JOIN bible.files f ON btf.file_id = f.id
                     JOIN bible.translations t ON tl.translation_id = t.id
