@@ -49,8 +49,8 @@ class LabelManager:
     def update_labelling_projects(self):
         loaded_db_projects = self.db.fetch_all("""
             SELECT tlp.project_id, tlp.translation_id, lp.name, lp.description
-            FROM bible.translationlabellingprojects tlp
-            JOIN bible.labellingprojects lp ON tlp.project_id = lp.id;
+            FROM nlp.translationlabellingprojects tlp
+            JOIN nlp.labellingprojects lp ON tlp.project_id = lp.id;
         """)
 
         temp_projects = {}
@@ -120,7 +120,7 @@ class LabelManager:
 
         # In Bible Insight DB, update with new project details
         self.db.execute("""
-            INSERT INTO bible.labellingprojects (id, name, description) 
+            INSERT INTO nlp.labellingprojects (id, name, description) 
             VALUES (%s, %s, %s)
             RETURNING id;
         """, (
@@ -131,7 +131,7 @@ class LabelManager:
 
         # In Bbile Insight DB, link translation to labelling project
         self.db.execute("""
-            INSERT INTO bible.translationlabellingprojects (translation_id, project_id) 
+            INSERT INTO nlp.translationlabellingprojects (translation_id, project_id) 
             VALUES (%s, %s)
             RETURNING id;
         """, (

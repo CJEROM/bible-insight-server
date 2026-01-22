@@ -9,7 +9,7 @@ class Search():
     SQL = {
         "get_languages": """
             SELECT id, iso, name, namelocal, scriptdirection 
-            FROM bible.languages;
+            FROM language.languages;
         """,
         "get_translations": """
             SELECT DISTINCT ON (t.dbl_id)

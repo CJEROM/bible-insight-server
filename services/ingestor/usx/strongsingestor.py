@@ -156,7 +156,7 @@ class StrongsIngestor:
             'Part of Speech', 'cl.Gk.eqt.']
         )
         language_id = self.db.fetch_clean_one("""
-            SELECT id FROM bible.languages WHERE name LIKE 'Hebrew%'
+            SELECT id FROM language.languages WHERE name LIKE 'Hebrew%'
         """)
         self.extract_strongs(sheet, language_id, "H")
 
@@ -168,7 +168,7 @@ class StrongsIngestor:
             'R3', 'R3-Gk', 'Part of Speech', 'cl.Heb.eqt.']
         )
         language_id = self.db.fetch_clean_one("""
-            SELECT id FROM bible.languages WHERE name LIKE 'Greek%'
+            SELECT id FROM language.languages WHERE name LIKE 'Greek%'
         """)
         self.extract_strongs(sheet, language_id, "G")
 

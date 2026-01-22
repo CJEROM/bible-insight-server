@@ -48,23 +48,26 @@ class DBManager:
         db_server_script_path = Path(__file__).parents[2] / "services" / "database" / "server"
 
         # Load and execute SQL file
-        schema_path = db_server_script_path / "schemas" / "v1_schema.sql"
-        with open(schema_path, "r") as file:
-            sql_script = file.read()
-            self.execute(sql_script)
+        # schema_file_path = db_server_script_path / "schemas" / "v1_schema.sql"
+        # with open(schema_file_path, "r") as file:
+        #     sql_script = file.read()
+        #     self.execute(sql_script)
 
-        migrations = [
-            "001_init_translations.sql",
-            "001_init_bible.sql",
-            "001_init_lookup.sql"
-        ]
+        # migrations = [
+        #     "001_init_translations.sql",
+        #     "001_init_bible.sql",
+        #     "001_init_lookup.sql"
+        # ]
+        migrations_path = db_server_script_path / "schemas"
+        migrations = [p.name for p in Path(migrations_path).iterdir() if p.is_file()]
 
         for init_script in migrations:
-            init_script_path = db_server_script_path / "migrations" / init_script
+            init_script_path = migrations_path / init_script
             # Load and execute SQL file
             with open(init_script_path, "r", encoding="utf-8") as file:
                 sql_script = file.read()
                 self.execute(sql_script)
+                print(f"Executed: {init_script}")
 
         self.commit()
 

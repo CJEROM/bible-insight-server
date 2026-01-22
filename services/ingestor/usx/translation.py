@@ -5,7 +5,7 @@ import shutil
 import re
 import traceback
 
-from ingestor.book import Book
+from ingestor.usx.book import Book
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -175,13 +175,13 @@ class Translation:
     
     def check_language(self, language_xml):
         # Check if language already added to database, if not create it and return language_id
-        language_id = self.db.fetch_clean_one("""SELECT id FROM bible.languages WHERE iso = %s;""", (language_xml.find("iso").text,))
+        language_id = self.db.fetch_clean_one("""SELECT id FROM language.languages WHERE iso = %s;""", (language_xml.find("iso").text,))
         if language_id != None:
             return language_id
         
         language_name = language_xml.find("nameLocal").text
         new_language_id = self.db.fetch_clean_one("""
-            INSERT INTO bible.languages (iso, name, namelocal, scriptdirection) 
+            INSERT INTO language.languages (iso, name, namelocal, scriptdirection) 
             VALUES (%s, %s, %s, %s)
             RETURNING id;
         """, (
@@ -190,7 +190,7 @@ class Translation:
             language_xml.find("nameLocal").text,
             language_xml.find("scriptDirection").text
         ))
-        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("bible.languages",))
+        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("language.languages",))
         self.log.log_to_file(f"Created New Language [ID: {new_language_id}] [Name: {language_name}]", "TRANSLATION", "INFO")
 
         return new_language_id
