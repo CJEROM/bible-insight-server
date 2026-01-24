@@ -35,5 +35,5 @@ INSERT INTO bible.dblinfo (dbl_id, agreement_id) VALUES
     -- ('',  ); --  | audio |
 
 INSERT INTO bible.dblinfo (dbl_id, agreement_id, supported, reason_not_supported) VALUES
-    ('ec290b5045ff54a5', 252291, FALSE, 'Not Valid -> Flawed USX files'), -- OKE | text | Targum Onkelos Etheridge
-    ('c89622d31b60c444', 272278, FALSE, 'Redundant -> introduces too much noise and not for our spec'); -- TOJB2011 | text | The Orthodox Jewish Bible
+    ('ec290b5045ff54a5', FALSE, 'Not Valid -> Flawed USX files'), -- OKE | text | Targum Onkelos Etheridge
+    ('c89622d31b60c444', FALSE, 'Redundant -> introduces too much noise and not for our spec'); -- TOJB2011 | text | The Orthodox Jewish Bible
