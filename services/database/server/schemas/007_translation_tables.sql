@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS bible.translations (
     dbl_id              TEXT,
 	revision            INTEGER,
 	revision_note		TEXT, -- For storing what has changed in the revision
+    revision_date       TIMESTAMP,
     metadata_file       INTEGER,
     ldml_file           INTEGER,
     versification_file  INTEGER,
