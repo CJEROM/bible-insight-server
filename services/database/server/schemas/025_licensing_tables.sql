@@ -1,10 +1,8 @@
 
 CREATE TABLE audit.license_providers (
-    provider_code   TEXT PRIMARY KEY,     -- CC, GNU, CUST
-    source_id       INTEGER,            
+    provider_code   TEXT PRIMARY KEY,     -- CC, GNU, CUST 
     name            TEXT NOT NULL,
-    description     TEXT,
-    FOREIGN KEY (source_id) REFERENCES audit.sources(id)
+    description     TEXT
 );
 
 CREATE TABLE audit.license_attributes (
@@ -72,3 +70,5 @@ CREATE TABLE audit.license_attribute_mapping (
     UNIQUE (license_id, provider_code, attribute_code),
     UNIQUE (agreement_id, provider_code, attribute_code)
 );
+
+--- IN THE FUTURE: Map license to features, so can track which ones are allowed
