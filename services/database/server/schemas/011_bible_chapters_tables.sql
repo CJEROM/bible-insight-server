@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS bible.chapteroccurences (
     FOREIGN KEY (chapter_ref) REFERENCES bible.chapters (chapter_ref),
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id),
-    FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE
+    FOREIGN KEY (file_id) REFERENCES audit.files (id) ON DELETE CASCADE
 );
 CREATE INDEX idx_bible_chapteroccurences_chapter_ref ON bible.chapteroccurences (chapter_ref);
 CREATE INDEX idx_bible_chapteroccurences_translation_id ON bible.chapteroccurences (translation_id);

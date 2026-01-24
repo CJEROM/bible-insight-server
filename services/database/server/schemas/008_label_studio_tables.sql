@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS nlp.labellingfiles (
     file_id             INTEGER,
     project_id          INTEGER,
     FOREIGN KEY (project_id) REFERENCES nlp.labellingprojects (id) ON DELETE CASCADE,
-    FOREIGN KEY (file_id) REFERENCES bible.files (id)
+    FOREIGN KEY (file_id) REFERENCES audit.files (id)
 );

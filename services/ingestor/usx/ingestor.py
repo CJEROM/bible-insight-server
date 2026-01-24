@@ -91,9 +91,9 @@ class Ingestor:
         
         # If not create a new translation entry and add to supported translations      
         self.db.execute("""
-            INSERT INTO bible.dblinfo (dbl_id, agreement_id, supported) VALUES (%s, %s, TRUE)
-            ON CONFLICT (dbl_id, agreement_id) DO NOTHING;
-        """, (dbl_id,agreement_id))
+            INSERT INTO audit.dblinfo (dbl_id, supported) VALUES (%s, %s, TRUE)
+            ON CONFLICT (dbl_id) DO NOTHING;
+        """, (dbl_id,))
 
         return self.db.fetch_clean_one("""
             INSERT INTO bible.translations (dbl_id, agreement_id) VALUES (%s, %s) RETURNING id;

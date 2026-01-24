@@ -122,13 +122,13 @@ class Translation:
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
-        source_id = self.db.fetch_clean_one("""SELECT id FROM bible.sources WHERE url = %s;""", (source_url,))
+        source_id = self.db.fetch_clean_one("""SELECT id FROM audit.sources WHERE url = %s;""", (source_url,))
         if source_id != None:
             return source_id
         
         # If not create new and return it
         new_source_id = self.db.fetch_clean_one("""
-            INSERT INTO bible.sources (url) 
+            INSERT INTO audit.sources (url) 
             VALUES (%s)
             RETURNING id;
         """, (source_url,))
@@ -378,7 +378,7 @@ class Translation:
         info = self.obj.upload_file(object_name, str(file_path), content_type)
         
         file_id = self.db.fetch_clean_one("""
-            INSERT INTO bible.files (etag, type, file_path, bucket, source_id) 
+            INSERT INTO audit.files (etag, type, file_path, bucket, source_id) 
             VALUES (%s, %s, %s, %s, %s)
             RETURNING id;
         """, (info.etag, info.content_type, info.object_name, info.bucket_name, self.source_id))
