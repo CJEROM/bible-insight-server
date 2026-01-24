@@ -65,10 +65,7 @@ CREATE TABLE audit.license_attribute_mapping (
         ON DELETE CASCADE,
 
     FOREIGN KEY (provider_code, attribute_code)
-        REFERENCES audit.license_attributes(provider_code, attribute_code),
-
-    UNIQUE (license_id, provider_code, attribute_code),
-    UNIQUE (agreement_id, provider_code, attribute_code)
+        REFERENCES audit.license_attributes(provider_code, attribute_code)
 );
 
 --- IN THE FUTURE: Map license to features, so can track which ones are allowed
