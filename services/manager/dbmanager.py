@@ -59,7 +59,7 @@ class DBManager:
         #     "001_init_lookup.sql"
         # ]
         migrations_path = db_server_script_path / "schemas"
-        migrations = [p.name for p in Path(migrations_path).iterdir() if p.is_file()]
+        migrations = sorted(p.name for p in Path(migrations_path).iterdir() if p.is_file())
 
         for init_script in migrations:
             init_script_path = migrations_path / init_script
