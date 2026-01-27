@@ -24,7 +24,7 @@ CREATE TABLE audit.feature_mapping (
 
     FOREIGN KEY (feature_code) REFERENCES audit.features(feature_code),
     FOREIGN KEY (source_id) REFERENCES audit.sources(id),
-    FOREIGN KEY (license_id) REFERENCES audit.licenses(license_id),
-    FOREIGN KEY (agreement_id) REFERENCES audit.agreements(agreement_id),
-    FOREIGN KEY (translation_id) REFERENCES audit.translations(translation_id)
+    FOREIGN KEY (license_id) REFERENCES audit.licenses(id),
+    FOREIGN KEY (agreement_id) REFERENCES audit.dbl_agreements(agreement_id),
+    FOREIGN KEY (translation_id) REFERENCES bible.translations(id)
 );

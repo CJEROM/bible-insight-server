@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS geo.geometries (
     surface             TEXT,
     info                JSON,
     FOREIGN KEY (geo_id) REFERENCES geo.locations (location_id),
-    FOREIGN KEY (file_id) REFERENCES geo.files (id)
+    FOREIGN KEY (file_id) REFERENCES audit.files (id)
 );
 
 CREATE TABLE IF NOT EXISTS geo.locationgeometry (

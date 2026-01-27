@@ -1,10 +1,10 @@
 -- Is this translation + revision supported by Bible Insight Ingestion. Why or why not?
 CREATE TABLE IF NOT EXISTS audit.dblinfo (
-    dbl_id                  TEXT,
+    dbl_id                  TEXT PRIMARY KEY,
 	revision                INTEGER,
     supported               BOOLEAN DEFAULT TRUE,
     test_import             BOOLEAN DEFAULT FALSE, -- Change Default in future
-    reason_not_supported    TEXT,
+    reason_not_supported    TEXT
 );
 
 CREATE TABLE IF NOT EXISTS bible.translations (
@@ -50,13 +50,13 @@ CREATE TABLE IF NOT EXISTS bible.translationrelationships (
 CREATE TABLE IF NOT EXISTS audit.dbl_agreements (
     agreement_id        INTEGER PRIMARY KEY,
     dbl_id              TEXT, --
-    license_id          TEXT,
+    license_id          INTEGER,
     dateLicense         TIMESTAMP,
     dateLicenseExpiry   TIMESTAMP,
     file_id             INTEGER,    -- Secondary Link to License File
     active              BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (dbl_id) REFERENCES audit.dblinfo(dbl_id),
-    FOREIGN KEY (license_id) REFERENCES audit.licenses(license_id),
+    FOREIGN KEY (license_id) REFERENCES audit.licenses(id),
     FOREIGN KEY (file_id) REFERENCES audit.files(id)
 );
 

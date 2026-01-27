@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS language.morph_scheme (
     UNIQUE (source_id, code),
     FOREIGN KEY (source_id) REFERENCES audit.sources(id),
     FOREIGN KEY (language) REFERENCES language.languages(iso)
-)
+);
 
 CREATE TABLE IF NOT EXISTS language.morph_key (
     key_id           SERIAL PRIMARY KEY,
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS language.morph_key (
     sort_order       INT,
     UNIQUE (scheme_id, key_code),
     FOREIGN KEY (scheme_id) REFERENCES language.morph_scheme(scheme_id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS language.morph_value (
     value_id         SERIAL PRIMARY KEY,
@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS language.morph_value (
     description      TEXT,
     sort_order       INT,
     UNIQUE (key_id, value_code),
-    FOREIGN KEY (key_id) REFERENCES language.morph_key(key_id),
-)
+    FOREIGN KEY (key_id) REFERENCES language.morph_key(key_id)
+);
 
 CREATE TABLE IF NOT EXISTS language.token_morph_attr (
     token_anchor_id  INTEGER,
@@ -47,4 +47,4 @@ CREATE TABLE IF NOT EXISTS language.token_morph_attr (
     FOREIGN KEY (scheme_id) REFERENCES language.morph_scheme(scheme_id),
     FOREIGN KEY (key_id) REFERENCES language.morph_key(key_id),
     FOREIGN KEY (value_id) REFERENCES language.morph_value(value_id)
-)
+);

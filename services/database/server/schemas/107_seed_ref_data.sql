@@ -1,5 +1,5 @@
 INSERT INTO lookup.data_formats (code, mime_type, extension, description) VALUES
-    ('USX', 'application/xml', 'usx', 'Unified Standard XML Bible Format'),
+    ('USX', 'application/xml', 'xml', 'Unified Standard XML Bible Format'),
     ('TSV', 'text/tab-separated-values', 'tsv', 'Tab Separated Values'),
     ('XML', 'application/xml', 'xml', 'Extensible Markup Language'),
     ('JSON', 'application/json', 'json', 'JavaScript Object Notation'),

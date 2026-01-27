@@ -54,5 +54,5 @@ CREATE TABLE IF NOT EXISTS audit.files (
     active          BOOLEAN DEFAULT TRUE, -- the preferred/current version for this logical file
     FOREIGN KEY (source_id) REFERENCES audit.sources (id) ON DELETE SET NULL,
     FOREIGN KEY (data_formats) REFERENCES lookup.data_formats (code)
-    UNIQUE (bucket, object_path, version_id)
+    -- UNIQUE (bucket, object_path, version_id)
 );
