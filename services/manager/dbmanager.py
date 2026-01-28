@@ -53,21 +53,42 @@ class DBManager:
         #     sql_script = file.read()
         #     self.execute(sql_script)
 
-        # migrations = [
-        #     "001_init_translations.sql",
-        #     "001_init_bible.sql",
-        #     "001_init_lookup.sql"
-        # ]
-        migrations_path = db_server_script_path / "schemas"
-        migrations = [p.name for p in Path(migrations_path).iterdir() if p.is_file()]
+        migrations = [
+            db_server_script_path / "core"      / "schemas.sql",
+            db_server_script_path / "core"      / "extensions.sql",
+            db_server_script_path / "reference" / "sources.sql",
+            db_server_script_path / "reference" / "files.sql",
+            db_server_script_path / "reference" / "languages.sql",
+            db_server_script_path / "metadata"  / "translations.sql",
+            db_server_script_path / "bible"     / "books.sql",
+            db_server_script_path / "usx"       / "nodes.sql",
+            db_server_script_path / "bible"     / "chapters.sql",
+            db_server_script_path / "bible"     / "verses.sql",
+            db_server_script_path / "usx"       / "styles.sql",
+            db_server_script_path / "usx"       / "paragraphs.sql",
+            db_server_script_path / "usx"       / "footnotes.sql",
+            db_server_script_path / "usx"       / "cross_references.sql",
+            db_server_script_path / "user"      / "users.sql",
+            db_server_script_path / "user"      / "user_data.sql",
+            db_server_script_path / "metadata"  / "label_studio.sql",
+            db_server_script_path / "metadata"  / "spacy_lookup.sql",
+            db_server_script_path / "metadata"  / "tokens.sql",
+            db_server_script_path / "reference" / "lexemes (legacy).sql",
+            db_server_script_path / "reference" / "lexemes.sql",
+            db_server_script_path / "entities"  / "entities.sql",
+            db_server_script_path / "entities"  / "quotes.sql",
+            db_server_script_path / "reference" / "morphology.sql"
+            # db_server_script_path / "metadata"  / "chronology.sql",   # Not in Use
+            # db_server_script_path / "metadata"  / "harmony.sql",      # Not in Use
+            # db_server_script_path / "entities"  / "geo (legacy).sql", # Not Complete (For Bible.Info data)
+        ]
 
-        for init_script in migrations:
-            init_script_path = migrations_path / init_script
+        for init_script_path in migrations:
             # Load and execute SQL file
             with open(init_script_path, "r", encoding="utf-8") as file:
                 sql_script = file.read()
                 self.execute(sql_script)
-                print(f"Executed: {init_script}")
+                print(f"Executed: {init_script_path.st}")
 
         self.commit()
 
