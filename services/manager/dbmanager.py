@@ -77,10 +77,17 @@ class DBManager:
             db_server_script_path / "reference" / "lexemes.sql",
             db_server_script_path / "entities"  / "entities.sql",
             db_server_script_path / "entities"  / "quotes.sql",
-            db_server_script_path / "reference" / "morphology.sql"
+            db_server_script_path / "reference" / "morphology.sql",
             # db_server_script_path / "metadata"  / "chronology.sql",   # Not in Use
             # db_server_script_path / "metadata"  / "harmony.sql",      # Not in Use
             # db_server_script_path / "entities"  / "geo (legacy).sql", # Not Complete (For Bible.Info data)
+            # --------------------------- SEED DATA ---------------------------
+            db_server_script_path / "seed" / "language_data.sql",
+            db_server_script_path / "seed" / "translation_data.sql",
+            db_server_script_path / "seed" / "bible_books.sql",
+            db_server_script_path / "seed" / "bible_chapters.sql",
+            db_server_script_path / "seed" / "lookup_data.sql",
+            db_server_script_path / "seed" / "user_data.sql"
         ]
 
         for init_script_path in migrations:
