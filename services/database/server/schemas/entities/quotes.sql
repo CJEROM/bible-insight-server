@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS nlp.quotes (
     audience        TEXT,
     FOREIGN KEY (quote_start) REFERENCES bible.tokens (id) ON DELETE CASCADE,
     FOREIGN KEY (quote_end) REFERENCES bible.tokens (id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_quote) REFERENCES bible.quotes (id) ON DELETE CASCADE
+    FOREIGN KEY (parent_quote) REFERENCES nlp.quotes (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS nlp.quote_attribution (
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS nlp.quote_attribution (
     attribution         INTEGER, -- whether Speaker or audience or writer
     type                TEXT,
     FOREIGN KEY (entity_id) REFERENCES bible.entities (id) ON DELETE CASCADE,
-    FOREIGN KEY (quote_id) REFERENCES bible.quotes (id) ON DELETE CASCADE
+    FOREIGN KEY (quote_id) REFERENCES nlp.quotes (id) ON DELETE CASCADE
 );
 
 -- Look up table for quote attributions
