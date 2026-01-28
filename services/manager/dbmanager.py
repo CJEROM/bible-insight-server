@@ -56,10 +56,12 @@ class DBManager:
         migrations = [
             db_server_script_path / "core"      / "schemas.sql",
             db_server_script_path / "core"      / "extensions.sql",
+            db_server_script_path / "reference" / "licences.sql",
             db_server_script_path / "reference" / "sources.sql",
             db_server_script_path / "reference" / "files.sql",
             db_server_script_path / "reference" / "languages.sql",
             db_server_script_path / "metadata"  / "translations.sql",
+            db_server_script_path / "reference" / "licence_mapping.sql",
             db_server_script_path / "bible"     / "books.sql",
             db_server_script_path / "usx"       / "nodes.sql",
             db_server_script_path / "bible"     / "chapters.sql",
@@ -78,6 +80,8 @@ class DBManager:
             db_server_script_path / "entities"  / "entities.sql",
             db_server_script_path / "entities"  / "quotes.sql",
             db_server_script_path / "reference" / "morphology.sql",
+            db_server_script_path / "reference" / "ingestion.sql",
+            db_server_script_path / "reference" / "feature_mapping.sql",
             # db_server_script_path / "metadata"  / "chronology.sql",   # Not in Use
             # db_server_script_path / "metadata"  / "harmony.sql",      # Not in Use
             # db_server_script_path / "entities"  / "geo (legacy).sql", # Not Complete (For Bible.Info data)
@@ -87,7 +91,9 @@ class DBManager:
             db_server_script_path / "seed" / "bible_books.sql",
             db_server_script_path / "seed" / "bible_chapters.sql",
             db_server_script_path / "seed" / "lookup_data.sql",
-            db_server_script_path / "seed" / "user_data.sql"
+            db_server_script_path / "seed" / "user_data.sql",
+            db_server_script_path / "seed" / "ref_lookup_data.sql",
+            db_server_script_path / "seed" / "licensing_data.sql"
         ]
 
         for init_script_path in migrations:
