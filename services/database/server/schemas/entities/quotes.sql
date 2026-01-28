@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS nlp.quote_attribution (
     entity_id           INTEGER,
     attribution         INTEGER, -- whether Speaker or audience or writer
     type                TEXT,
-    FOREIGN KEY (entity_id) REFERENCES bible.entities (id) ON DELETE CASCADE,
+    FOREIGN KEY (entity_id) REFERENCES entity.entities (id) ON DELETE CASCADE,
     FOREIGN KEY (quote_id) REFERENCES nlp.quotes (id) ON DELETE CASCADE
 );
 
