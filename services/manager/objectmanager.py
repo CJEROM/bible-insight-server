@@ -54,6 +54,9 @@ class ObjectManager:
         for bucket in self.configured_buckets:
             if not self.client.bucket_exists(bucket):
                 self.client.make_bucket(bucket)
+                config = self.client.get_bucket_versioning(bucket)
+                print(config)
+                # self.client.set_bucket_versioning(bucket, VersioningConfig(ENABLED))
 
         return self.client.list_buckets()
 
