@@ -1,4 +1,4 @@
--- Map features possible for translation (using license and agreement data as well as the data contents)
+-- Map features possible for translation (using licence and agreement data as well as the data contents)
 CREATE TABLE audit.features (
     feature_code    TEXT PRIMARY KEY,
     name            TEXT,
@@ -17,14 +17,14 @@ CREATE TABLE audit.feature_mapping (
     mapping_id      SERIAL PRIMARY KEY,
     feature_code    TEXT NOT NULL,
     source_id       INTEGER,
-    license_id      INTEGER,
+    licence_id      INTEGER,
     agreement_id    INTEGER,
     translation_id  INTEGER,
     is_allowed      BOOLEAN DEFAULT TRUE,
 
     FOREIGN KEY (feature_code) REFERENCES audit.features(feature_code),
     FOREIGN KEY (source_id) REFERENCES audit.sources(id),
-    FOREIGN KEY (license_id) REFERENCES audit.licenses(id),
+    FOREIGN KEY (licence_id) REFERENCES audit.licences(id),
     FOREIGN KEY (agreement_id) REFERENCES audit.dbl_agreements(agreement_id),
     FOREIGN KEY (translation_id) REFERENCES bible.translations(id)
 );

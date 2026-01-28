@@ -14,10 +14,10 @@ CREATE TABLE IF NOT EXISTS audit.sources (
     url                 TEXT,
 	note				TEXT,
     parent_source       INTEGER,
-    license_id          INTEGER,
+    licence_id          INTEGER,
     is_deprecated       BOOLEAN DEFAULT FALSE,
 	metadata			JSONB,
     FOREIGN KEY (parent_source) REFERENCES audit.sources(id),
-    FOREIGN KEY (license_id) REFERENCES audit.licenses(id),
+    FOREIGN KEY (licence_id) REFERENCES audit.licences(id),
     FOREIGN KEY (source_type) REFERENCES lookup.source_types(code)
 );

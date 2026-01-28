@@ -40,7 +40,7 @@ class Translation:
 
         self.files = {
             "metadata": None,
-            "license": None,
+            "licence": None,
             "ldml": None,
             "versification": None,
             "styles": None,
@@ -277,7 +277,7 @@ class Translation:
 
         self.files = {
             "metadata": self.get_support_files(file_location, object_start, "metadata.xml", "application/xml"),
-            "license": self.get_support_files(file_location, object_start, "license.xml", "application/xml"),
+            "licence": self.get_support_files(file_location, object_start, "licence.xml", "application/xml"),
             "ldml": ldml_file_id,
             "versification": self.get_support_files(file_location, object_start, "release/versification.vrs", "application/xml"),
             "styles": self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml"),
@@ -289,7 +289,7 @@ class Translation:
             SET revision = %s,
                 revision_note = %s,
                 metadata_file = %s,
-                license_file = %s,
+                licence_file = %s,
                 ldml_file = %s,
                 versification_file = %s,
                 style_file = %s
@@ -298,7 +298,7 @@ class Translation:
             self.revision, 
             revision_note, 
             self.files["metadata"],
-            self.files["license"],
+            self.files["licence"],
             self.files["ldml"],
             self.files["versification"],
             self.files["styles"],

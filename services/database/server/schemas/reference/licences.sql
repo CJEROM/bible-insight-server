@@ -1,10 +1,10 @@
-CREATE TABLE audit.license_providers (
+CREATE TABLE audit.licence_providers (
     provider_code   TEXT PRIMARY KEY,     -- CC, GNU, CUST 
     name            TEXT NOT NULL,
     description     TEXT
 );
 
-CREATE TABLE audit.license_attributes (
+CREATE TABLE audit.licence_attributes (
     provider_code TEXT NOT NULL,
     attribute_code TEXT NOT NULL,        -- BY, NC, SRC, SAME, etc.
 
@@ -16,10 +16,10 @@ CREATE TABLE audit.license_attributes (
     ),
 
     PRIMARY KEY (provider_code, attribute_code),
-    FOREIGN KEY (provider_code) REFERENCES audit.license_providers(provider_code)
+    FOREIGN KEY (provider_code) REFERENCES audit.licence_providers(provider_code)
 );
 
-CREATE TABLE audit.licenses (
+CREATE TABLE audit.licences (
     id SERIAL PRIMARY KEY,
 
     provider_code TEXT NOT NULL,          -- CC, GNU
@@ -36,5 +36,5 @@ CREATE TABLE audit.licenses (
     notes         TEXT,
 
     UNIQUE (provider_code, code, version),
-    FOREIGN KEY (provider_code) REFERENCES audit.license_providers(provider_code)
+    FOREIGN KEY (provider_code) REFERENCES audit.licence_providers(provider_code)
 );

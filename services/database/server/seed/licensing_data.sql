@@ -1,11 +1,11 @@
-INSERT INTO audit.license_providers (provider_code, name, description) 
+INSERT INTO audit.licence_providers (provider_code, name, description) 
 VALUES 
-	('CC', 'Creative Commons', 'Content licenses'),
-	('GNU', 'GNU / FSF (Free Software Foundation)', 'Free Software licenses'),
+	('CC', 'Creative Commons', 'Content licences'),
+	('GNU', 'GNU / FSF (Free Software Foundation)', 'Free Software licences'),
 	('CUST', 'Custom Agreement / License', 'DBL / SIL / Negotiated'),
 	('NONE', 'No License', 'No License');
 
-INSERT INTO audit.license_attributes (provider_code, attribute_code, name, description, attribute_type) 
+INSERT INTO audit.licence_attributes (provider_code, attribute_code, name, description, attribute_type) 
 VALUES 
 	('CC', 'BY', 'Attribution', 'Credit must be given to the creator', 'obligation'),
 	('CC', 'SA', 'Share Alike', 'Adaptations must be shared under the same terms', 'obligation'),
@@ -14,22 +14,22 @@ VALUES
 	('CC', '0', 'No Rights Reserved', 'Public Domain - No copyright restrictions', 'permission');
 	-- ('GNU', '', '', '', '');
 
-INSERT INTO audit.licenses (provider_code, code, name, version, link) 
+INSERT INTO audit.licences (provider_code, code, name, version, link) 
 VALUES 
 	('NONE', 'NONE', 'No License', '0', NULL),
-	('CC', 'BY-NC-ND', 'Attribution-Non', '4.0', 'https://creativecommons.org/licenses/by-nc-nd/4.0/'),
-	('CC', 'BY-ND', 'Attribution-NoDerivatives 4.0 International', '4.0', 'https://creativecommons.org/licenses/by-nd/4.0/'),
-	('CC', 'BY-NC-SA', 'Attribution-NonCommercial-ShareAlike 4.0 International', '4.0', 'https://creativecommons.org/licenses/by-nc-sa/4.0/'),
-	('CC', 'BY-NC', 'Attribution-NonCommercial 4.0 International', '4.0', 'https://creativecommons.org/licenses/by-nc/4.0/'),
-	('CC', 'BY-SA', 'Attribution-ShareAlike 4.0 International', '4.0', 'https://creativecommons.org/licenses/by-sa/4.0/'),
-	('CC', 'BY', 'Attribution 4.0 International', '4.0', 'https://creativecommons.org/licenses/by/4.0/'),
+	('CC', 'BY-NC-ND', 'Attribution-Non', '4.0', 'https://creativecommons.org/licences/by-nc-nd/4.0/'),
+	('CC', 'BY-ND', 'Attribution-NoDerivatives 4.0 International', '4.0', 'https://creativecommons.org/licences/by-nd/4.0/'),
+	('CC', 'BY-NC-SA', 'Attribution-NonCommercial-ShareAlike 4.0 International', '4.0', 'https://creativecommons.org/licences/by-nc-sa/4.0/'),
+	('CC', 'BY-NC', 'Attribution-NonCommercial 4.0 International', '4.0', 'https://creativecommons.org/licences/by-nc/4.0/'),
+	('CC', 'BY-SA', 'Attribution-ShareAlike 4.0 International', '4.0', 'https://creativecommons.org/licences/by-sa/4.0/'),
+	('CC', 'BY', 'Attribution 4.0 International', '4.0', 'https://creativecommons.org/licences/by/4.0/'),
 	('CC', '0', '', '1.0', 'https://creativecommons.org/publicdomain/zero/');
 	-- ('GNU', 'GPLv3', '', '', ''),
 	-- ('GNU', 'GPLv2', '', '', ''),
 	-- ('', '', '', '', ''),
 	-- ('', '', '', '', ''),;
 
-INSERT INTO audit.license_attribute_mapping (license_id, agreement_id, provider_code, attribute_code) 
+INSERT INTO audit.licence_attribute_mapping (licence_id, agreement_id, provider_code, attribute_code) 
 VALUES 
 	(2, NULL, 'CC', 'BY'),
 	(2, NULL, 'CC', 'NC'),
