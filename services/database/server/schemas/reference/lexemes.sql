@@ -1,6 +1,6 @@
 
 CREATE TABLE IF NOT EXISTS language.lexicon (
-    lexicon_id      SERIAL PRIMARY KEY,
+    id      SERIAL PRIMARY KEY,
     source_id       INTEGER,
     language        TEXT,      -- grc, heb
     code            TEXT,      -- Strong, BDB, STEP
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS language.lexicon (
 )
 
 CREATE TABLE IF NOT EXISTS language.lexeme (
-    lexeme_id       SERIAL PRIMARY KEY,
+    id       SERIAL PRIMARY KEY,
     lexicon_id      INTEGER,
     lemma           TEXT,
     lemma_norm      TEXT,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS language.lexeme (
     gloss           TEXT,
     description     TEXT,
     UNIQUE (lexicon_id, lemma, strong_code),
-    FOREIGN KEY (lexicon_id) REFERENCES language.lexicon (lexicon_id)
+    FOREIGN KEY (lexicon_id) REFERENCES language.lexicon (id)
 )
 
 CREATE TABLE IF NOT EXISTS language.token_lexeme (
