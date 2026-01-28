@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS language.lexicon (
     description     TEXT,
     FOREIGN KEY (source_id) REFERENCES audit.sources (id),
     FOREIGN KEY (language) REFERENCES language.languages (iso)
-)
+);
 
 CREATE TABLE IF NOT EXISTS language.lexeme (
     id       SERIAL PRIMARY KEY,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS language.lexeme (
     description     TEXT,
     UNIQUE (lexicon_id, lemma, strong_code),
     FOREIGN KEY (lexicon_id) REFERENCES language.lexicon (id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS language.token_lexeme (
     token_anchor_id  INTEGER,
@@ -29,4 +29,4 @@ CREATE TABLE IF NOT EXISTS language.token_lexeme (
     PRIMARY KEY (token_anchor_id, lexeme_id),
     -- FOREIGN KEY (token_anchor_id) REFERENCES bible.tokens (id),
     FOREIGN KEY (lexeme_id) REFERENCES language.lexeme (id)
-)
+);
