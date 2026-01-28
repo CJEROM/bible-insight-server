@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS bible.styles (
     versetext           BOOLEAN,
     publishable         BOOLEAN,
     source_file_id      INTEGER,
-    FOREIGN KEY (source_file_id) REFERENCES bible.files (id) ON DELETE CASCADE
+    FOREIGN KEY (source_file_id) REFERENCES audit.files (id) ON DELETE CASCADE
 );
 CREATE INDEX idx_bible_styles_file ON bible.styles (source_file_id);
 CREATE INDEX idx_bible_styles_style ON bible.styles (style);

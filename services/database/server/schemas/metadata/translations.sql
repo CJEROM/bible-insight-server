@@ -32,11 +32,11 @@ CREATE TABLE IF NOT EXISTS bible.translations (
     expiry              TIMESTAMP,
 	UNIQUE(dbl_id, agreement_id),
     FOREIGN KEY (dbl_id, agreement_id) REFERENCES bible.dblinfo (dbl_id, agreement_id) ON DELETE CASCADE,
-    FOREIGN KEY (license_file) REFERENCES bible.files (id) ON DELETE SET NULL,
-    FOREIGN KEY (metadata_file) REFERENCES bible.files (id) ON DELETE SET NULL,
-    FOREIGN KEY (ldml_file) REFERENCES bible.files (id) ON DELETE SET NULL,
-    FOREIGN KEY (versification_file) REFERENCES bible.files (id) ON DELETE SET NULL,
-    FOREIGN KEY (style_file) REFERENCES bible.files (id) ON DELETE SET NULL,
+    FOREIGN KEY (license_file) REFERENCES audit.files (id) ON DELETE SET NULL,
+    FOREIGN KEY (metadata_file) REFERENCES audit.files (id) ON DELETE SET NULL,
+    FOREIGN KEY (ldml_file) REFERENCES audit.files (id) ON DELETE SET NULL,
+    FOREIGN KEY (versification_file) REFERENCES audit.files (id) ON DELETE SET NULL,
+    FOREIGN KEY (style_file) REFERENCES audit.files (id) ON DELETE SET NULL,
     FOREIGN KEY (language_id) REFERENCES language.languages (id) ON DELETE CASCADE
 );
 CREATE INDEX idx_bible_translations_dbl_id ON bible.translations (dbl_id);

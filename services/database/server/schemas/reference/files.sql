@@ -1,11 +1,24 @@
-CREATE TABLE IF NOT EXISTS bible.files (
+CREATE TABLE lookup.data_formats (
+    code        TEXT PRIMARY KEY,     -- USX, TSV, XML, JSON
+    mime_type   TEXT,
+    extension   TEXT,
+    description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS audit.files (
     id              SERIAL PRIMARY KEY,
     etag            TEXT,
     type            TEXT,
 	-- Update to include bucket id for this file
-    file_path       TEXT, -- where this would be the file path inside said bucket
+    object_path     TEXT, -- where this would be the file path inside said bucket
     bucket          TEXT, -- this would be ignored
     -- translation_id  INTEGER,
     source_id       INTEGER,
-    FOREIGN KEY (source_id) REFERENCES audit.sources (id) ON DELETE SET NULL
+    data_formats    TEXT,
+    version_id      TEXT, -- Object storage version id
+    version_note    TEXT, -- e.g., for Git commit hash or similar
+    active          BOOLEAN DEFAULT TRUE, -- the preferred/current version for this logical file
+    FOREIGN KEY (source_id) REFERENCES audit.sources (id) ON DELETE SET NULL,
+    FOREIGN KEY (data_formats) REFERENCES lookup.data_formats (code)
+    -- UNIQUE (bucket, object_path, version_id)
 );

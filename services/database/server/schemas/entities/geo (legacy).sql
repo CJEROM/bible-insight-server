@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS geo.images (
     file_id             INTEGER,
     info                JSON,
     FOREIGN KEY (location_id) REFERENCES geo.locations (location_id),
-    FOREIGN KEY (file_id) REFERENCES bible.files (id)
+    FOREIGN KEY (file_id) REFERENCES audit.files (id)
 );
 
 CREATE TABLE IF NOT EXISTS geo.locationimages (

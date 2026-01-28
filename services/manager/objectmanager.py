@@ -77,7 +77,7 @@ class ObjectManager:
 
     def stream_file_from_file_id(self, file_id):
         file_object_name, file_bucket = self.db.fetch_one("""
-            SELECT file_path AS object_name, bucket FROM bible.files WHERE id = %s
+            SELECT file_path AS object_name, bucket FROM audit.files WHERE id = %s
         """, (file_id,))
         return self.stream_file(file_object_name, file_bucket)
 

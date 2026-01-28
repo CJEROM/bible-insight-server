@@ -143,7 +143,7 @@ class Labeller:
                     tl.translation_id
                 FROM nlp.translationlabellingprojects tl 
                     JOIN bible.booktofile btf ON tl.translation_id = btf.translation_id
-                    JOIN bible.files f ON btf.file_id = f.id
+                    JOIN audit.files f ON btf.file_id = f.id
                     JOIN bible.translations t ON tl.translation_id = t.id
                     JOIN bible.translationinfo ti ON t.dbl_id = ti.dbl_id
                     JOIN language.languages l ON l.id = ti.language_id
@@ -158,7 +158,7 @@ class Labeller:
                     f.bucket,
                     btf.translation_id
                 FROM bible.booktofile btf 
-                    JOIN bible.files f ON btf.file_id = f.id
+                    JOIN audit.files f ON btf.file_id = f.id
                 WHERE btf.translation_id = %s;
             """, (self.translation_id,))
 

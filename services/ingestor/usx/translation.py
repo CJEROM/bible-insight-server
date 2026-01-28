@@ -378,7 +378,7 @@ class Translation:
         info = self.obj.upload_file(object_name, str(file_path), content_type)
         
         file_id = self.db.fetch_clean_one("""
-            INSERT INTO bible.files (etag, type, file_path, bucket, source_id) 
+            INSERT INTO audit.files (etag, type, file_path, bucket, source_id) 
             VALUES (%s, %s, %s, %s, %s)
             RETURNING id;
         """, (info.etag, info.content_type, info.object_name, info.bucket_name, self.source_id))

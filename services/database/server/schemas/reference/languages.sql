@@ -16,6 +16,6 @@ CREATE TABLE IF NOT EXISTS language.language_letters (
     symbol_def      TEXT,
     language_id     INTEGER,
     FOREIGN KEY (parent_letter) REFERENCES language.language_letters (id),
-    FOREIGN KEY (ancient_symbol) REFERENCES bible.files (id),
+    FOREIGN KEY (ancient_symbol) REFERENCES audit.files (id),
     FOREIGN KEY (language_id) REFERENCES language.languages (id)
 );
