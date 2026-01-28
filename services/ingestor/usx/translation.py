@@ -122,13 +122,13 @@ class Translation:
 
     def get_source(self, source_url):
         # Find if url is already stored source in database
-        source_id = self.db.fetch_clean_one("""SELECT id FROM bible.sources WHERE url = %s;""", (source_url,))
+        source_id = self.db.fetch_clean_one("""SELECT id FROM audit.sources WHERE url = %s;""", (source_url,))
         if source_id != None:
             return source_id
         
         # If not create new and return it
         new_source_id = self.db.fetch_clean_one("""
-            INSERT INTO bible.sources (url) 
+            INSERT INTO audit.sources (url) 
             VALUES (%s)
             RETURNING id;
         """, (source_url,))

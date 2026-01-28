@@ -1,14 +1,23 @@
-CREATE TABLE IF NOT EXISTS bible.sources (
+CREATE TABLE lookup.source_types (
+    code            TEXT PRIMARY KEY, -- PUB, DAT, FILE
+    name            TEXT,   -- Publisher, Dataset, File
+    description     TEXT
+);
+
+CREATE TABLE IF NOT EXISTS audit.sources (
     id                  SERIAL PRIMARY KEY,
-    code                TEXT UNIQUE,   -- STEP, MorphGNT, OSHB
+    source_type         TEXT,           -- publisher, dataset, file
+    code                TEXT UNIQUE,    -- STEP, MorphGNT, OSHB
     name                TEXT,
     description         TEXT,
     version             TEXT,
     url                 TEXT,
 	note				TEXT,
-    dateAccessed        TIMESTAMP,
     parent_source       INTEGER,
+    license_id          INTEGER,
+    is_deprecated       BOOLEAN DEFAULT FALSE,
 	metadata			JSONB,
-    FOREIGN KEY (parent_source) REFERENCES bible.sources(source_id)
+    FOREIGN KEY (parent_source) REFERENCES audit.sources(id),
+    FOREIGN KEY (license_id) REFERENCES audit.licenses(id),
+    FOREIGN KEY (source_type) REFERENCES lookup.source_types(code)
 );
-CREATE INDEX idx_bible_sources_url ON bible.sources (url);

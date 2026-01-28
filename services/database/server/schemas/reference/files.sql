@@ -7,5 +7,5 @@ CREATE TABLE IF NOT EXISTS bible.files (
     bucket          TEXT, -- this would be ignored
     -- translation_id  INTEGER,
     source_id       INTEGER,
-    FOREIGN KEY (source_id) REFERENCES bible.sources (id) ON DELETE SET NULL
+    FOREIGN KEY (source_id) REFERENCES audit.sources (id) ON DELETE SET NULL
 );

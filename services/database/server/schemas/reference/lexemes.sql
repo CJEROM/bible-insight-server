@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS language.lexicon (
     code            TEXT,      -- Strong, BDB, STEP
     long_name       TEXT,      -- Exhaustive Strong's Concordance, 
     description     TEXT,
-    FOREIGN KEY (source_id) REFERENCES bible.sources (id),
+    FOREIGN KEY (source_id) REFERENCES audit.sources (id),
     FOREIGN KEY (language) REFERENCES language.languages (iso)
 )
 

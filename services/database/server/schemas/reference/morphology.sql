@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS language.morph_scheme (
     description      TEXT,
     standard_ref     TEXT,           -- book/paper/spec
     UNIQUE (source_id, code),
-    FOREIGN KEY (source_id) REFERENCES bible.sources(id),
+    FOREIGN KEY (source_id) REFERENCES audit.sources(id),
     FOREIGN KEY (language) REFERENCES language.languages(iso)
 )
 
