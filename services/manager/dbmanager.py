@@ -155,5 +155,5 @@ class DBManager:
     def close(self):
         self.conn.close()
 
-    def get_connection(self):
-        return self.conn
+    # def get_connection(self):
+    #     return self.conn
