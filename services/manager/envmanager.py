@@ -28,13 +28,14 @@ class EnvManager:
         return value
         
     # ======================== Group Getters ========================
-    def get_postgres_config(self) -> dict:
+    def get_postgres_config(self, role: str):
+        prefix = f"POSTGRES_{role.upper()}" if role else "POSTGRES"
         return {
-            "username": self.get("POSTGRES_USERNAME", required=True),
-            "password": self.get("POSTGRES_PASSWORD", required=True),
-            "database": self.get("POSTGRES_DB", required=True),
             "host": self.get("POSTGRES_HOST", default="localhost"),
-            "port": int(self.get("POSTGRES_PORT", required=True)), #, default="5432"
+            "port": self.get("POSTGRES_PORT", required=True), #, default="5432"
+            "dbname": self.get("POSTGRES_DB", required=True),
+            "user": self.get(f"{prefix}_USER", required=True),
+            "password": self.get(f"{prefix}_PASSWORD", required=True),
         }
 
     def get_minio_config(self) -> dict:
