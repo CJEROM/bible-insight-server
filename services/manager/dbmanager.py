@@ -45,7 +45,7 @@ class DBManager:
             # print("Database Already Initialised!")
             return 
 
-        db_server_script_path = Path(__file__).parents[2] / "services" / "database" / "server"
+        db_server_script_path = Path(__file__).parents[2] / "services" / "database" / "server" / "schemas"
 
         # Load and execute SQL file
         # schema_file_path = db_server_script_path / "schemas" / "v1_schema.sql"
@@ -101,7 +101,7 @@ class DBManager:
             with open(init_script_path, "r", encoding="utf-8") as file:
                 sql_script = file.read()
                 self.execute(sql_script)
-                print(f"Executed: {init_script_path.st}")
+                print(f"Executed: {init_script_path.parent.name}.{init_script_path.name}")
 
         self.commit()
 
