@@ -45,7 +45,7 @@ class DBManager:
             # print("Database Already Initialised!")
             return 
 
-        db_server_script_path = Path(__file__).parents[2] / "services" / "database" / "server" / "schemas"
+        db_server_script_path = Path(__file__).parents[2] / "services" / "database" / "server"
 
         # Load and execute SQL file
         # schema_file_path = db_server_script_path / "schemas" / "v1_schema.sql"
@@ -53,47 +53,50 @@ class DBManager:
         #     sql_script = file.read()
         #     self.execute(sql_script)
 
+        schema_folder   = "schemas"
+        seed_folder     = "seed"
+
         migrations = [
-            db_server_script_path / "core"      / "schemas.sql",
-            db_server_script_path / "core"      / "extensions.sql",
-            db_server_script_path / "reference" / "licences.sql",
-            db_server_script_path / "reference" / "sources.sql",
-            db_server_script_path / "reference" / "files.sql",
-            db_server_script_path / "reference" / "languages.sql",
-            db_server_script_path / "metadata"  / "translations.sql",
-            db_server_script_path / "reference" / "licence_mapping.sql",
-            db_server_script_path / "bible"     / "books.sql",
-            db_server_script_path / "usx"       / "nodes.sql",
-            db_server_script_path / "bible"     / "chapters.sql",
-            db_server_script_path / "bible"     / "verses.sql",
-            db_server_script_path / "usx"       / "styles.sql",
-            db_server_script_path / "usx"       / "paragraphs.sql",
-            db_server_script_path / "usx"       / "footnotes.sql",
-            db_server_script_path / "usx"       / "cross_references.sql",
-            db_server_script_path / "user"      / "users.sql",
-            db_server_script_path / "user"      / "user_data.sql",
-            db_server_script_path / "metadata"  / "label_studio.sql",
-            db_server_script_path / "metadata"  / "spacy_lookup.sql",
-            db_server_script_path / "metadata"  / "tokens.sql",
-            db_server_script_path / "reference" / "lexemes (legacy).sql",
-            db_server_script_path / "reference" / "lexemes.sql",
-            db_server_script_path / "entities"  / "entities.sql",
-            db_server_script_path / "entities"  / "quotes.sql",
-            db_server_script_path / "reference" / "morphology.sql",
-            db_server_script_path / "reference" / "ingestion.sql",
-            db_server_script_path / "reference" / "feature_mapping.sql",
+            db_server_script_path / schema_folder / "core"      / "schemas.sql",
+            db_server_script_path / schema_folder / "core"      / "extensions.sql",
+            db_server_script_path / schema_folder / "reference" / "licences.sql",
+            db_server_script_path / schema_folder / "reference" / "sources.sql",
+            db_server_script_path / schema_folder / "reference" / "files.sql",
+            db_server_script_path / schema_folder / "reference" / "languages.sql",
+            db_server_script_path / schema_folder / "metadata"  / "translations.sql",
+            db_server_script_path / schema_folder / "reference" / "licence_mapping.sql",
+            db_server_script_path / schema_folder / "bible"     / "books.sql",
+            db_server_script_path / schema_folder / "reference" / "lexemes (legacy).sql",
+            db_server_script_path / schema_folder / "reference" / "lexemes.sql",
+            db_server_script_path / schema_folder / "usx"       / "nodes.sql",
+            db_server_script_path / schema_folder / "bible"     / "chapters.sql",
+            db_server_script_path / schema_folder / "bible"     / "verses.sql",
+            db_server_script_path / schema_folder / "usx"       / "styles.sql",
+            db_server_script_path / schema_folder / "usx"       / "paragraphs.sql",
+            db_server_script_path / schema_folder / "usx"       / "footnotes.sql",
+            db_server_script_path / schema_folder / "usx"       / "cross_references.sql",
+            db_server_script_path / schema_folder / "user"      / "users.sql",
+            db_server_script_path / schema_folder / "user"      / "user_data.sql",
+            db_server_script_path / schema_folder / "metadata"  / "label_studio.sql",
+            db_server_script_path / schema_folder / "metadata"  / "spacy_lookup.sql",
+            db_server_script_path / schema_folder / "metadata"  / "tokens.sql",
+            db_server_script_path / schema_folder / "entities"  / "entities.sql",
+            db_server_script_path / schema_folder / "entities"  / "quotes.sql",
+            db_server_script_path / schema_folder / "reference" / "morphology.sql",
+            db_server_script_path / schema_folder / "metadata"  / "ingestion.sql",
+            db_server_script_path / schema_folder / "metadata" / "feature_mapping.sql",
             # db_server_script_path / "metadata"  / "chronology.sql",   # Not in Use
             # db_server_script_path / "metadata"  / "harmony.sql",      # Not in Use
             # db_server_script_path / "entities"  / "geo (legacy).sql", # Not Complete (For Bible.Info data)
             # --------------------------- SEED DATA ---------------------------
-            db_server_script_path / "seed" / "language_data.sql",
-            db_server_script_path / "seed" / "translation_data.sql",
-            db_server_script_path / "seed" / "bible_books.sql",
-            db_server_script_path / "seed" / "bible_chapters.sql",
-            db_server_script_path / "seed" / "lookup_data.sql",
-            db_server_script_path / "seed" / "user_data.sql",
-            db_server_script_path / "seed" / "ref_lookup_data.sql",
-            db_server_script_path / "seed" / "licensing_data.sql"
+            db_server_script_path / seed_folder / "language_data.sql",
+            db_server_script_path / seed_folder / "translation_data.sql",
+            db_server_script_path / seed_folder / "bible_books.sql",
+            db_server_script_path / seed_folder / "bible_chapters.sql",
+            db_server_script_path / seed_folder / "lookup_data.sql",
+            db_server_script_path / seed_folder / "user_data.sql",
+            db_server_script_path / seed_folder / "ref_lookup_data.sql",
+            db_server_script_path / seed_folder / "licensing_data.sql"
         ]
 
         for init_script_path in migrations:
