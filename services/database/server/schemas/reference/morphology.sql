@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS language.token_morph_attr (
     value_text       TEXT,           -- fallback for unmapped cases
     PRIMARY KEY (token_anchor_id, scheme_id, key_id),
     -- FOREIGN KEY (token_anchor_id) REFERENCES bible.tokens (token_id),
-    FOREIGN KEY (scheme_id) REFERENCES language.morph_scheme(scheme_id),
-    FOREIGN KEY (key_id) REFERENCES language.morph_key(key_id),
+    FOREIGN KEY (scheme_id) REFERENCES language.morph_scheme(id),
+    FOREIGN KEY (key_id) REFERENCES language.morph_key(id),
     FOREIGN KEY (value_id) REFERENCES language.morph_value(id)
 );
