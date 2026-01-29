@@ -27,8 +27,6 @@ class DBManager:
             password=config["password"]
         )
 
-        self.cur = self.conn.cursor()
-
         self.CHUNK = 20000  # ideal for execute_values
 
         self.init_database()
@@ -111,45 +109,51 @@ class DBManager:
         print("Database Init Success")
 
     def execute(self, query, params=None):
-        self.cur.execute(query, params)
-        self.conn.commit()
+        # Adds transaction control / handling + Error handling and rollback
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(query, params)
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
 
     def fetch_clean_one(self, query, params=None):
-        self.cur.execute(query, params)
-        result = self.cur.fetchone()
-
-        if result != None:
-            return result[0]
-        
-        return result
+        with self.conn.cursor() as cur:
+            cur.execute(query, params)
+            result = cur.fetchone()
+            return result[0] if result else None
     
     def fetch_one(self, query, params=None):
-        self.cur.execute(query, params)
-        return self.cur.fetchone()
+        with self.conn.cursor() as cur:
+            cur.execute(query, params)
+            return cur.fetchone()
     
     def fetch_all(self, query, params=None):
-        self.cur.execute(query, params)
-        return self.cur.fetchall()
+        with self.conn.cursor() as cur:
+            cur.execute(query, params)
+            return cur.fetchall()
     
     def fetch_all_single(self, query, params=None):
-        self.cur.execute(query, params)
-        return [row[0] for row in self.cur.fetchall()]
+        with self.conn.cursor() as cur:
+            cur.execute(query, params)
+            return [row[0] for row in cur.fetchall()]
     
     def set_chunks(self, new_chunk):
         self.CHUNK = new_chunk
     
     def bulk_insert(self, query, items):
-        for i in range(0, len(items), self.CHUNK):
-            execute_values(self.cur, query, items[i:i+self.CHUNK])
-    
-    def commit(self):
-        self.conn.commit()
+        try:
+            with self.conn.cursor() as cur:
+                for i in range(0, len(items), self.CHUNK):
+                    execute_values(cur, query, items[i:i+self.CHUNK])
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
 
     def close(self):
         self.conn.close()
-
-    def get_cursor(self):
-        return self.cur
 
     def get_connection(self):
         return self.conn
