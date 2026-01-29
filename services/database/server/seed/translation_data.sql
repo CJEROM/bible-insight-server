@@ -34,6 +34,6 @@
 --     -- Audio Medium Translations
 --     -- ('',  ); --  | audio |
 
-INSERT INTO audit.dbl_info (dbl_id, agreement_id, supported, reason_not_supported) VALUES
+INSERT INTO audit.dbl_info (dbl_id, supported, reason_not_supported) VALUES
     ('ec290b5045ff54a5', FALSE, 'Not Valid -> Flawed USX files'), -- OKE | text | Targum Onkelos Etheridge
     ('c89622d31b60c444', FALSE, 'Redundant -> introduces too much noise and not for our spec'); -- TOJB2011 | text | The Orthodox Jewish Bible
