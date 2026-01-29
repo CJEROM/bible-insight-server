@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2.extras import execute_values
 from pathlib import Path
+from contextlib import contextmanager
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -157,3 +158,14 @@ class DBManager:
 
     # def get_connection(self):
     #     return self.conn
+
+    # Allows rolling back a sequence of operations if needed, instead of just the one that failed
+    #   prevent half imports and incomplete data in db
+    @contextmanager
+    def transaction(self):
+        try:
+            yield self
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
