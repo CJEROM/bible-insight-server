@@ -2,6 +2,7 @@ import psycopg2
 from psycopg2.extras import execute_values
 from pathlib import Path
 from contextlib import contextmanager
+from manager.queryboundary import QueryBoundary
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -9,7 +10,7 @@ if TYPE_CHECKING:
     from manager.envmanager import EnvManager
 
 class DBManager:
-    def __init__(self, this_manager: "ManagerHandler" = None):
+    def __init__(self, role: str, this_manager: "ManagerHandler" = None):
         self.this_manager = this_manager
         self.env = None
         if this_manager == None:
@@ -17,20 +18,27 @@ class DBManager:
         else:
             self.env = self.this_manager.get_env()
 
-        config = self.env.get_postgres_config()
+        self.role = role
+        config = self.env.get_postgres_config(role)
+        self.conn = psycopg2.connect(**config)
 
         # Adds a database connection
-        self.conn = psycopg2.connect(
-            host=config["host"],
-            port=config["port"],
-            dbname=config["database"],
-            user=config["username"],
-            password=config["password"]
-        )
+        # self.conn = psycopg2.connect(
+        #     host=config["host"],
+        #     port=config["port"],
+        #     dbname=config["database"],
+        #     user=config["username"],
+        #     password=config["password"]
+        # )
+
+        self.query_boundary = QueryBoundary(self)
 
         self.CHUNK = 20000  # ideal for execute_values
 
         self.init_database()
+
+    def get_query_boundary(self):
+        return self.query_boundary
 
     def init_database(self):
         # cur.execute("SELECT version();")
@@ -169,3 +177,22 @@ class DBManager:
         except Exception:
             self.conn.rollback()
             raise
+
+class DBManagerFactory:
+    def __init__(self, this_manager: "ManagerHandler" = None):
+        self.this_manager = this_manager
+
+    def default(self):
+        return DBManager(None, self.this_manager)
+
+    def reader(self):
+        return DBManager("reader", self.this_manager)
+
+    def writer(self):
+        return DBManager("writer", self.this_manager)
+
+    def usx_ingestor(self):
+        return DBManager("usx_ingestor", self.this_manager)
+
+    def admin(self):
+        return DBManager("admin", self.this_manager)
