@@ -34,7 +34,7 @@ class EnvManager:
             "host": self.get("POSTGRES_HOST", default="localhost"),
             "port": self.get("POSTGRES_PORT", required=True), #, default="5432"
             "dbname": self.get("POSTGRES_DB", required=True),
-            "user": self.get(f"{prefix}_USER", required=True),
+            "user": self.get(f"{prefix}_USERNAME", required=True),
             "password": self.get(f"{prefix}_PASSWORD", required=True),
         }
 

@@ -113,7 +113,7 @@ class DBManager:
                 self.execute(sql_script)
                 print(f"Executed: {init_script_path.parent.name}.{init_script_path.name}")
 
-        self.commit()
+        self.conn.commit()
 
         print("Database Init Success")
 
@@ -163,6 +163,9 @@ class DBManager:
 
     def close(self):
         self.conn.close()
+
+    def commit(self):
+        self.conn.commit()
 
     # def get_connection(self):
     #     return self.conn
