@@ -16,7 +16,7 @@ class Ingestor:
             self.manager = ManagerHandler()
             self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
-        StrongsIngestor(self.manager)
+        # StrongsIngestor(self.manager)
 
         self.dbl_id = dbl_id
         self.agreement_id = agreement_id
@@ -131,7 +131,8 @@ class Ingestor:
 
             translations = None
             if self.all_translations == None:
-                translations = self.db.fetch_all("""SELECT dbl_id, agreement_id FROM bible.DBLInfo WHERE supported = TRUE;""")
+                # translations = self.db.fetch_all("""SELECT dbl_id, agreement_id FROM bible.DBLInfo WHERE supported = TRUE;""")
+                translations = [dbl_id, agreement_id]
             else:
                 translations = self.all_translations
 
@@ -213,6 +214,6 @@ class Ingestor:
             browser.close()
 
 if __name__ == "__main__":
-    # Ingestor()
+    # Can be set up to run all supported translations
     Ingestor(dbl_id="7142879509583d59", agreement_id="240016")
     # Ingestor(dbl_id="65eec8e0b60e656b", agreement_id="246069")
