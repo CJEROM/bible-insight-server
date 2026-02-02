@@ -2,7 +2,6 @@ import psycopg2
 from psycopg2.extras import execute_values
 from pathlib import Path
 from contextlib import contextmanager
-from manager.queryboundary import QueryBoundary
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -18,20 +17,10 @@ class DBManager:
         else:
             self.env = self.this_manager.get_env()
 
+        # Adds a database connection (role not implemented yet)
         self.role = role
         config = self.env.get_postgres_config(role)
         self.conn = psycopg2.connect(**config)
-
-        # Adds a database connection
-        # self.conn = psycopg2.connect(
-        #     host=config["host"],
-        #     port=config["port"],
-        #     dbname=config["database"],
-        #     user=config["username"],
-        #     password=config["password"]
-        # )
-
-        self.query_boundary = QueryBoundary(self)
 
         self.CHUNK = 20000  # ideal for execute_values
 
