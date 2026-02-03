@@ -89,7 +89,8 @@ class DBManager:
             db_server_script_path / seed_folder / "lookup_data.sql",
             db_server_script_path / seed_folder / "user_data.sql",
             db_server_script_path / seed_folder / "ref_lookup_data.sql",
-            db_server_script_path / seed_folder / "licensing_data.sql"
+            db_server_script_path / seed_folder / "licensing_data.sql",
+            db_server_script_path / seed_folder / "source_data.sql"
         ]
 
         for init_script_path in migrations:

@@ -16,8 +16,8 @@ INSERT INTO lookup.data_formats (code, mime_type, extension, description) VALUES
     ('LDML', 'application/xml', 'ldml', 'Unicode Locale Data Markup Language');
 
 INSERT INTO lookup.source_types (code, name, description) VALUES 
-('PUB', 'Publisher', 'An organization or entity that officially publishes and releases biblical resources, datasets, or scholarly works. Publishers typically hold intellectual property rights and are responsible for the official release of materials.'),
-('DAT', 'Dataset', 'A structured collection of biblical data organized for a specific purpose, such as morphological analysis, lexical information, or textual variants. May be produced by publishers, contributors, or distributors.'),
-('FILE', 'File', 'An individual file containing biblical data or resources. May exist as part of a dataset or as a standalone resource. Represents the actual data artifact being processed or stored.'),
-('CONT', 'Contributor', 'An individual, organization, or scholarly entity that contributes to the creation, editing, translation, or annotation of biblical resources. Contributors may work on datasets without being the official publisher.'),
-('DIST', 'Distributor', 'An organization or platform that makes biblical resources available to users, potentially aggregating content from multiple publishers and contributors. Distributors facilitate access and delivery but may not hold original publishing rights.');
+    ('PUB', 'Publisher', 'An organization or entity that officially publishes and releases biblical resources, datasets, or scholarly works. Publishers typically hold intellectual property rights and are responsible for the official release of materials.'),
+    ('DAT', 'Dataset', 'A structured collection of biblical data organized for a specific purpose, such as morphological analysis, lexical information, or textual variants. May be produced by publishers, contributors, or distributors.'),
+    ('FILE', 'File', 'An individual file containing biblical data or resources. May exist as part of a dataset or as a standalone resource. Represents the actual data artifact being processed or stored.'),
+    ('CONT', 'Contributor', 'An individual, organization, or scholarly entity that contributes to the creation, editing, translation, or annotation of biblical resources. Contributors may work on datasets without being the official publisher.'),
+    ('DIST', 'Distributor', 'An organization or platform that makes biblical resources available to users, potentially aggregating content from multiple publishers and contributors. Distributors facilitate access and delivery but may not hold original publishing rights.');
