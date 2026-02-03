@@ -23,6 +23,14 @@ class Metadata(BaseFile):
         # Object Storage Start Path
         self.object_start = None
 
+        self.files = {
+            # "metadata": None,
+            # "licence": None,
+            "ldml": None,
+            "versification": None,
+            "styles": None,
+        }
+
         self.read_metadata_file(translation_file_path)
 
     def get_metadata(self, key:str = None):
@@ -35,6 +43,9 @@ class Metadata(BaseFile):
     
     def get_object_start(self):
         return self.object_start
+    
+    def get_file(self, type):
+        return self.files.get(type)
 
     def extract_metadata(self, metadata_xml: BeautifulSoup):
         self.metadata["language_iso"]   = metadata_xml.find("language").find("iso").text
@@ -192,11 +203,28 @@ class Metadata(BaseFile):
 
         match file_name.split(".")[0].capitalize():
             case "Versification":
-                Versification(self.manager, self.log, self.source_id, new_file_path, self.translation_id)
+                self.files["versification"] = Versification(
+                    self.manager, 
+                    self.log, 
+                    self.source_id, 
+                    new_file_path, 
+                    self.translation_id
+                )
             case "Styles":
-                Styles(self.manager, self.log, self.source_id, new_file_path, file_id)
+                self.files["styles"]        = Styles(
+                    self.manager, 
+                    self.log, 
+                    self.source_id, 
+                    new_file_path, 
+                    file_id
+                )
             case "LDML":
-                LDML(self.manager, self.log, self.source_id, new_file_path)
+                self.files["ldml"]          = LDML(
+                    self.manager, 
+                    self.log, 
+                    self.source_id, 
+                    new_file_path
+                )
 
     def get_book_files(self, metadata_xml: BeautifulSoup):
         contents = metadata_xml.find("publication", default="true").find_all("content")
@@ -248,7 +276,7 @@ class Metadata(BaseFile):
                     )
 
                     # We are uploading Books
-                    Book(self, found_book, book_map_id, file_id, self.obj.stream_file(object_name), self.log)   
+                    Book(self.this_translation, found_book, book_map_id, file_id, self.obj.stream_file(object_name), self.log)   
 
                     self.log.set_progress(found_book, i+1)  
 
