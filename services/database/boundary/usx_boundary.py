@@ -237,14 +237,12 @@ class USXWriteBoundary(WriteBoundary):
             translation_id: int,
             type: str,
             version: str
-        ) -> int:
+        ) -> None:
         query = """
             INSERT INTO bible.translationtofile (file_id, translation_id, type, version) 
             VALUES (%s, %s, %s, %s)
-            RETURNING id;
         """
-        translation_file_id = self.db.fetch_clean_one(query, (file_id, translation_id, type, version))
-        return translation_file_id
+        self.db.fetch_clean_one(query, (file_id, translation_id, type, version))
 
     def persist_translation_relation(self,
             from_dbl_id: int,
@@ -293,8 +291,8 @@ class USXWriteBoundary(WriteBoundary):
     def persist_style_property(self,
             name: str,
             value: str,
-            unit: str,
-            style_id: int
+            unit: str = None,
+            style_id: int = None
         ) -> int:
         query = """
             INSERT INTO bible.properties (name, value, unit, style_id) 

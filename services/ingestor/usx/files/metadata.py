@@ -175,7 +175,7 @@ class Metadata(BaseFile):
         if file_extension == ".ldml":
             support_file_type = "LDML"
 
-        file_id = self.write.persist_translation_file(
+        self.write.persist_translation_file(
             translation_id=self.translation_id,
             file_id=file_id,
             type=support_file_type,
@@ -186,7 +186,7 @@ class Metadata(BaseFile):
             case "Versification":
                 Versification(self.manager, self.log, self.source_id, new_file_path)
             case "Styles":
-                Styles(self.manager, self.log, self.source_id, new_file_path)
+                Styles(self.manager, self.log, self.source_id, new_file_path, file_id)
             case "LDML":
                 LDML(self.manager, self.log, self.source_id, new_file_path)
 
