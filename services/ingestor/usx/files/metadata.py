@@ -93,6 +93,14 @@ class Metadata(BaseFile):
         # Match number system?
         self.get_metadata("numerals")
 
+        # Method may change as Language Ingestion is completed
+        #   Currently relies on language already existing in DB to be succesful
+        language_id = self.read.find_language(
+            iso_code=self.get_metadata("language_iso")
+        )
+    
+        return language_id
+
     def update_translation_details(self):
         self.write.update_usx_translation(
             translation_id  = self.translation_id,
