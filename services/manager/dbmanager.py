@@ -26,9 +26,6 @@ class DBManager:
 
         self.init_database()
 
-    def get_query_boundary(self):
-        return self.query_boundary
-
     def init_database(self):
         # cur.execute("SELECT version();")
         is_init = self.fetch_clean_one("""

@@ -78,18 +78,24 @@ class ObjectManager:
                 response.close()
                 response.release_conn()
 
+    # EDIT METHOD: Needs to also account for Object versioning
     def stream_file_from_file_id(self, file_id):
         file_object_name, file_bucket = self.db.fetch_one("""
             SELECT file_path AS object_name, bucket FROM audit.files WHERE id = %s
         """, (file_id,))
         return self.stream_file(file_object_name, file_bucket)
 
+    # ADD METHOD TO CHEck FILE EXISTS ALREADY? IF SO UPDATE IT, DO DB WRITING HERE? INSTEAD OF IN INGESTOR CODE? OR PROCESESS THAT THERE INSTEAD
+
+    # EDIT METHOD: Needs to also include Object versioning
     def upload_file(self, object_name, file_path, content_type, bucket=None):
         if bucket == None:
             bucket = self.bucket
         self.client.fput_object(bucket, object_name, str(file_path), content_type=content_type)
         info = self.client.stat_object(self.bucket, object_name)
-        #region Object Return Example
+        return info
+    
+#region Object Return Example
             # Object(
             #     bucket_name='bible-dbl-raw', 
             #     object_name='text-65eec8e0b60e656b-246069/10/2JN.usx', 
@@ -123,5 +129,3 @@ class ObjectManager:
             #     is_dir=False
             # )
         #endregion
-        return info
-    
