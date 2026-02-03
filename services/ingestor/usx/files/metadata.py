@@ -192,7 +192,7 @@ class Metadata(BaseFile):
 
         match file_name.split(".")[0].capitalize():
             case "Versification":
-                Versification(self.manager, self.log, self.source_id, new_file_path)
+                Versification(self.manager, self.log, self.source_id, new_file_path, self.translation_id)
             case "Styles":
                 Styles(self.manager, self.log, self.source_id, new_file_path, file_id)
             case "LDML":
