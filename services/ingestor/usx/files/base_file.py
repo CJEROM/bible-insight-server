@@ -1,3 +1,4 @@
+from pathlib import Path
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -7,7 +8,7 @@ if TYPE_CHECKING:
 from database.boundary.usx_boundary import USXReadBoundary, USXWriteBoundary
 
 class BaseFile:
-    def __init__(self, main_manager: "ManagerHandler", log: "LogManager", source_id: int, file_path: str = None):
+    def __init__(self, main_manager: "ManagerHandler", log: "LogManager", source_id: int, file_path: Path = None):
         self.manager = main_manager
         self.obj = main_manager.get_obj()
         self.db = main_manager.get_db()
@@ -18,6 +19,8 @@ class BaseFile:
 
         self.read = USXReadBoundary(self.manager.get_db())
         self.write = USXWriteBoundary(self.manager.get_db())
+
+        self.check_file_exists()
 
     # CHECK FILE EXISTS FIRST?
     # IF IT DOES, USE UPDATE INSTEAD OF INSERT
@@ -47,6 +50,14 @@ class BaseFile:
 
         return file_id # Return file_id to link to
     
+    def check_file_exists(self):
+        if self.this_file_path.exists():
+            pass
+        elif self.this_file_path == None:
+            self.log.log_to_file(f"File Read Failure: File Path NOT set!", "FILE", "WARN")
+        else:
+            self.log.log_to_file(f"File Read Failure: '{str(self.this_file_path)}' does not exist", "FILE", "ERROR")
+
     def read_file(self):
         with open(self.this_file_path, encoding="utf-8") as file:
             return file.read()
