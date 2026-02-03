@@ -1,7 +1,7 @@
 -- Is this translation + revision supported by Bible Insight Ingestion. Why or why not?
 CREATE TABLE IF NOT EXISTS audit.dbl_info (
     dbl_id                  TEXT PRIMARY KEY,
-	revision                INTEGER, -- Optional: Either specific revision not supported or entire translation
+	revision                INTEGER, -- Optional: Either specific revision not supported (int > 0) or entire translation (int = 0 or -1?)
     is_translation          BOOLEAN, -- TRUE = translation, FALSE = revision
     supported               BOOLEAN DEFAULT TRUE,
     test_import             BOOLEAN DEFAULT FALSE, -- Change Default in future?
@@ -53,11 +53,11 @@ CREATE TABLE IF NOT EXISTS bible.translationrelationships (
 
 CREATE TABLE IF NOT EXISTS audit.dbl_agreements (
     agreement_id        INTEGER PRIMARY KEY,
-    dbl_id              TEXT, --
-    licence_id          INTEGER,
-    dateLicense         TIMESTAMP,
-    dateLicenseExpiry   TIMESTAMP,
-    file_id             INTEGER,    -- Secondary Link to License File
+    dbl_id              TEXT NOT NULL, --
+    licence_id          INTEGER NOT NULL,
+    dateLicense         TIMESTAMP NOT NULL,
+    dateLicenseExpiry   TIMESTAMP NOT NULL,
+    file_id             INTEGER NOT NULL,    -- Secondary Link to License File
     active              BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (dbl_id) REFERENCES audit.dbl_info(dbl_id),
     FOREIGN KEY (licence_id) REFERENCES audit.licences(id),
