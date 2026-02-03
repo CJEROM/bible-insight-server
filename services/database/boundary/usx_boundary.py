@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from manager.dbmanager import DBManager 
 
+import json
+
 class USXReadBoundary(ReadBoundary):
     # GET       = Number of items
     # FIND      = Specific item
@@ -159,14 +161,25 @@ class USXWriteBoundary(WriteBoundary):
         return paragraph_id
     
     def persist_source(self,
+            source_type: str,
+            code: str,
+            name: str,
+            description: str,
+            version: str,
             url: str,    
+            note: str,
+            parent_source: str,
+            license_id: str,
+            official_citation: str = None,
+            date_published: str = None,
+            metadata: json = None
         ) -> int:
         query = """
-            INSERT INTO audit.sources (url) 
-            VALUES (%s)
+            INSERT INTO audit.sources (source_type, code, name, description, version, url, note, parent_source, license_id, official_citation, date_published, metadata) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
-        source_id = self.db.fetch_clean_one(query)
+        source_id = self.db.fetch_clean_one(query, (source_type, code, name, description, version, url, note, parent_source, license_id, official_citation, date_published, metadata))
         return source_id
     
     def persist_language(self): # To be moved to Language Ingestor
