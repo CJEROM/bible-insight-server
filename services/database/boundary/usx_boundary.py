@@ -90,18 +90,26 @@ class USXReadBoundary(ReadBoundary):
         """
         result = self.db.fetch_clean_one(query, (iso_code,))
         return result
+    
+    # Still need to figure out how this will work, with new split between dbl-agreements and translations
+    def get_supported_translations(self) -> list[tuple]:
+        query = """
+            SELECT dbl_id, agreement_id FROM bible.dbl_info WHERE supported = TRUE;
+        """
+        result = self.db.fetch_all(query)
+        return result
 
 
 class USXWriteBoundary(WriteBoundary):
     def persist_chapter_occurence(self, 
-            chapter_ref:str, book_map_id: int, translation_id: int, verse_ref: str, start_node: int, end_node: int
+            chapter_ref:str, book_map_id: int, translation_id: int, start_node: int=None, end_node: int=None
         ) -> int:
         query = """
             INSERT INTO bible.chapteroccurences (chapter_ref, book_map_id, translation_id, start_node, end_node) 
             VALUES (%s, %s, %s, %s, %s)
             RETURNING id;
         """
-        chapter_occurence_id = self.db.fetch_clean_one(query, (chapter_ref, book_map_id, translation_id, verse_ref, start_node, end_node))
+        chapter_occurence_id = self.db.fetch_clean_one(query, (chapter_ref, book_map_id, translation_id, start_node, end_node))
         return chapter_occurence_id
     
     def persist_chapter(self, 
@@ -165,7 +173,20 @@ class USXWriteBoundary(WriteBoundary):
         pass
 
     def persist_usx_translation(self,
-            dbl_id: str,
+            dbl_id: str
+        ) -> int:
+        # Prepares placeholder translation - to be populated properly with details when we have them
+        query = """
+            INSERT INTO bible.translations (dbl_id) 
+            VALUES (%s)
+            RETURNING id;
+        """
+        translation_id = self.db.fetch_clean_one(query, (dbl_id,))
+        self.db.commit()
+        return translation_id
+    
+    def update_usx_translation(self,
+            translation_id: int,
             revision: int,
             revision_note: str,
             revision_date: str,
@@ -178,12 +199,21 @@ class USXWriteBoundary(WriteBoundary):
             promotion: str,
         ) -> int:
         query = """
-            INSERT INTO bible.translations (dbl_id, revision, revision_note, revision_date, language_id, medium, name, nameLocal, abbreviation, copyright, promotion) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id;
+            UPDATE bible.translations
+            SET revision = %s,
+                revision_note = %s,
+                revision_date = %s,
+                language_id = %s,
+                medium = %s,
+                name = %s,
+                nameLocal = %s,
+                abbreviation = %s,
+                copyright = %s,
+                promotion = %s,
+            WHERE id = %s;
         """
-        translation_id = self.db.fetch_clean_one(query, (dbl_id, revision, revision_note, revision_date, language_id, medium, name, name_local, abbreviation, copyright, promotion))
-        return translation_id
+        self.db.fetch_clean_one(query, (revision, revision_note, revision_date, language_id, medium, name, name_local, abbreviation, copyright, promotion, translation_id))
+        self.db.commit()
     
     def persit_dbl_agreement(self,
             dbl_id: str,
@@ -247,14 +277,17 @@ class USXWriteBoundary(WriteBoundary):
             type: str,
             file_path: str,
             bucket: str,
-            source_id: int
+            source_id: int,
+            version_id: str, 
+            data_format: str,
+            version_note: str = None,
         ) -> int:
         query = """
-            INSERT INTO audit.files (etag, type, file_path, bucket, source_id) 
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO audit.files (etag, type, file_path, bucket, source_id, version_id, version_note, data_format) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
-        file_id = self.db.fetch_clean_one(query, (etag, type, file_path, bucket, source_id))
+        file_id = self.db.fetch_clean_one(query, (etag, type, file_path, bucket, source_id, version_id, version_note, data_format))
         return file_id
     
     def persist_style_property(self,
