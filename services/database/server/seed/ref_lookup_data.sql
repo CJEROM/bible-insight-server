@@ -12,7 +12,8 @@ INSERT INTO lookup.data_formats (code, mime_type, extension, description) VALUES
     ('XLSX', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx', 'Microsoft Excel Open XML Spreadsheet'),
     ('TXT', 'text/plain', 'txt', 'Plain Text File'),
     ('ZIP', 'application/zip', 'zip', 'ZIP Archive'),
-    ('7Z', 'application/x-7z-compressed', '7z', '7-Zip Archive');
+    ('7Z', 'application/x-7z-compressed', '7z', '7-Zip Archive'),
+    ('LDML', 'application/xml', 'ldml', 'Unicode Locale Data Markup Language');
 
 INSERT INTO lookup.source_types (code, name, description) VALUES
     ('PUB', 'Publisher', 'A publisher that provides various datasets and files.'),
