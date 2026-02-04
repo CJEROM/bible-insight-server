@@ -101,6 +101,23 @@ class USXReadBoundary(ReadBoundary):
         result = self.db.fetch_all(query)
         return result
 
+    def find_source(self, 
+            code: str
+        ) -> int:
+        query = """
+            SELECT id FROM audit.sources WHERE code=%s
+        """
+        source_id = self.db.fetch_clean_one(query, (code,))
+        return source_id
+    
+    def find_agreement(self,
+        agreement_id: int
+        ) -> int:
+        query = """
+            SELECT agreement_id FROM audit.dbl_agreements WHERE agreement_id=%s;
+        """
+        result = self.db.fetch_clean_one(query, (agreement_id,))
+        return result
 
 class USXWriteBoundary(WriteBoundary):
     def persist_chapter_occurence(self, 
@@ -409,6 +426,29 @@ class USXWriteBoundary(WriteBoundary):
         verse_occurence_id = self.db.fetch_clean_one(query, (chapter_id, book_map_id, translation_id, verse_ref, start_node, end_node))
         return verse_occurence_id
 
+    def persist_agreement(self, 
+            agreement_id: int,
+            dbl_id: str,
+            licence_id: int,
+            dateLicence: str,
+            dateLicenseExpirty: str,
+            file_id,
+            active
+        ) -> None:
+        query = """
+            INSERT INTO audit.dbl_agreements (agreement_id, dbl_id, licence_id, dateLicence, dateLicenceExpiry, file_id, active)
+            VALUES (%s, %s, %s, %s, %s, %s, %s);
+        """
+    
+    def persist_agreement_revision_mapping(self,
+            agreement_id: int,
+            revision: int
+        ) -> None:
+        query = """
+            INSERT INTO audit.dbl_revision_agreements (agreement_id, revision)
+        """
+        self.db.execute(query, (agreement_id, revision))
+
 class USXDeleteBoundary(DeleteBoundary):
     def delete_translation(self,
             translation_id: int
@@ -418,4 +458,3 @@ class USXDeleteBoundary(DeleteBoundary):
             DELETE FROM bible.translations WHERE id = %s;
         """ 
         self.db.execute(query, (translation_id,))
-        pass
