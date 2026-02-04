@@ -16,6 +16,7 @@ class BaseFile:
 
         self.source_id = source_id
         self.this_file_path = file_path
+        self.file_id = None
 
         self.read = USXReadBoundary(self.manager.get_db())
         self.write = USXWriteBoundary(self.manager.get_db())
