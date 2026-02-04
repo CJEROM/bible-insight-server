@@ -55,10 +55,9 @@ CREATE TABLE IF NOT EXISTS audit.dbl_agreements (
     agreement_id        INTEGER PRIMARY KEY,
     dbl_id              TEXT NOT NULL, --
     licence_id          INTEGER NOT NULL,
-    dateLicense         TIMESTAMP NOT NULL,
-    dateLicenseExpiry   TIMESTAMP NOT NULL,
+    dateLicence         TIMESTAMP NOT NULL,
+    dateLicenceExpiry   TIMESTAMP NOT NULL,
     file_id             INTEGER NOT NULL,    -- Secondary Link to License File
-    active              BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (dbl_id) REFERENCES audit.dbl_info(dbl_id),
     FOREIGN KEY (licence_id) REFERENCES audit.licences(id),
     FOREIGN KEY (file_id) REFERENCES audit.files(id)
@@ -68,7 +67,7 @@ CREATE TABLE IF NOT EXISTS audit.dbl_agreements (
 CREATE TABLE IF NOT EXISTS audit.dbl_revision_agreements (
     agreement_id        INTEGER,
     revision            INTEGER,
-    active              BOOLEAN DEFAULT TRUE, -- If multiple terms exist for same revision -> FALSE
+    -- active              BOOLEAN DEFAULT TRUE, -- If multiple terms exist for same revision -> FALSE
     PRIMARY KEY (agreement_id, revision),
     FOREIGN KEY (agreement_id) REFERENCES audit.dbl_agreements(agreement_id) ON DELETE CASCADE
 );

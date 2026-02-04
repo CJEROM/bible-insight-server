@@ -23,7 +23,7 @@ CREATE TABLE audit.licences (
     id SERIAL PRIMARY KEY,
 
     provider_code TEXT NOT NULL,          -- CC, GNU
-    code          TEXT NOT NULL,           -- BY-NC-ND, GPL
+    code          TEXT UNIQUE,           -- BY-NC-ND, GPL
     name          TEXT NOT NULL,
     version       TEXT,
     
