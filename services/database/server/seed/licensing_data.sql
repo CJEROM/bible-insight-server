@@ -13,8 +13,6 @@ VALUES
     ('TRANSLATE', 'Translation', 'May translate to other languages', 'PERMISSION'),
     ('PRINT', 'Print/Physical', 'May create printed/physical copies', 'PERMISSION'),
     ('DIGITAL', 'Digital Distribution', 'May distribute digitally', 'PERMISSION'),
-    ('AUDIO', 'Audio Production', 'May create audio versions', 'PERMISSION'),
-    ('VIDEO', 'Video Production', 'May create video versions', 'PERMISSION'),
     ('SUBLICENSE', 'Sublicensing', 'May grant rights to others', 'PERMISSION'),
     ('PRIVATE_USE', 'Private Use', 'May use privately/internally', 'PERMISSION'),
     
@@ -64,11 +62,27 @@ VALUES (
     'All rights reserved - no permissions granted',
     'Default copyright - no usage permitted without explicit permission'
 );
+INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'NONE'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'NONE'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'NONE'
+    UNION ALL
+    SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'NONE'
+    UNION ALL
+    SELECT id, 'PRINT' FROM audit.licences WHERE code = 'NONE'
+    UNION ALL
+    SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'NONE'
+    UNION ALL
+    SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'NONE'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'NONE';
 
 -- Public Domain
 INSERT INTO audit.licences (code, name, version, link, summary, notes)
 VALUES (
-    'PUBLIC-DOMAIN',
+    'PUBLIC_DOMAIN',
     'Public Domain',
     NULL,
     NULL,
@@ -77,25 +91,21 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'PUBLIC-DOMAIN'
-UNION ALL
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'PUBLIC-DOMAIN'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'PUBLIC-DOMAIN'
-UNION ALL
-SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'PUBLIC-DOMAIN'
-UNION ALL
-SELECT id, 'PRINT' FROM audit.licences WHERE code = 'PUBLIC-DOMAIN'
-UNION ALL
-SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'PUBLIC-DOMAIN'
-UNION ALL
-SELECT id, 'AUDIO' FROM audit.licences WHERE code = 'PUBLIC-DOMAIN'
-UNION ALL
-SELECT id, 'VIDEO' FROM audit.licences WHERE code = 'PUBLIC-DOMAIN'
-UNION ALL
-SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'PUBLIC-DOMAIN'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'PUBLIC-DOMAIN';
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'PUBLIC_DOMAIN'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'PUBLIC_DOMAIN'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'PUBLIC_DOMAIN'
+    UNION ALL
+    SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'PUBLIC_DOMAIN'
+    UNION ALL
+    SELECT id, 'PRINT' FROM audit.licences WHERE code = 'PUBLIC_DOMAIN'
+    UNION ALL
+    SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'PUBLIC_DOMAIN'
+    UNION ALL
+    SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'PUBLIC_DOMAIN'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'PUBLIC_DOMAIN';
 
 -- CC0 1.0 Universal
 INSERT INTO audit.licences (
@@ -108,7 +118,7 @@ INSERT INTO audit.licences (
     source_id
 )
 VALUES (
-    'CC0-1.0',
+    'CC0 1.0',
     'CC0 Universal',
     '1.0',
     'https://creativecommons.org/publicdomain/zero/1.0/',
@@ -118,25 +128,21 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'CC0-1.0'
-UNION ALL
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC0-1.0'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'CC0-1.0'
-UNION ALL
-SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'CC0-1.0'
-UNION ALL
-SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC0-1.0'
-UNION ALL
-SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC0-1.0'
-UNION ALL
-SELECT id, 'AUDIO' FROM audit.licences WHERE code = 'CC0-1.0'
-UNION ALL
-SELECT id, 'VIDEO' FROM audit.licences WHERE code = 'CC0-1.0'
-UNION ALL
-SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'CC0-1.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC0-1.0';
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'CC0 1.0'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC0 1.0'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'CC0 1.0'
+    UNION ALL
+    SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'CC0 1.0'
+    UNION ALL
+    SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC0 1.0'
+    UNION ALL
+    SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC0 1.0'
+    UNION ALL
+    SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'CC0 1.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC0 1.0';
 
 -- CC BY 4.0
 INSERT INTO audit.licences (
@@ -148,7 +154,7 @@ INSERT INTO audit.licences (
     source_id
 )
 VALUES (
-    'CC-BY-4.0',
+    'CC BY 4.0',
     'Attribution 4.0 International',
     '4.0',
     'https://creativecommons.org/licenses/by/4.0/',
@@ -157,29 +163,25 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'CC-BY-4.0'
-UNION ALL
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC-BY-4.0'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'CC-BY-4.0'
-UNION ALL
-SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'CC-BY-4.0'
-UNION ALL
-SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC-BY-4.0'
-UNION ALL
-SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC-BY-4.0'
-UNION ALL
-SELECT id, 'AUDIO' FROM audit.licences WHERE code = 'CC-BY-4.0'
-UNION ALL
-SELECT id, 'VIDEO' FROM audit.licences WHERE code = 'CC-BY-4.0'
-UNION ALL
-SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'CC-BY-4.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC-BY-4.0'
-UNION ALL
-SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC-BY-4.0'
-UNION ALL
-SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC-BY-4.0';
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'CC BY 4.0'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC BY 4.0'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'CC BY 4.0'
+    UNION ALL
+    SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'CC BY 4.0'
+    UNION ALL
+    SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC BY 4.0'
+    UNION ALL
+    SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC BY 4.0'
+    UNION ALL
+    SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'CC BY 4.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC BY 4.0'
+    UNION ALL
+    SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC BY 4.0'
+    UNION ALL
+    SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC BY 4.0';
 
 -- CC BY-SA 4.0
 INSERT INTO audit.licences (
@@ -191,7 +193,7 @@ INSERT INTO audit.licences (
     source_id
 )
 VALUES (
-    'CC-BY-SA-4.0',
+    'CC BY-SA 4.0',
     'Attribution-ShareAlike 4.0 International',
     '4.0',
     'https://creativecommons.org/licenses/by-sa/4.0/',
@@ -200,31 +202,27 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'AUDIO' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'VIDEO' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC-BY-SA-4.0'
-UNION ALL
-SELECT id, 'SHARE_ALIKE' FROM audit.licences WHERE code = 'CC-BY-SA-4.0';
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'CC BY-SA 4.0'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC BY-SA 4.0'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'CC BY-SA 4.0'
+    UNION ALL
+    SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'CC BY-SA 4.0'
+    UNION ALL
+    SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC BY-SA 4.0'
+    UNION ALL
+    SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC BY-SA 4.0'
+    UNION ALL
+    SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'CC BY-SA 4.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC BY-SA 4.0'
+    UNION ALL
+    SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC BY-SA 4.0'
+    UNION ALL
+    SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC BY-SA 4.0'
+    UNION ALL
+    SELECT id, 'SHARE_ALIKE' FROM audit.licences WHERE code = 'CC BY-SA 4.0';
 
 -- CC BY-NC 4.0
 INSERT INTO audit.licences (
@@ -236,7 +234,7 @@ INSERT INTO audit.licences (
     source_id
 )
 VALUES (
-    'CC-BY-NC-4.0',
+    'CC BY-NC 4.0',
     'Attribution-NonCommercial 4.0 International',
     '4.0',
     'https://creativecommons.org/licenses/by-nc/4.0/',
@@ -245,27 +243,23 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC-BY-NC-4.0'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'CC-BY-NC-4.0'
-UNION ALL
-SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'CC-BY-NC-4.0'
-UNION ALL
-SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC-BY-NC-4.0'
-UNION ALL
-SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC-BY-NC-4.0'
-UNION ALL
-SELECT id, 'AUDIO' FROM audit.licences WHERE code = 'CC-BY-NC-4.0'
-UNION ALL
-SELECT id, 'VIDEO' FROM audit.licences WHERE code = 'CC-BY-NC-4.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC-BY-NC-4.0'
-UNION ALL
-SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC-BY-NC-4.0'
-UNION ALL
-SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC-BY-NC-4.0'
-UNION ALL
-SELECT id, 'NO_COMMERCIAL' FROM audit.licences WHERE code = 'CC-BY-NC-4.0';
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC BY-NC 4.0'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'CC BY-NC 4.0'
+    UNION ALL
+    SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'CC BY-NC 4.0'
+    UNION ALL
+    SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC BY-NC 4.0'
+    UNION ALL
+    SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC BY-NC 4.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC BY-NC 4.0'
+    UNION ALL
+    SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC BY-NC 4.0'
+    UNION ALL
+    SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC BY-NC 4.0'
+    UNION ALL
+    SELECT id, 'NO_COMMERCIAL' FROM audit.licences WHERE code = 'CC BY-NC 4.0';
 
 -- CC BY-NC-SA 4.0
 INSERT INTO audit.licences (
@@ -286,29 +280,25 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
-UNION ALL
-SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
-UNION ALL
-SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
-UNION ALL
-SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
-UNION ALL
-SELECT id, 'AUDIO' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
-UNION ALL
-SELECT id, 'VIDEO' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
-UNION ALL
-SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
-UNION ALL
-SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
-UNION ALL
-SELECT id, 'SHARE_ALIKE' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
-UNION ALL
-SELECT id, 'NO_COMMERCIAL' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0';
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
+    UNION ALL
+    SELECT id, 'TRANSLATE' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
+    UNION ALL
+    SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
+    UNION ALL
+    SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
+    UNION ALL
+    SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
+    UNION ALL
+    SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
+    UNION ALL
+    SELECT id, 'SHARE_ALIKE' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0'
+    UNION ALL
+    SELECT id, 'NO_COMMERCIAL' FROM audit.licences WHERE code = 'CC BY-NC-SA 4.0';
 
 -- CC BY-ND 4.0
 INSERT INTO audit.licences (
@@ -329,21 +319,21 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
-UNION ALL
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
-UNION ALL
-SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
-UNION ALL
-SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
-UNION ALL
-SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
-UNION ALL
-SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
-UNION ALL
-SELECT id, 'NO_DERIVATIVES' FROM audit.licences WHERE code = 'CC BY-ND 4.0';
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
+    UNION ALL
+    SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
+    UNION ALL
+    SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
+    UNION ALL
+    SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
+    UNION ALL
+    SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC BY-ND 4.0'
+    UNION ALL
+    SELECT id, 'NO_DERIVATIVES' FROM audit.licences WHERE code = 'CC BY-ND 4.0';
 
 -- CC BY-NC-ND 4.0
 INSERT INTO audit.licences (
@@ -364,21 +354,21 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
-UNION ALL
-SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
-UNION ALL
-SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
-UNION ALL
-SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
-UNION ALL
-SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
-UNION ALL
-SELECT id, 'NO_COMMERCIAL' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
-UNION ALL
-SELECT id, 'NO_DERIVATIVES' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0';
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
+    UNION ALL
+    SELECT id, 'PRINT' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
+    UNION ALL
+    SELECT id, 'DIGITAL' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
+    UNION ALL
+    SELECT id, 'ATTRIBUTION' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
+    UNION ALL
+    SELECT id, 'NOTICE' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
+    UNION ALL
+    SELECT id, 'NO_COMMERCIAL' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0'
+    UNION ALL
+    SELECT id, 'NO_DERIVATIVES' FROM audit.licences WHERE code = 'CC BY-NC-ND 4.0';
 
 -- ============================================================================
 -- GPL/COPYLEFT-SPECIFIC ATTRIBUTES
@@ -428,33 +418,33 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'USE' FROM audit.licences WHERE code = 'GPL-2.0'
-UNION ALL
-SELECT id, 'STUDY' FROM audit.licences WHERE code = 'GPL-2.0'
-UNION ALL
-SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'GPL-2.0'
-UNION ALL
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'GPL-2.0'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'GPL-2.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'GPL-2.0'
--- Obligations
-UNION ALL
-SELECT id, 'COPYLEFT' FROM audit.licences WHERE code = 'GPL-2.0'
-UNION ALL
-SELECT id, 'SOURCE_CODE' FROM audit.licences WHERE code = 'GPL-2.0'
-UNION ALL
-SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'GPL-2.0'
-UNION ALL
-SELECT id, 'DOCUMENT_CHANGES' FROM audit.licences WHERE code = 'GPL-2.0'
-UNION ALL
-SELECT id, 'LICENSE_TEXT' FROM audit.licences WHERE code = 'GPL-2.0'
--- Restrictions
-UNION ALL
-SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'GPL-2.0'
-UNION ALL
-SELECT id, 'NO_ADDITIONAL_RESTRICTIONS' FROM audit.licences WHERE code = 'GPL-2.0';
+    SELECT id, 'USE' FROM audit.licences WHERE code = 'GPL-2.0'
+    UNION ALL
+    SELECT id, 'STUDY' FROM audit.licences WHERE code = 'GPL-2.0'
+    UNION ALL
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'GPL-2.0'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'GPL-2.0'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'GPL-2.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'GPL-2.0'
+    -- Obligations
+    UNION ALL
+    SELECT id, 'COPYLEFT' FROM audit.licences WHERE code = 'GPL-2.0'
+    UNION ALL
+    SELECT id, 'SOURCE_CODE' FROM audit.licences WHERE code = 'GPL-2.0'
+    UNION ALL
+    SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'GPL-2.0'
+    UNION ALL
+    SELECT id, 'DOCUMENT_CHANGES' FROM audit.licences WHERE code = 'GPL-2.0'
+    UNION ALL
+    SELECT id, 'LICENSE_TEXT' FROM audit.licences WHERE code = 'GPL-2.0'
+    -- Restrictions
+    UNION ALL
+    SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'GPL-2.0'
+    UNION ALL
+    SELECT id, 'NO_ADDITIONAL_RESTRICTIONS' FROM audit.licences WHERE code = 'GPL-2.0';
 
 -- GPL-3.0
 INSERT INTO audit.licences (
@@ -475,41 +465,41 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'USE' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'STUDY' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'PATENT_GRANT' FROM audit.licences WHERE code = 'GPL-3.0'
--- Obligations
-UNION ALL
-SELECT id, 'COPYLEFT' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'SOURCE_CODE' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'DOCUMENT_CHANGES' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'LICENSE_TEXT' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'INSTALLATION_INFO' FROM audit.licences WHERE code = 'GPL-3.0'
--- Restrictions
-UNION ALL
-SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'NO_ADDITIONAL_RESTRICTIONS' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'NO_DRM' FROM audit.licences WHERE code = 'GPL-3.0'
-UNION ALL
-SELECT id, 'NO_TIVOIZATION' FROM audit.licences WHERE code = 'GPL-3.0';
+    SELECT id, 'USE' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'STUDY' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'PATENT_GRANT' FROM audit.licences WHERE code = 'GPL-3.0'
+    -- Obligations
+    UNION ALL
+    SELECT id, 'COPYLEFT' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'SOURCE_CODE' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'DOCUMENT_CHANGES' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'LICENSE_TEXT' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'INSTALLATION_INFO' FROM audit.licences WHERE code = 'GPL-3.0'
+    -- Restrictions
+    UNION ALL
+    SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'NO_ADDITIONAL_RESTRICTIONS' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'NO_DRM' FROM audit.licences WHERE code = 'GPL-3.0'
+    UNION ALL
+    SELECT id, 'NO_TIVOIZATION' FROM audit.licences WHERE code = 'GPL-3.0';
 
 -- AGPL-3.0 (Affero GPL - for network services)
 INSERT INTO audit.licences (
@@ -530,43 +520,43 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'USE' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'STUDY' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'PATENT_GRANT' FROM audit.licences WHERE code = 'AGPL-3.0'
--- Obligations
-UNION ALL
-SELECT id, 'COPYLEFT' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'SOURCE_CODE' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'DOCUMENT_CHANGES' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'LICENSE_TEXT' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'INSTALLATION_INFO' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'NETWORK_DISCLOSURE' FROM audit.licences WHERE code = 'AGPL-3.0'  -- Key difference!
--- Restrictions
-UNION ALL
-SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'NO_ADDITIONAL_RESTRICTIONS' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'NO_DRM' FROM audit.licences WHERE code = 'AGPL-3.0'
-UNION ALL
-SELECT id, 'NO_TIVOIZATION' FROM audit.licences WHERE code = 'AGPL-3.0';
+    SELECT id, 'USE' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'STUDY' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'PATENT_GRANT' FROM audit.licences WHERE code = 'AGPL-3.0'
+    -- Obligations
+    UNION ALL
+    SELECT id, 'COPYLEFT' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'SOURCE_CODE' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'DOCUMENT_CHANGES' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'LICENSE_TEXT' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'INSTALLATION_INFO' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'NETWORK_DISCLOSURE' FROM audit.licences WHERE code = 'AGPL-3.0'  -- Key difference!
+    -- Restrictions
+    UNION ALL
+    SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'NO_ADDITIONAL_RESTRICTIONS' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'NO_DRM' FROM audit.licences WHERE code = 'AGPL-3.0'
+    UNION ALL
+    SELECT id, 'NO_TIVOIZATION' FROM audit.licences WHERE code = 'AGPL-3.0';
 
 -- LGPL-3.0 (Lesser GPL - allows linking with proprietary software)
 INSERT INTO audit.licences (
@@ -587,33 +577,33 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'USE' FROM audit.licences WHERE code = 'LGPL-3.0'
-UNION ALL
-SELECT id, 'STUDY' FROM audit.licences WHERE code = 'LGPL-3.0'
-UNION ALL
-SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'LGPL-3.0'
-UNION ALL
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'LGPL-3.0'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'LGPL-3.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'LGPL-3.0'
-UNION ALL
-SELECT id, 'PATENT_GRANT' FROM audit.licences WHERE code = 'LGPL-3.0'
--- Obligations (less strict than GPL)
-UNION ALL
-SELECT id, 'SOURCE_CODE' FROM audit.licences WHERE code = 'LGPL-3.0'
-UNION ALL
-SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'LGPL-3.0'
-UNION ALL
-SELECT id, 'DOCUMENT_CHANGES' FROM audit.licences WHERE code = 'LGPL-3.0'
-UNION ALL
-SELECT id, 'LICENSE_TEXT' FROM audit.licences WHERE code = 'LGPL-3.0'
--- Restrictions
-UNION ALL
-SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'LGPL-3.0'
-UNION ALL
-SELECT id, 'NO_ADDITIONAL_RESTRICTIONS' FROM audit.licences WHERE code = 'LGPL-3.0';
+    SELECT id, 'USE' FROM audit.licences WHERE code = 'LGPL-3.0'
+    UNION ALL
+    SELECT id, 'STUDY' FROM audit.licences WHERE code = 'LGPL-3.0'
+    UNION ALL
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'LGPL-3.0'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'LGPL-3.0'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'LGPL-3.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'LGPL-3.0'
+    UNION ALL
+    SELECT id, 'PATENT_GRANT' FROM audit.licences WHERE code = 'LGPL-3.0'
+    -- Obligations (less strict than GPL)
+    UNION ALL
+    SELECT id, 'SOURCE_CODE' FROM audit.licences WHERE code = 'LGPL-3.0'
+    UNION ALL
+    SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'LGPL-3.0'
+    UNION ALL
+    SELECT id, 'DOCUMENT_CHANGES' FROM audit.licences WHERE code = 'LGPL-3.0'
+    UNION ALL
+    SELECT id, 'LICENSE_TEXT' FROM audit.licences WHERE code = 'LGPL-3.0'
+    -- Restrictions
+    UNION ALL
+    SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'LGPL-3.0'
+    UNION ALL
+    SELECT id, 'NO_ADDITIONAL_RESTRICTIONS' FROM audit.licences WHERE code = 'LGPL-3.0';
 
 -- MIT License
 INSERT INTO audit.licences (code, name, version, link, summary)
@@ -626,21 +616,21 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'USE' FROM audit.licences WHERE code = 'MIT'
-UNION ALL
-SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'MIT'
-UNION ALL
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'MIT'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'MIT'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'MIT'
-UNION ALL
-SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'MIT'
-UNION ALL
-SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'MIT'
-UNION ALL
-SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'MIT';
+    SELECT id, 'USE' FROM audit.licences WHERE code = 'MIT'
+    UNION ALL
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'MIT'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'MIT'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'MIT'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'MIT'
+    UNION ALL
+    SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'MIT'
+    UNION ALL
+    SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'MIT'
+    UNION ALL
+    SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'MIT';
 
 -- Apache 2.0
 INSERT INTO audit.licences (code, name, version, link, summary)
@@ -653,27 +643,27 @@ VALUES (
 );
 
 INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code)
-SELECT id, 'USE' FROM audit.licences WHERE code = 'Apache-2.0'
-UNION ALL
-SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'Apache-2.0'
-UNION ALL
-SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'Apache-2.0'
-UNION ALL
-SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'Apache-2.0'
-UNION ALL
-SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'Apache-2.0'
-UNION ALL
-SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'Apache-2.0'
-UNION ALL
-SELECT id, 'PATENT_GRANT' FROM audit.licences WHERE code = 'Apache-2.0'
-UNION ALL
-SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'Apache-2.0'
-UNION ALL
-SELECT id, 'DOCUMENT_CHANGES' FROM audit.licences WHERE code = 'Apache-2.0'
-UNION ALL
-SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'Apache-2.0'
-UNION ALL
-SELECT id, 'NO_TRADEMARK' FROM audit.licences WHERE code = 'Apache-2.0';
+    SELECT id, 'USE' FROM audit.licences WHERE code = 'Apache-2.0'
+    UNION ALL
+    SELECT id, 'COMMERCIAL' FROM audit.licences WHERE code = 'Apache-2.0'
+    UNION ALL
+    SELECT id, 'DISTRIBUTE' FROM audit.licences WHERE code = 'Apache-2.0'
+    UNION ALL
+    SELECT id, 'MODIFY' FROM audit.licences WHERE code = 'Apache-2.0'
+    UNION ALL
+    SELECT id, 'PRIVATE_USE' FROM audit.licences WHERE code = 'Apache-2.0'
+    UNION ALL
+    SELECT id, 'SUBLICENSE' FROM audit.licences WHERE code = 'Apache-2.0'
+    UNION ALL
+    SELECT id, 'PATENT_GRANT' FROM audit.licences WHERE code = 'Apache-2.0'
+    UNION ALL
+    SELECT id, 'PRESERVE_NOTICES' FROM audit.licences WHERE code = 'Apache-2.0'
+    UNION ALL
+    SELECT id, 'DOCUMENT_CHANGES' FROM audit.licences WHERE code = 'Apache-2.0'
+    UNION ALL
+    SELECT id, 'NO_WARRANTY' FROM audit.licences WHERE code = 'Apache-2.0'
+    UNION ALL
+    SELECT id, 'NO_TRADEMARK' FROM audit.licences WHERE code = 'Apache-2.0';
 
 -- ============================================================================
 -- 3. EXAMPLE: DBL AGREEMENT
@@ -691,7 +681,7 @@ SELECT id, 'NO_TRADEMARK' FROM audit.licences WHERE code = 'Apache-2.0';
 --     1,
 --     'ENGWEB',
 --     123,  -- Your file ID
---     (SELECT id FROM audit.licences WHERE code = 'PUBLIC-DOMAIN'),
+--     (SELECT id FROM audit.licences WHERE code = 'PUBLIC_DOMAIN'),
 --     'WEB Bible - Public Domain with DBL-specific publication rights'
 -- );
 
