@@ -1,8 +1,5 @@
 
-from base_boundary import ReadBoundary, WriteBoundary, DeleteBoundary
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from manager.dbmanager import DBManager 
+from database.boundary.base_boundary import ReadBoundary, WriteBoundary, DeleteBoundary
 
 import json
 
@@ -114,10 +111,10 @@ class USXReadBoundary(ReadBoundary):
             agreement_id: int
         ) -> int:
         query = """
-            SELECT * FROM audit.dbl_agreements WHERE agreement_id=%s;
+            SELECT dbl_id FROM audit.dbl_agreements WHERE agreement_id=%s;
         """
-        result = self.db.fetch_clean_one(query, (agreement_id,))
-        return result
+        dbl_id = self.db.fetch_clean_one(query, (agreement_id,))
+        return dbl_id
     
     def find_agreement_expired(self,
             agreement_id: int
@@ -136,7 +133,8 @@ class USXReadBoundary(ReadBoundary):
         query = """
             SELECT id FROM audit.licences WHERE code=%s
         """
-        licence_id = self.db.fetch_clean_one(query, (license_code,))
+        licence_id = self.db.fetch_clean_one(query, (license_code, ))
+        return licence_id
 
 class USXWriteBoundary(WriteBoundary):
     def persist_chapter_occurence(self, 
@@ -205,17 +203,16 @@ class USXWriteBoundary(WriteBoundary):
             url: str,    
             note: str,
             parent_source: str,
-            license_id: str,
             official_citation: str = None,
             date_published: str = None,
             metadata: json = None
         ) -> int:
         query = """
-            INSERT INTO audit.sources (source_type, code, name, description, version, url, note, parent_source, license_id, official_citation, date_published, metadata) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO audit.sources (source_type, code, name, description, version, url, note, parent_source, official_citation, date_published, metadata) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
-        source_id = self.db.fetch_clean_one(query, (source_type, code, name, description, version, url, note, parent_source, license_id, official_citation, date_published, metadata))
+        source_id = self.db.fetch_clean_one(query, (source_type, code, name, description, version, url, note, parent_source, official_citation, date_published, metadata))
         return source_id
     
     def persist_language(self): # To be moved to Language Ingestor
@@ -415,7 +412,7 @@ class USXWriteBoundary(WriteBoundary):
             VALUES %s
             RETURNING id;
         """
-        cross_reference_id = self.db.fetch_clean_one(query, cross_refs)
+        cross_reference_id = self.db.fetch_clean_one(query, (cross_refs, node_id, from_verse_ref, to_verse_ref, from_chapter_ref, to_chapter_ref))
         return cross_reference_id
     
     def persist_verse_correction(self,
@@ -448,16 +445,16 @@ class USXWriteBoundary(WriteBoundary):
     def persist_agreement(self, 
             agreement_id: int,
             dbl_id: str,
-            licence_id: int,
+            base_licence_id: int,
             dateLicence: str,
             dateLicenseExpiry: str,
-            file_id
+            licence_file_id: int
         ) -> None:
         query = """
-            INSERT INTO audit.dbl_agreements (agreement_id, dbl_id, licence_id, dateLicence, dateLicenceExpiry, file_id)
+            INSERT INTO audit.dbl_agreements (agreement_id, dbl_id, base_licence_id, dateLicence, dateLicenceExpiry, licence_file_id)
             VALUES (%s, %s, %s, %s, %s, %s);
         """
-        self.db.execute(query, (agreement_id, dbl_id, licence_id, dateLicence, dateLicenseExpiry, file_id))
+        self.db.execute(query, (agreement_id, dbl_id, base_licence_id, dateLicence, dateLicenseExpiry, licence_file_id))
     
     def persist_agreement_revision_mapping(self,
             agreement_id: int,
@@ -467,6 +464,60 @@ class USXWriteBoundary(WriteBoundary):
             INSERT INTO audit.dbl_revision_agreements (agreement_id, revision)
         """
         self.db.execute(query, (agreement_id, revision))
+
+    def persist_agreement_attributes(self,
+            agreement_id: int,
+            attribute_code: str,
+            attribute_value: str           
+        ) -> None:
+        query = """
+            INSERT INTO audit.agreement_attributes (agreement_id, attribute_code, attribute_value)
+        """
+        self.db.execute(query, (agreement_id, attribute_code, attribute_value))
+
+    def persist_licence(self, 
+            source_id: int,
+            code: str,
+            name: str,
+            version: str,
+            link: str,
+            valid_from: str = None,
+            valid_until: str = None,
+            notes: str = None
+        ) -> int:
+        query = """
+            INSERT INTO audit.licences (source_id, code, name, version, valid_from, valid_until, notes) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        """
+        licence_id = self.db.fetch_clean_one(query, (source_id, code, name, version, link, valid_from, valid_until, notes))
+        return licence_id
+    
+    def persist_licence_attribute(self,
+            attribute_code: str,
+            name: str,
+            description: str,
+            attribute_type: int         
+        ) -> str:
+        query = """
+            INSERT INTO audit.licence_attributes (attribute_code, name, description, attribute_type)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT DO NOTHING
+        """
+        self.db.execute(query , (attribute_code, name, description, attribute_type))
+        
+        return
+
+    def persist_licence_attribute_mapping(self,
+            licence_id: int,
+            attribute_code: str,
+            custom_note: str = None                  
+        ) -> None:
+        query = """
+            INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code, custom_note)
+            VALUES (%s, %s, %s)
+        """
+        self.db.execute(query, (licence_id, attribute_code, custom_note))
 
 class USXDeleteBoundary(DeleteBoundary):
     def delete_translation(self,
