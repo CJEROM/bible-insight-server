@@ -23,7 +23,7 @@ CREATE TABLE audit.agreement_attributes (
     attribute_value TEXT,  -- 'true', 'false', or specific details
     
     PRIMARY KEY (agreement_id, attribute_code),
-    FOREIGN KEY (agreement_id) REFERENCES audit.agreements(id) ON DELETE CASCADE,
+    FOREIGN KEY (agreement_id) REFERENCES audit.dbl_agreements(agreement_id) ON DELETE CASCADE,
     FOREIGN KEY (attribute_code) REFERENCES audit.licence_attributes(attribute_code)
 );
 

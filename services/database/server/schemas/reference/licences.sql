@@ -21,7 +21,7 @@ CREATE TABLE audit.licences (
     valid_from      DATE,
     valid_until     DATE,
 
-    notes           TEXT,
+    notes           TEXT
 );
 
 CREATE TABLE audit.licence_attribute_mapping (

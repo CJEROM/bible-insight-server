@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS audit.sources (
     metadata			JSONB,
     FOREIGN KEY (parent_source) REFERENCES audit.sources(id),
     FOREIGN KEY (source_type) REFERENCES lookup.source_types(code),
-    CONSTRAINT no_self_parent CHECK (parent_source IS NULL OR parent_source != id),
+    CONSTRAINT no_self_parent CHECK (parent_source IS NULL OR parent_source != id)
 );
 
 -- For mapping extra sources to each other, which can help build dependency graph
@@ -34,6 +34,6 @@ CREATE TABLE IF NOT EXISTS audit.source_mappings (
     created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (source_id) REFERENCES audit.sources(id),
     FOREIGN KEY (related_source_id) REFERENCES audit.sources(id),
-    FOREIGN KEY (relationship_type) REFERENCES lookup.relationship_types(code),
+    -- FOREIGN KEY (relationship_type) REFERENCES lookup.relationship_types(code),
     UNIQUE(source_id, related_source_id, relationship_type)
 );
