@@ -8,6 +8,7 @@ from pathlib import Path
 from ingestor.usx.translation import Translation
 from ingestor.usx.strongsingestor import StrongsIngestor
 from manager.managerhandler import ManagerHandler
+from ingestor.usx.files.agreements import DBLAgreement
 
 class Ingestor:
     def __init__(self, manager: ManagerHandler = None, dbl_id = None, agreement_id = None, all_translations: list = None):
@@ -203,6 +204,10 @@ class Ingestor:
         agreement_id = int(query.split("agreementId=")[1])
 
         return (dbl_id, agreement_id, url)
+    
+    def get_licence_code(self, page: Page):
+        # Applicable to CC based licences and Public Domain
+        pass
 
     def download_files(self, page: Page):
         # Wait for the download button to appear
@@ -212,6 +217,8 @@ class Ingestor:
         new_path = None
 
         dbl_id, agreement_id, source_url = self.read_translation_from_url(page)
+
+        agreement = DBLAgreement(agreement_id, self.get_licence_code(page))
 
         zip_button = page.query_selector("button:has-text('Download All')")
         if zip_button:
@@ -226,7 +233,7 @@ class Ingestor:
             download.save_as(os.path.join(self.download_path, download.suggested_filename))
             print(f"✅ Downloaded ZIP: {new_path}")
 
-            Translation(self.manager, "text", new_path, source_url, dbl_id, agreement_id)
+            Translation(self.manager, "text", new_path, source_url, dbl_id, agreement)
         else:
             print("⚠️ No ZIP button found, assuming audio download instead")
             # Expand all folders
@@ -234,7 +241,7 @@ class Ingestor:
 
             page.wait_for_load_state("networkidle")
             
-            download_folder_name = f"audio-{dbl_id}-{agreement_id}"
+            download_folder_name = f"audio-{dbl_id}"
 
             file_buttons = page.query_selector_all("button[aria-label^='Download']")
 
@@ -259,7 +266,7 @@ class Ingestor:
             
             print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
 
-            Translation(self.manager, "audio", new_path, source_url, dbl_id, agreement_id)
+            Translation(self.manager, "audio", new_path, source_url, dbl_id, agreement)
 
 if __name__ == "__main__":
     # Can be set up to run all supported translations
