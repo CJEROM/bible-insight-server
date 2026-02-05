@@ -6,25 +6,24 @@ CREATE TABLE lookup.source_types (
 
 CREATE TABLE IF NOT EXISTS audit.sources (
     id                  SERIAL PRIMARY KEY,
-    source_type         TEXT,           -- publisher, dataset, file, contributor
-    code                TEXT UNIQUE,    -- STEP, MorphGNT, OSHB
-    name                TEXT,
+    source_type         TEXT NOT NULL,           -- publisher, dataset, file, contributor
+    code                TEXT UNIQUE NOT NULL,    -- STEP, MorphGNT, OSHB
+    name                TEXT NOT NULL,
     description         TEXT,
     version             TEXT,
     url                 TEXT,
 	note				TEXT,
     parent_source       INTEGER,
-    licence_id          INTEGER,
     official_citation   TEXT,  -- How to cite this source in scholarly work
     date_published      DATE,  -- When originally published/released
     deprecated_at       TIMESTAMP,  -- when it was deprecated
     metadata			JSONB,
     FOREIGN KEY (parent_source) REFERENCES audit.sources(id),
-    FOREIGN KEY (licence_id) REFERENCES audit.licences(id),
     FOREIGN KEY (source_type) REFERENCES lookup.source_types(code),
     CONSTRAINT no_self_parent CHECK (parent_source IS NULL OR parent_source != id),
 );
 
+-- For mapping extra sources to each other, which can help build dependency graph
 CREATE TABLE IF NOT EXISTS audit.source_mappings (
     id                  SERIAL PRIMARY KEY,
     source_id           INTEGER NOT NULL,

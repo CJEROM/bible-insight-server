@@ -20,4 +20,5 @@ INSERT INTO lookup.source_types (code, name, description) VALUES
     ('DAT', 'Dataset', 'A structured collection of biblical data organized for a specific purpose, such as morphological analysis, lexical information, or textual variants. May be produced by publishers, contributors, or distributors.'),
     ('FILE', 'File', 'An individual file containing biblical data or resources. May exist as part of a dataset or as a standalone resource. Represents the actual data artifact being processed or stored.'),
     ('CONT', 'Contributor', 'An individual, organization, or scholarly entity that contributes to the creation, editing, translation, or annotation of biblical resources. Contributors may work on datasets without being the official publisher.'),
-    ('DIST', 'Distributor', 'An organization or platform that makes biblical resources available to users, potentially aggregating content from multiple publishers and contributors. Distributors facilitate access and delivery but may not hold original publishing rights.');
+    ('DIST', 'Distributor', 'An organization or platform that makes biblical resources available to users, potentially aggregating content from multiple publishers and contributors. Distributors facilitate access and delivery but may not hold original publishing rights.'),
+    ('LICP', 'Licence Provider', 'Licence standard creators');

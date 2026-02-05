@@ -57,7 +57,7 @@ class DBManager:
             db_server_script_path / schema_folder / "reference" / "files.sql",
             db_server_script_path / schema_folder / "reference" / "languages.sql",
             db_server_script_path / schema_folder / "reference" / "translations.sql",
-            db_server_script_path / schema_folder / "reference" / "licence_mapping.sql",
+            db_server_script_path / schema_folder / "usx"       / "agreements.sql",
             db_server_script_path / schema_folder / "bible"     / "books.sql",
             db_server_script_path / schema_folder / "reference" / "lexemes (legacy).sql",
             db_server_script_path / schema_folder / "reference" / "lexemes.sql",
