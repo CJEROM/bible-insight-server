@@ -1,6 +1,6 @@
 import time
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, Page
 import os
 import time
 from pathlib import Path
@@ -34,7 +34,7 @@ class Ingestor:
         self.download_path = Path(__file__).parents[2] / "downloads"
         os.makedirs(self.download_path, exist_ok=True)
 
-        self.get_downloads()
+        self.open_dbl_session()
 
         self.db.commit()
         self.db.close()
@@ -116,7 +116,7 @@ class Ingestor:
             ON CONFLICT (dbl_id, agreement_id) DO NOTHING;
         """, (dbl_id,agreement_id))
 
-    def verify_log_in(self, page):
+    def verify_log_in(self, page: Page):
         # Do we need to login?
         if page.query_selector("input[name='email']"):
             # Fill in the username/email and password
@@ -134,7 +134,7 @@ class Ingestor:
         else:
             print("     Already logged in") # Assumes that we couldn't find email field in link means we are logged in already
 
-    def get_downloads(self):
+    def open_dbl_session(self):
         with sync_playwright() as p:
             # Launch browser
             browser = p.chromium.launch(headless=False, timeout=999999)  # headless=False shows the browser
@@ -152,81 +152,150 @@ class Ingestor:
             translations = None
             if self.all_translations == None:
                 # translations = self.db.fetch_all("""SELECT dbl_id, agreement_id FROM bible.DBLInfo WHERE supported = TRUE;""")
-                translations = [dbl_id, agreement_id]
+                translations = [self.dbl_id, self.agreement_id]
             else:
                 translations = self.all_translations
 
             for i, (dbl_id, agreement_id) in enumerate(translations):
-                if self.dbl_id != None and self.agreement_id != None:
+                print(f"\n\n✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
+
+                if self.agreement_id != None:
                     if i == 0:
                         dbl_id = self.dbl_id
                         agreement_id = self.agreement_id
                     else:
                         break
-
-                print(f"\n\n✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
-
-                new_path = None
+                
+                browse_method = 0
+                if dbl_id == None:
+                    browse_method = 2
+                else:
+                    browse_method = 1
 
                 # Go to the DBL translation page
-                url = "https://app.library.bible/content/" + dbl_id + "/download?agreementId=" + str(agreement_id)
-                page.goto(url, wait_until="domcontentloaded")  # Replace with your URL
+                
+                self.choose_browse_method(dbl_id, agreement_id, browse_method, page)
 
                 page.wait_for_load_state("networkidle")
 
-                # Wait for the download button to appear
-                # Inspect the page and adjust the selector to match the button
-                page.wait_for_selector("button:has-text('Download All')")  
-
-                zip_button = page.query_selector("button:has-text('Download All')")
-                if zip_button:
-
-                    # Trigger the download
-                    with page.expect_download() as download_info:
-                        page.click("button:has-text('Download All')")  # Click the download button
-                    download = download_info.value
-
-                    # Save to your folder
-                    new_path = Path(self.download_path) / download.suggested_filename
-                    download.save_as(os.path.join(self.download_path, download.suggested_filename))
-                    print(f"✅ Downloaded ZIP: {new_path}")
-
-                    Translation(self.manager, "text", new_path, url, translation_id, dbl_id, agreement_id)
-                else:
-                    print("⚠️ No ZIP button found, assuming audio download instead")
-                    # Expand all folders
-                    # self.expand_all_folders(page)
-
-                    page.wait_for_load_state("networkidle")
-                    
-                    download_folder_name = f"audio-{dbl_id}-{agreement_id}"
-
-                    file_buttons = page.query_selector_all("button[aria-label^='Download']")
-
-                    for btn in file_buttons:
-                        filename = btn.get_attribute("aria-label").replace("Download ", "").strip()
-
-                        book = filename.split(".")[0].split("_")[0]
-                        folder_names = ["release", "audio", book]
-                        if filename == "metadata.xml":
-                            folder_names = []
-
-                        folder_path = os.path.join(Path(self.download_path) / download_folder_name, *folder_names)
-                        os.makedirs(folder_path, exist_ok=True)
-
-                        # Trigger download
-                        with page.expect_download() as download_info:
-                            btn.click()
-                        download = download_info.value
-                        download.save_as(os.path.join(folder_path, filename))
-
-                    new_path = Path(self.download_path) / download_folder_name
-                    
-                    print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
-
-                    Translation(self.manager, "audio", new_path, url, translation_id, dbl_id, agreement_id)
+                self.download_files(dbl_id, agreement_id, page)
 
             browser.close()
+
+    def choose_browse_method(dbl_id: str | None, agreement_id: int, method: int, page: Page):
+        # Allows choosing what url to go to
+        url = None
+
+        match method:
+            case 1: # --------------------------- FINAL URL LOCATION FOR DOWNLOAD ---------------------------
+                # https://app.library.bible/content/[DBL_ID]/download?agreementId=[AGREEMENT_ID]
+                url = "https://app.library.bible/content/" + dbl_id + "/download?agreementId=" + str(agreement_id)
+                page.goto(url, wait_until="domcontentloaded")  # Replace with your URL
+
+            case 2: # --------------------------- DIRECTS TO METHOD 1 (USING ONLY AGREEMENT) ---------------------------
+                # https://app.library.bible/agreements/[AGREEMENT_ID]
+                url = "https://app.library.bible/agreements/" + str(agreement_id)
+                page.goto(url, wait_until="domcontentloaded")  # Replace with your URL
+
+                page.wait_for_selector("button:has-text('Access Files')")  
+                page.click("button:has-text('Access Files')")
+                page.wait_for_url(wait_until="domcontentloaded")
+
+            # ------------------------------------------ OTHER METHODS ------------------------------------------
+            # NOTE: These aren't reliable for our use case to download files currently, but they do exist, and might have future uses
+            case 3:
+                # https://app.library.bible/agreements/[AGREEMENT_ID]/history
+                url = "https://app.library.bible/agreements/" + str(agreement_id) + "/history"
+                
+            case 4:
+                # https://app.library.bible/content/[DBL_ID]/summary
+                url = "https://app.library.bible/content/" + dbl_id + "/summary"
+                
+            case 5:
+                # https://app.library.bible/content/[DBL_ID]/revisions
+                url = "https://app.library.bible/content/" + dbl_id + "/revisions"
+                
+            case 6:
+                # https://app.library.bible/content/[DBL_ID]/revisions/[AGREEMENT_ID]/summary
+                url = "https://app.library.bible/content/" + dbl_id + "/revisions/" + str(agreement_id) + "/summary"
+                
+            case 7:
+                # https://app.library.bible/content/[DBL_ID]/revisions/[AGREEMENT_ID]/files
+                url = "https://app.library.bible/content/" + dbl_id + "/revisions/" + str(agreement_id) + "/files"
+
+    def read_translation_from_url(self, page: Page) -> tuple[str, int]:
+        # Fails if DBL changes the URL structure
+        url = page.url
+        parts = url.split("/")
+
+        assert parts[3] == "content", f"Unexpected URL structure: {url}"
+        assert parts[5].startswith("download"), f"Unexpected URL structure: {url}"
+
+        dbl_id = parts[4]
+
+        query = parts[5]
+        assert "agreementId=" in query, f"Missing agreementId in URL: {url}"
+
+        agreement_id = int(query.split("agreementId=")[1])
+
+        return (dbl_id, agreement_id)
+
+    def download_files(self, page: Page):
+        # Wait for the download button to appear
+        # Inspect the page and adjust the selector to match the button
+        page.wait_for_selector("button:has-text('Download All')")  
+
+        new_path = None
+
+        dbl_id, agreement_id = self.read_translation_from_url(page)
+
+        zip_button = page.query_selector("button:has-text('Download All')")
+        if zip_button:
+
+            # Trigger the download
+            with page.expect_download() as download_info:
+                page.click("button:has-text('Download All')")  # Click the download button
+            download = download_info.value
+
+            # Save to your folder
+            new_path = Path(self.download_path) / download.suggested_filename
+            download.save_as(os.path.join(self.download_path, download.suggested_filename))
+            print(f"✅ Downloaded ZIP: {new_path}")
+
+            Translation(self.manager, "text", new_path, dbl_id, agreement_id)
+        else:
+            print("⚠️ No ZIP button found, assuming audio download instead")
+            # Expand all folders
+            # self.expand_all_folders(page)
+
+            page.wait_for_load_state("networkidle")
+            
+            download_folder_name = f"audio-{dbl_id}-{agreement_id}"
+
+            file_buttons = page.query_selector_all("button[aria-label^='Download']")
+
+            for btn in file_buttons:
+                filename = btn.get_attribute("aria-label").replace("Download ", "").strip()
+
+                book = filename.split(".")[0].split("_")[0]
+                folder_names = ["release", "audio", book]
+                if filename == "metadata.xml":
+                    folder_names = []
+
+                folder_path = os.path.join(Path(self.download_path) / download_folder_name, *folder_names)
+                os.makedirs(folder_path, exist_ok=True)
+
+                # Trigger download
+                with page.expect_download() as download_info:
+                    btn.click()
+                download = download_info.value
+                download.save_as(os.path.join(folder_path, filename))
+
+            new_path = Path(self.download_path) / download_folder_name
+            
+            print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
+
+            Translation(self.manager, "audio", new_path, source_id, dbl_id, agreement_id)
 
 if __name__ == "__main__":
     # Can be set up to run all supported translations
