@@ -185,9 +185,11 @@ class USXWriteBoundary(WriteBoundary):
             is_test_import: bool,
             reason_not_supported: str
         ) -> None:
+        # If we add this and we already have stored supported for translation revision, skip
         query = """
             INSERT INTO audit.dbl_info (dbl_id, revision, is_translation, supported, test_import, reason_not_supported)
-            VALUES (%s, %s, %s, %s, %s);
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (dbl_id, agreement_id) DO NOTHING;
         """ # ON CONFLICT (dbl_id, agreement_id) DO NOTHING;
         self.db.execute(query, (dbl_id, revision, is_translation, is_supported, is_test_import, reason_not_supported))
 

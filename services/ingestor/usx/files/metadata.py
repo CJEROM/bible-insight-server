@@ -15,13 +15,15 @@ if TYPE_CHECKING:
     from manager.logmanager import LogManager
 
 class Metadata(BaseFile):
-    def __init__(self, this_translation: "Translation", translation_file_path: Path, log: "LogManager"):
+    def __init__(self, this_translation: "Translation", translation_file_path: Path, log: "LogManager", source_id):
         self.translation_file_path = translation_file_path
+        self.this_translation = this_translation
         self.log = log
+
+        self.source_id=source_id
 
         self.metadata = {}
 
-        self.this_translation = this_translation
         self.translation_id = this_translation.get_translation_id()
         self.translation_name = None
 
@@ -188,7 +190,7 @@ class Metadata(BaseFile):
         valid = self.validate_translation_import()
 
         ingestion_id = self.write.start_ingestion(
-            source_id=self.this_translation.get_source(),
+            source_id=self.source_id,
             start_time=self.ingestion_start
         )
 
