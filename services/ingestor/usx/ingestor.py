@@ -49,6 +49,7 @@ class Ingestor:
 
         print(f"✅ Completed Ingestor in [{formatted_duration}]!\n")
 
+    # DEPRACATED SINCE EXPANDED BY DEFAULT NOW
     def expand_all_folders(self, page):
         """
         Expands all collapsible folders on the DBL download page
@@ -79,6 +80,26 @@ class Ingestor:
 
         print("✅ All folders expanded.")
 
+    def create_source(self, source_url):
+        # Find if url is already stored source in database
+        source_id = self.db.fetch_clean_one("""SELECT id FROM audit.sources WHERE url = %s;""", (source_url,))
+        if source_id != None:
+            return source_id
+        # Find if source already in the database
+        source_id = self.read.find_source(code='DBL')
+        # source_id = self.read.
+
+        # if it is return, if it isn't then create it
+        
+        
+        # If not create new and return it
+        new_source_id = self.write.persist_source(
+            url=source_url
+        )
+
+        self.log.log_to_file(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "TRANSLATION", "INFO")
+        return new_source_id
+
     def get_translation(self, dbl_id, agreement_id):
         agreement_id = str(agreement_id)
         translation_id = self.db.fetch_one("""
@@ -95,9 +116,23 @@ class Ingestor:
             ON CONFLICT (dbl_id, agreement_id) DO NOTHING;
         """, (dbl_id,agreement_id))
 
-        return self.db.fetch_clean_one("""
-            INSERT INTO bible.translations (dbl_id, agreement_id) VALUES (%s, %s) RETURNING id;
-        """, (dbl_id, agreement_id))
+    def verify_log_in(self, page):
+        # Do we need to login?
+        if page.query_selector("input[name='email']"):
+            # Fill in the username/email and password
+            dbl_credentials = self.env.get_dbl_credentials()
+            page.fill("input[name='email']", dbl_credentials["username"])
+            page.fill("input[name='password']", dbl_credentials["password"])
+            page.click("button#rememberMe") # Try Remember me for 30 days, to prevent excessive logging and checking
+
+            # Click the login button
+            page.click("button:has-text('Sign in')")
+
+            # Wait for navigation after login
+            page.wait_for_url("https://app.library.bible/")
+            print("✅ Succesful Log In")
+        else:
+            print("     Already logged in") # Assumes that we couldn't find email field in link means we are logged in already
 
     def get_downloads(self):
         with sync_playwright() as p:
@@ -112,22 +147,7 @@ class Ingestor:
 
             page.wait_for_load_state("networkidle") # Wait until no network requests for ~500ms (are we being redirected to login?)
 
-            # Do we need to login?
-            if page.query_selector("input[name='email']"):
-                # Fill in the username/email and password
-                dbl_credentials = self.env.get_dbl_credentials()
-                page.fill("input[name='email']", dbl_credentials["username"])
-                page.fill("input[name='password']", dbl_credentials["password"])
-                page.click("button#rememberMe") # Try Remember me for 30 days, to prevent excessive logging and checking
-
-                # Click the login button
-                page.click("button:has-text('Sign in')")
-
-                # Wait for navigation after login
-                page.wait_for_url("https://app.library.bible/")
-                print("✅ Succesful Log In")
-            else:
-                print("     Already logged in") # Assumes that we couldn't find email field in link means we are logged in already
+            self.verify_log_in(page)
 
             translations = None
             if self.all_translations == None:
@@ -143,11 +163,6 @@ class Ingestor:
                         agreement_id = self.agreement_id
                     else:
                         break
-
-                translation_id = self.get_translation(dbl_id, agreement_id)
-                if translation_id == -1:
-                    print(f"❌ Translation {dbl_id}-{agreement_id} already exists! Skipping ...")
-                    continue # Skip because its already in our system
 
                 print(f"\n\n✅ Starting Translation {dbl_id}-{agreement_id} Processing!")
 
