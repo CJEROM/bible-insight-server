@@ -150,13 +150,11 @@ class Metadata(BaseFile):
 
     def validate_translation_import(self) -> bool:
         dbl_id = self.this_translation.get_dbl_id()
-        agreement_id = self.this_translation.get_agreement().get_agreement_id()
         revision = self.get_metadata("revision")
 
         # 1. Check if translation / revision already exists
         existing_translation = self.read.find_translation(
             dbl_id=dbl_id,
-            agreement_id=agreement_id,
             revision=revision
         )
 

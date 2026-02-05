@@ -49,13 +49,12 @@ class USXReadBoundary(ReadBoundary):
     
     def find_translation(self,
             dbl_id: int,
-            agreement_id: int,
             revision: int
         ) -> str:
         query = """
-            SELECT id FROM bible.translations WHERE dbl_id = %s AND agreement_id = %s;
+            SELECT id FROM bible.translations WHERE dbl_id = %s AND revision = %s;
         """
-        result = self.db.fetch_clean_one(query, (dbl_id, agreement_id))
+        result = self.db.fetch_clean_one(query, (dbl_id, revision))
         return result
     
     def get_node_count(self) -> int:
