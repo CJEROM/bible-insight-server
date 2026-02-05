@@ -115,5 +115,8 @@ class DBLAgreement(BaseFile):
             )
 
     def check_license(self):
+        if self.license_code == None:
+            return None
+        
         licence_id = self.read.find_license(license_code=self.license_code)
         return licence_id

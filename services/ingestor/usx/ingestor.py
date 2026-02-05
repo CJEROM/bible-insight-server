@@ -4,6 +4,7 @@ from playwright.sync_api import sync_playwright, Page
 import os
 import time
 from pathlib import Path
+import re
 
 from ingestor.usx.translation import Translation
 from ingestor.usx.strongsingestor import StrongsIngestor
@@ -205,9 +206,40 @@ class Ingestor:
 
         return (dbl_id, agreement_id, url)
     
-    def get_licence_code(self, page: Page):
+    async def get_licence_code(self, page: Page):
         # Applicable to CC based licences and Public Domain
-        pass
+        licence_text = await page.locator(
+            "p:has-text('available to the public') strong"
+        ).inner_text()
+
+        return self.parse_licence(licence_text)    
+
+    def parse_licence(self, text: str) -> str | None:
+        ALLOWED_CC_LICENCES = {
+            "CC BY",
+            "CC BY-SA",
+            "CC BY-ND",
+            "CC BY-NC",
+            "CC BY-NC-SA",
+            "CC BY-NC-ND",
+        }
+        # Rule 1: explicit Public Domain
+        if "Public Domain" in text:
+            return "PUBLIC_DOMAIN"
+
+        # Rule 2: extract bracketed licence code
+        match = re.search(r"\[(.*?)\]", text)
+        if not match:
+            return None
+            # raise AssertionError(f"No licence code found: {text}")
+
+        code = match.group(1).strip()
+
+        if code not in ALLOWED_CC_LICENCES:
+            return None
+            # raise AssertionError(f"Unknown Creative Commons licence: {code}")
+
+        return f"{code} 4.0"
 
     def download_files(self, page: Page):
         # Wait for the download button to appear
