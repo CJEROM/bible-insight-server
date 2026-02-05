@@ -62,8 +62,7 @@ class Translation:
                     pass
                 case "audio": # Audio e.g. for the blind or preference
                     # Start Ingestion Pipeline for all files
-                    self.metadata = Metadata(self.translation_id, self.process_location, self.log, self.source_url)
-                    self.delete_files()
+                    self.process_metadata(self.process_location)
         except Exception as e:
             error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
             self.log.log_to_file(error_message, "TRANSLATION", "ERROR")
@@ -100,6 +99,17 @@ class Translation:
     
     def get_style_dict(self):
         return self.style_dict
+    
+    def process_metadata(self, file_location: Path):
+        self.agreement_object.set_translation(self, file_location)
+
+        # Start Ingestion Pipeline for all files
+        self.metadata = Metadata(self.translation_id, file_location, self.log, self.source_url)
+
+        self.agreement_object.link_agreement_revision(self.metadata.get_metadata("revision"))
+
+        # Clean up files
+        self.delete_files(file_location)
 
     def unzip_folder(self, zip_path):
         # This will unzip the zip folder, and then delete the original and replace process location with new path name
@@ -120,11 +130,7 @@ class Translation:
             new_location = downloads_location / top_folder
             self.log.log_to_file(f"Unzipping [{len(all_files)}] files from {zip_path} in {new_location}", "TRANSLATION", "INFO")
 
-            # Start Ingestion Pipeline for all files
-            self.metadata = Metadata(self.translation_id, new_location, self.log, self.source_url)
-
-            # Clean up files
-            self.delete_files(new_location)
+            self.process_metadata()
 
         # After unzipping delete the old zip file
         shutil.rmtree(zip_path, ignore_errors=True)
