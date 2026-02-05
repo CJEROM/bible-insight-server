@@ -335,7 +335,7 @@ class Metadata(BaseFile):
                     )
 
                     # We are uploading Books
-                    Book(self.this_translation, found_book, book_map_id, file_id, self.obj.stream_file(object_name), self.log)   
+                    Book(self.this_translation, found_book, book_map_id, file_id, file_path, self.log)   
 
                     self.log.set_progress(found_book, i+1)  
 

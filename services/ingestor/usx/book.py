@@ -8,15 +8,19 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ingestor.usx.translation import Translation
     from manager.logmanager import LogManager
+    from ingestor.usx.files.base_file import BaseFile
 
 # Changing since will only be relevant for text anyway
-class Book:
-    def __init__(self, this_translation: "Translation", book_code, book_map_id, file_id, book_string, log: "LogManager"):
+class Book(BaseFile):
+    def __init__(self, this_translation: "Translation", book_code, book_map_id, file_id, file_path, log: "LogManager"):
+        self.this_file_path = file_path
         self.log = log
         self.manager = self.log.get_manager_handler()
         self.db = self.manager.get_db()
 
         self.this_translation = this_translation
+
+        book_string = self.read_file()
 
         self.language_id =      self.this_translation.get_language_id()
         self.translation_id =   self.this_translation.get_translation_id()
