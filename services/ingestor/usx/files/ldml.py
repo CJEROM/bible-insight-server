@@ -1,4 +1,4 @@
-from base_file import BaseFile
+from ingestor.usx.files.base_file import BaseFile
 
 class LDML(BaseFile):
     def __init__(self):

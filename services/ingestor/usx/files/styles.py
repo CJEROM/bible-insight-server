@@ -1,4 +1,5 @@
-from base_file import BaseFile
+from ingestor.usx.files.base_file import BaseFile
+
 from bs4 import BeautifulSoup
 
 class Styles(BaseFile):

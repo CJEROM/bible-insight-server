@@ -1,16 +1,19 @@
-from base_file import BaseFile
+from ingestor.usx.files.base_file import BaseFile
 from bs4 import BeautifulSoup
 from pathlib import Path
 
-from ingestor.usx.translation import Translation
 from ingestor.usx.book import Book
 
-from ldml import LDML
-from styles import Styles
-from versification import Versification
+from ingestor.usx.files.ldml import LDML
+from ingestor.usx.files.styles import Styles
+from ingestor.usx.files.versification import Versification
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ingestor.usx.translation import Translation
 
 class Metadata(BaseFile):
-    def __init__(self, this_translation: Translation, translation_file_path: Path):
+    def __init__(self, this_translation: "Translation", translation_file_path: Path):
         self.translation_file_path = translation_file_path
         self.metadata = {
 
