@@ -91,12 +91,29 @@ class USXReadBoundary(ReadBoundary):
         return result
     
     # Still need to figure out how this will work, with new split between dbl-agreements and translations
-    def get_supported_translations(self) -> list[tuple]:
+    def is_translation_supported(self, 
+            dbl_id: str, 
+            revision: int | None = None
+        ) -> bool:
         query = """
-            SELECT dbl_id, agreement_id FROM bible.dbl_info WHERE supported = TRUE;
+            SELECT supported
+            FROM audit.dbl_info
+            WHERE dbl_id = %s
+            AND supported = TRUE
+            AND (
+                    (revision = %s AND %s IS NOT NULL)
+                OR (is_translation = TRUE)
+            )
+            ORDER BY
+                CASE
+                    WHEN revision = %s THEN 1
+                    WHEN is_translation = TRUE THEN 2
+                END
+            LIMIT 1;
         """
-        result = self.db.fetch_all(query)
-        return result
+
+        row = self.db.fetch_one(query, (dbl_id, revision, revision, revision))
+        return bool(row)
 
     def find_source(self, 
             code: str
@@ -518,6 +535,30 @@ class USXWriteBoundary(WriteBoundary):
             VALUES (%s, %s, %s)
         """
         self.db.execute(query, (licence_id, attribute_code, custom_note))
+
+    def start_ingestion(self,
+            source_id: int,
+            start_time: str,
+            version_id: str = None
+        ) -> int: 
+        query = """
+            INSERT INTO audit.ingestion_stats (source_id, version_id, start_time)
+        """
+        ingestion_id = self.db.fetch_clean_one(query, (source_id, version_id, start_time))
+        return ingestion_id
+
+    def end_ingestion(self,
+            ingestion_id: int,
+            end_time: str,
+            error_message: str = None
+        ) -> None:
+        query = """
+            UPDATE audit.ingestion_stats
+            SET end_time = %s,
+                error_message = %s
+            WHERE id = %s
+        """
+        self.db.execute(query, (end_time, error_message, ingestion_id))
 
 class USXDeleteBoundary(DeleteBoundary):
     def delete_translation(self,

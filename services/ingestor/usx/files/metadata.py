@@ -1,5 +1,6 @@
 from ingestor.usx.files.base_file import BaseFile
 from bs4 import BeautifulSoup
+import time
 from pathlib import Path
 
 from ingestor.usx.book import Book
@@ -11,13 +12,14 @@ from ingestor.usx.files.versification import Versification
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ingestor.usx.translation import Translation
+    from manager.logmanager import LogManager
 
 class Metadata(BaseFile):
-    def __init__(self, this_translation: "Translation", translation_file_path: Path):
+    def __init__(self, this_translation: "Translation", translation_file_path: Path, log: "LogManager"):
         self.translation_file_path = translation_file_path
-        self.metadata = {
+        self.log = log
 
-        }
+        self.metadata = {}
 
         self.this_translation = this_translation
         self.translation_id = this_translation.get_translation_id()
@@ -25,6 +27,8 @@ class Metadata(BaseFile):
 
         # Object Storage Start Path
         self.object_start = None
+
+        self.ingestion_start = time.time()
 
         self.files = {
             # "metadata": None,
@@ -91,7 +95,6 @@ class Metadata(BaseFile):
             """, (self.translation_id, self.revision, relation_dbl_id, relation_revision, relation_type))
             self.log.log_to_file(f"Created Translation Relationship with [ID: {relation_dbl_id}] [Revision: {relation_revision}] [medium: {relation_type}]", "TRANSLATION", "DEBUG")
 
-    # TO DO
     def match_language(self):
         # Should find what language we are in
         self.get_metadata("language_iso")
@@ -130,9 +133,43 @@ class Metadata(BaseFile):
             language_id     = self.match_language()
         )
 
-    # TO DO
-    def update_agreement_mapping(self):
-        pass
+    def create_dbl_info(self):
+        self.write.persist_translation_info(
+            dbl_id=self.this_translation.get_dbl_id(),
+            revision=self.get_metadata("revision"),
+            is_translation=False,
+            is_supported=True,
+            is_test_import=False,
+            reason_not_supported=None
+        )
+
+    def validate_translation_import(self) -> bool:
+        dbl_id = self.this_translation.get_dbl_id()
+        agreement_id = self.this_translation.get_agreement_id()
+        revision = self.get_metadata("revision")
+
+        # 1. Check if translation / revision already exists
+        existing_translation = self.read.find_translation(
+            dbl_id=dbl_id,
+            agreement_id=agreement_id,
+            revision=revision
+        )
+
+        already_exists = existing_translation is not None
+
+        if already_exists:
+            return False
+
+        # 2. Check if translation / revision is supported
+        is_supported = self.read.is_translation_supported(
+            dbl_id=dbl_id,
+            revision=revision
+        )
+
+        if not is_supported:
+            return False
+
+        return True
 
     def read_metadata_file(self, file_path):
         metadata_file_path = Path(file_path) / "metadata.xml"
@@ -148,10 +185,29 @@ class Metadata(BaseFile):
         # We don't rely on agreement to store files, we build from dbl_id and revision
         self.object_start = f"{self.get_metadata("dbl_id")}/{self.get_metadata("revision")}/"
 
-        self.update_translation_details()
-        self.create_translation_relationships(metadata_xml)
-        self.upload_support_files(metadata_xml)
-        self.get_book_files(metadata_xml)
+        valid = self.validate_translation_import()
+
+        ingestion_id = self.write.start_ingestion(
+            source_id=self.this_translation.get_source(),
+            start_time=self.ingestion_start
+        )
+
+        if valid:
+            self.update_translation_details()
+            self.create_translation_relationships(metadata_xml)
+            self.upload_support_files(metadata_xml)
+            self.get_book_files(metadata_xml)
+            self.create_dbl_info()
+            self.write.end_ingestion(
+                ingestion_id=ingestion_id,
+                end_time=time.time()
+            )
+        else:
+            self.write.end_ingestion(
+                ingestion_id=ingestion_id,
+                end_time=time.time(),
+                error_message="Translation already exists!"
+            )
 
     def upload_support_files(self, metadata_xml: BeautifulSoup):
         # License File => Passed on, and not stored in metadata
