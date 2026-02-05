@@ -15,12 +15,13 @@ if TYPE_CHECKING:
     from manager.logmanager import LogManager
 
 class Metadata(BaseFile):
-    def __init__(self, this_translation: "Translation", translation_file_path: Path, log: "LogManager", source_id):
+    def __init__(self, this_translation: "Translation", translation_file_path: Path, log: "LogManager", source_url):
         self.translation_file_path = translation_file_path
         self.this_translation = this_translation
         self.log = log
 
-        self.source_id=source_id
+        self.source_url = source_url
+        self.source_id = None
 
         self.metadata = {}
 
@@ -172,6 +173,26 @@ class Metadata(BaseFile):
             return False
 
         return True
+    
+    def create_source(self, source_url):
+        # Find if url is already stored source in database
+        source_id = self.db.fetch_clean_one("""SELECT id FROM audit.sources WHERE url = %s;""", (source_url,))
+        if source_id != None:
+            return source_id
+        # Find if source already in the database
+        source_id = self.read.find_source(code='DBL')
+        # source_id = self.read.
+
+        # if it is return, if it isn't then create it
+        
+        
+        # If not create new and return it
+        new_source_id = self.write.persist_source(
+            url=source_url
+        )
+
+        self.log.log_to_file(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "TRANSLATION", "INFO")
+        return new_source_id
 
     def read_metadata_file(self, file_path):
         metadata_file_path = Path(file_path) / "metadata.xml"

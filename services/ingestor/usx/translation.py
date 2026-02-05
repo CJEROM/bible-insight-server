@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ingestor.usx.files.agreements import DBLAgreement
 
 class Translation:
-    def __init__(self, manager: "ManagerHandler", medium: str, process_location: Path, source_id: int, dbl_id: str, agreement: "DBLAgreement"):
+    def __init__(self, manager: "ManagerHandler", medium: str, process_location: Path, source_url: str, dbl_id: str, agreement: "DBLAgreement"):
         self.manager = manager
         self.env = manager.get_env()
         self.obj = manager.get_obj()
@@ -27,6 +27,8 @@ class Translation:
         self.dbl_id = dbl_id
         self.agreement_object = agreement
         self.agreement_id = agreement.get_agreement_id()
+
+        self.source_url = source_url
 
         print("✅ Starting Upload ...")
         
@@ -48,7 +50,6 @@ class Translation:
         self.write = USXWriteBoundary(self.db)
         self.read = USXReadBoundary(self.db)
 
-        self.source_id = source_id
         self.metadata = None
 
         try:
@@ -61,7 +62,7 @@ class Translation:
                     pass
                 case "audio": # Audio e.g. for the blind or preference
                     # Start Ingestion Pipeline for all files
-                    self.metadata = Metadata(self.translation_id, self.process_location, self.log, self.source_id)
+                    self.metadata = Metadata(self.translation_id, self.process_location, self.log, self.source_url)
                     self.delete_files()
         except Exception as e:
             error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -120,7 +121,7 @@ class Translation:
             self.log.log_to_file(f"Unzipping [{len(all_files)}] files from {zip_path} in {new_location}", "TRANSLATION", "INFO")
 
             # Start Ingestion Pipeline for all files
-            self.metadata = Metadata(self.translation_id, new_location, self.log, self.source_id)
+            self.metadata = Metadata(self.translation_id, new_location, self.log, self.source_url)
 
             # Clean up files
             self.delete_files(new_location)
