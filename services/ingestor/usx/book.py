@@ -3,12 +3,12 @@ import re
 
 from ingestor.usx.chapter import Chapter
 from ingestor.usx.nodes import Nodes
+from ingestor.usx.files.base_file import BaseFile
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ingestor.usx.translation import Translation
     from manager.logmanager import LogManager
-    from ingestor.usx.files.base_file import BaseFile
 
 # Changing since will only be relevant for text anyway
 class Book(BaseFile):
