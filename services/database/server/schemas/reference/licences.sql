@@ -11,7 +11,7 @@ CREATE TABLE audit.licences (
     id              SERIAL PRIMARY KEY,
 
     source_id       INTEGER,                -- Example: Source ID for 'CC'
-    code            TEXT NOT NULL,          -- Example: 'CC BY 4.0'
+    code            TEXT UNIQUE NOT NULL,          -- Example: 'CC BY 4.0'
     name            TEXT NOT NULL,
     version         TEXT,
     
