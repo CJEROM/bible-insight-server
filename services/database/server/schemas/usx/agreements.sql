@@ -1,9 +1,9 @@
 CREATE TABLE IF NOT EXISTS audit.dbl_agreements (
     agreement_id        INTEGER PRIMARY KEY,
-    dbl_id              TEXT NOT NULL, --
+    dbl_id              TEXT, --
 
     -- Link to the actual license document/file
-    licence_file_id     INTEGER  NOT NULL,
+    licence_file_id     INTEGER,
     base_licence_id     INTEGER, -- Licence to extend current one
 
     notes               TEXT,

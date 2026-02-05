@@ -137,18 +137,20 @@ class Metadata(BaseFile):
         )
 
     def create_dbl_info(self):
+        # If the agreement is new then mark as test import
         self.write.persist_translation_info(
-            dbl_id=self.this_translation.get_dbl_id(),
-            revision=self.get_metadata("revision"),
-            is_translation=False,
-            is_supported=True,
-            is_test_import=False,
+            dbl_id              =self.this_translation.get_dbl_id(),
+            revision            =self.get_metadata("revision"),
+            is_translation      =False,
+            is_supported        =True,
+            is_test_import      =self.this_translation.get_agreement().is_new(),
             reason_not_supported=None
         )
+        # Non test translation's are those that are included in initial DB seeding
 
     def validate_translation_import(self) -> bool:
         dbl_id = self.this_translation.get_dbl_id()
-        agreement_id = self.this_translation.get_agreement_id()
+        agreement_id = self.this_translation.get_agreement().get_agreement_id()
         revision = self.get_metadata("revision")
 
         # 1. Check if translation / revision already exists

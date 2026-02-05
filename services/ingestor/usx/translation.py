@@ -83,8 +83,8 @@ class Translation:
     def get_dbl_id(self):
         return self.dbl_id
     
-    def get_agreement_id(self):
-        return self.agreement_id
+    def get_agreement(self):
+        return self.agreement_object
     
     def get_translation_id(self):
         return self.translation_id

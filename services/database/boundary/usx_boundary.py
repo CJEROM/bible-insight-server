@@ -460,8 +460,17 @@ class USXWriteBoundary(WriteBoundary):
         """
         verse_occurence_id = self.db.fetch_clean_one(query, (chapter_id, book_map_id, translation_id, verse_ref, start_node, end_node))
         return verse_occurence_id
+    
+    def init_agreement(self,
+            agreement_id: int
+        ) -> None:
+        query = """
+            INSERT INTO audit.dbl_agreements (agreement_id)
+            VALUES (%s);
+        """
+        self.db.execute(query, (agreement_id, ))
 
-    def persist_agreement(self, 
+    def update_agreement(self, 
             agreement_id: int,
             dbl_id: str,
             base_licence_id: int,
@@ -470,10 +479,15 @@ class USXWriteBoundary(WriteBoundary):
             licence_file_id: int
         ) -> None:
         query = """
-            INSERT INTO audit.dbl_agreements (agreement_id, dbl_id, base_licence_id, dateLicence, dateLicenceExpiry, licence_file_id)
-            VALUES (%s, %s, %s, %s, %s, %s);
+            UPDATE audit.dbl_agreements 
+            SET dbl_id  = %s, 
+                base_licence_id = %s, 
+                dateLicence = %s, 
+                dateLicenceExpiry = %s, 
+                licence_file_id = %s
+            WHERE agreement_id = %s;
         """
-        self.db.execute(query, (agreement_id, dbl_id, base_licence_id, dateLicence, dateLicenseExpiry, licence_file_id))
+        self.db.execute(query, (dbl_id, base_licence_id, dateLicence, dateLicenseExpiry, licence_file_id, agreement_id))
     
     def persist_agreement_revision_mapping(self,
             agreement_id: int,

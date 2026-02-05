@@ -15,6 +15,8 @@ class DBLAgreement(BaseFile):
         self.valid = False
         self.exists = False
 
+        self.new = False # Is this a newly introduced agreement?
+
         self.details = {}
 
         self.check_agreement_exists(agreement_id)
@@ -24,6 +26,9 @@ class DBLAgreement(BaseFile):
     
     def get_exists(self):
         return self.exists
+    
+    def is_new(self):
+        return self.new
     
     def get_details(self, key):
         if key is not None:
@@ -40,8 +45,10 @@ class DBLAgreement(BaseFile):
         )
         if found: # i.e. != None
             self.exists = True
-            self.agreement_id = agreement_id
             self.check_agreement_valid()
+        else:
+            self.new = True
+            self.write.init_agreement(self.agreement_id)
 
     def check_agreement_valid(self):
         # If license exists, and is not expired, license = valid
@@ -80,7 +87,7 @@ class DBLAgreement(BaseFile):
     def create_agreement(self):
         file_xml = BeautifulSoup(self.read_file(), "xml")
 
-        self.write.persist_agreement(
+        self.write.update_agreement(
             agreement_id        = self.agreement_id,
             dbl_id              = self.translation.get_dbl_id(),
             base_licence_id     = self.check_license(),
