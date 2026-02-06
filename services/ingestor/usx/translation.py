@@ -53,8 +53,11 @@ class Translation:
 
         self.metadata = None
 
+        self.ingest()
+        
+    def ingest(self):
         try:
-            match medium:
+            match self.medium:
                 case "text": # USX Files e.g. for deeper analysis
                     # unzip first
                     self.unzip_folder(self.process_location)
@@ -67,10 +70,10 @@ class Translation:
         except Exception as e:
             error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
             self.log.log_to_file(error_message, "TRANSLATION", "ERROR")
-            print(f"❌ Failed to Upload Translation {dbl_id}-{self.agreement_id} with error {e}")
+            print(f"❌ Failed to Upload Translation {self.dbl_id}-{self.agreement_id} with error {e}")
 
         self.log.log_to_file(f"Completed Translation [{self.translation_name}] Ingestion!", "TRANSLATION", "INFO")
-        
+
     def get_metadata(self):
         return self.metadata
     
