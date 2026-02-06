@@ -70,9 +70,6 @@ class Translation:
             print(f"❌ Failed to Upload Translation {dbl_id}-{self.agreement_id} with error {e}")
 
         self.log.log_to_file(f"Completed Translation [{self.translation_name}] Ingestion!", "TRANSLATION", "INFO")
-
-        # Create Label Studio Project for this specific translation of the bible
-        self.labelproject = self.label.create_new_translation_project(self.translation_id, self.translation_name, self.translation_title)
         
     def get_metadata(self):
         return self.metadata
@@ -108,6 +105,9 @@ class Translation:
         self.metadata = Metadata(file_location, self.log, self.source_url)
 
         self.agreement_object.link_agreement_revision(self.metadata.get_metadata("revision"))
+
+        # Create Label Studio Project for this specific translation of the bible
+        self.labelproject = self.label.create_new_translation_project(self.translation_id, self.translation_name, self.translation_title)
 
         # Clean up files
         self.delete_files(file_location)
