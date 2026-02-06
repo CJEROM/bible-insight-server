@@ -124,9 +124,8 @@ class USXReadBoundary(ReadBoundary):
                 END
             LIMIT 1;
         """
-
         row = self.db.fetch_one(query, (dbl_id, revision, revision, revision))
-        return bool(row)
+        return row
 
     def find_source(self, 
             code: str
