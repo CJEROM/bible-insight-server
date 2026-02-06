@@ -105,7 +105,12 @@ class Translation:
         self.agreement_object.set_translation(self, file_location)
 
         # Start Ingestion Pipeline for all files
-        self.metadata = Metadata(file_location, self.log, self.source_url)
+        self.metadata = Metadata(
+            this_translation        = self,
+            translation_file_path   = file_location, 
+            log                     = self.log, 
+            source_url              = self.source_url
+        )
 
         self.agreement_object.link_agreement_revision(self.metadata.get_metadata("revision"))
 
