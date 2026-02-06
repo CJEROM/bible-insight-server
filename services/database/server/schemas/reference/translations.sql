@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS bible.translations (
     name                TEXT,
     nameLocal           TEXT,
     description         TEXT,
+    abbreviation        TEXT,
     abbreviationLocal   TEXT,
     copyright           TEXT,
     promotion           TEXT,

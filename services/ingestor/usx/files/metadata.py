@@ -81,7 +81,8 @@ class Metadata(BaseFile):
         self.metadata["ldml"]           = metadata_xml.find("language").find("ldml").text
         self.metadata["numerals"]       = metadata_xml.find("language").find("numerals").text
 
-        self.metadata["abbreviation"]   = metadata_xml.find("identification").find("abbreviationLocal").text
+        self.metadata["abbreviation"]   = metadata_xml.find("identification").find("abbreviation").text
+        self.metadata["abbreviationLocal"]   = metadata_xml.find("identification").find("abbreviationLocal").text
         self.metadata["name"]           = metadata_xml.find("identification").find("name").text
         self.metadata["nameLocal"]      = metadata_xml.find("identification").find("nameLocal").text
         self.metadata["description"]    = metadata_xml.find("identification").find("description").text
@@ -144,17 +145,18 @@ class Metadata(BaseFile):
 
     def create_translation_details(self):
         self.translation_id = self.write.persist_usx_translation(
-            dbl_id          = self.get_metadata("dbl_id"),
-            revision        = self.get_metadata("revision"),
-            revision_note   = self.get_metadata("revision_note"),
-            revision_date   = self.get_metadata("revision_date"),
-            medium          = self.get_metadata("medium"),
-            name            = self.get_metadata("name"),
-            name_local      = self.get_metadata("nameLocal"),
-            abbreviation    = self.get_metadata("abbreviation"),
-            copyright       = self.get_metadata("copyright"),
-            promotion       = self.get_metadata("promotion"),
-            language_id     = self.match_language()
+            dbl_id              = self.get_metadata("dbl_id"),
+            revision            = self.get_metadata("revision"),
+            revision_note       = self.get_metadata("revision_note"),
+            revision_date       = self.get_metadata("revision_date"),
+            medium              = self.get_metadata("medium"),
+            name                = self.get_metadata("name"),
+            name_local          = self.get_metadata("nameLocal"),
+            abbreviation        = self.get_metadata("abbreviation"),
+            abbreviationLocal   = self.get_metadata("abbreviationLocal"),
+            copyright           = self.get_metadata("copyright"),
+            promotion           = self.get_metadata("promotion"),
+            language_id         = self.match_language()
         )
 
         self.log.log_to_file(f"Created Translation Entry -> ID = {self.translation_id}!", "METADATA", "DEBUG")
@@ -209,7 +211,7 @@ class Metadata(BaseFile):
         # Find if url is already stored source in database
         self.log.log_to_file(f"Creating Translation Source!", "METADATA", "DEBUG")
 
-        source_unique_code = f"DBL-{self.get_metadata("language_iso")}-{self.get_metadata("abbreviation")}"
+        source_unique_code = f"DBL-{self.get_metadata("abbreviation")}"
         source_id = self.read.find_source(code=source_unique_code)
         if source_id != None:
             self.this_translation.get_agreement().set_source(source_id)

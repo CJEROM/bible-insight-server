@@ -292,15 +292,16 @@ class USXWriteBoundary(WriteBoundary):
             name: str,
             name_local: str,
             abbreviation: str,
+            abbreviationLocal: str,
             copyright: str,
             promotion: str,
         ) -> int:
         query = """
-            INSERT INTO bible.translations (dbl_id, revision, revision_note, revision_date, language_id, medium, name, nameLocal, abbreviation, copyright, promotion) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO bible.translations (dbl_id, revision, revision_note, revision_date, language_id, medium, name, nameLocal, abbreviation, abbreviationLocal, copyright, promotion) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
-        translation_id = self.db.fetch_clean_one(query, (dbl_id, revision, revision_note, revision_date, language_id, medium, name, name_local, abbreviation, copyright, promotion))
+        translation_id = self.db.fetch_clean_one(query, (dbl_id, revision, revision_note, revision_date, language_id, medium, name, name_local, abbreviation, abbreviationLocal, copyright, promotion))
         return translation_id
     
     def persit_dbl_agreement(self,
