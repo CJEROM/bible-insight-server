@@ -1,11 +1,12 @@
 -- Is this translation + revision supported by Bible Insight Ingestion. Why or why not?
 CREATE TABLE IF NOT EXISTS audit.dbl_info (
-    dbl_id                  TEXT PRIMARY KEY,
-	revision                INTEGER, -- Optional: Either specific revision not supported (int > 0) or entire translation (int = 0 or -1?)
-    is_translation          BOOLEAN, -- TRUE = translation, FALSE = revision
+    dbl_id                  TEXT NOT NULL,
+	revision                INTEGER NOT NULL,   -- >0 = revision, 0 = translation
     supported               BOOLEAN DEFAULT TRUE,
     test_import             BOOLEAN DEFAULT FALSE, -- Change Default in future?
-    reason_not_supported    TEXT
+    reason_not_supported    TEXT,
+    PRIMARY KEY (dbl_id, revision),
+    CHECK (revision >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS bible.translations (
@@ -23,7 +24,7 @@ CREATE TABLE IF NOT EXISTS bible.translations (
     copyright           TEXT,
     promotion           TEXT,
 	UNIQUE(dbl_id, revision),
-    FOREIGN KEY (dbl_id) REFERENCES audit.dbl_info (dbl_id) ON DELETE CASCADE,
+    FOREIGN KEY (dbl_id, revision) REFERENCES audit.dbl_info (dbl_id, revision) ON DELETE CASCADE,
     FOREIGN KEY (language_id) REFERENCES language.languages (id) ON DELETE CASCADE
 );
 CREATE INDEX idx_bible_translations_dbl_id ON bible.translations (dbl_id);

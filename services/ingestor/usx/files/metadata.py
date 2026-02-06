@@ -165,12 +165,10 @@ class Metadata(BaseFile):
         # If the agreement is new then mark as test import
         self.log.log_to_file(f"Creating DBL INFO Entry ...", "METADATA", "DEBUG")
         self.write.persist_translation_info(
-            dbl_id              =self.get_metadata("dbl_id"),
-            revision            =self.get_metadata("revision"),
-            is_translation      =False,
-            is_supported        =True,
-            is_test_import      =self.this_translation.get_agreement().is_new(),
-            reason_not_supported=None
+            dbl_id              = self.get_metadata("dbl_id"),
+            revision            = self.get_metadata("revision"),
+            is_supported        = True,
+            is_test_import      = self.this_translation.get_agreement().is_new()
         )
         self.log.log_to_file(f"DBL INFO Created!", "METADATA", "DEBUG")
         # Non test translation's are those that are included in initial DB seeding

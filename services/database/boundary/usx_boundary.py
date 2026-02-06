@@ -112,19 +112,11 @@ class USXReadBoundary(ReadBoundary):
             SELECT supported
             FROM audit.dbl_info
             WHERE dbl_id = %s
-            AND supported = TRUE
-            AND (
-                    (revision = %s AND %s IS NOT NULL)
-                OR (is_translation = TRUE)
-            )
-            ORDER BY
-                CASE
-                    WHEN revision = %s THEN 1
-                    WHEN is_translation = TRUE THEN 2
-                END
+                AND revision IN (%s, 0)
+            ORDER BY revision DESC
             LIMIT 1;
         """
-        row = self.db.fetch_one(query, (dbl_id, revision, revision, revision))
+        row = self.db.fetch_one(query, (dbl_id, revision))
         return row
 
     def find_source(self, 
@@ -195,20 +187,19 @@ class USXWriteBoundary(WriteBoundary):
         self.db.execute(query, (book_code, chapter_num, chapter_ref, is_standard))
 
     def persist_translation_info(self,
-            dbl_id: int,
+            dbl_id: str,
             revision: int,
-            is_translation: bool,
             is_supported: bool,
             is_test_import: bool,
-            reason_not_supported: str
+            reason_not_supported: str = None
         ) -> None:
         # If we add this and we already have stored supported for translation revision, skip
         query = """
-            INSERT INTO audit.dbl_info (dbl_id, revision, is_translation, supported, test_import, reason_not_supported)
+            INSERT INTO audit.dbl_info (dbl_id, revision, supported, test_import, reason_not_supported)
             VALUES (%s, %s, %s, %s, %s)
-            ON CONFLICT (dbl_id, agreement_id) DO NOTHING;
-        """ # ON CONFLICT (dbl_id, agreement_id) DO NOTHING;
-        self.db.execute(query, (dbl_id, revision, is_translation, is_supported, is_test_import, reason_not_supported))
+            ON CONFLICT (dbl_id, revision) DO NOTHING;
+        """
+        self.db.execute(query, (dbl_id, revision, is_supported, is_test_import, reason_not_supported))
 
     def persist_nodes(self, 
             new_nodes: list[tuple]
