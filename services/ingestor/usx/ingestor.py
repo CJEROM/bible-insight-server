@@ -1,6 +1,7 @@
 import time
+import asyncio
 
-from playwright.sync_api import sync_playwright, Page
+from playwright.async_api import async_playwright, Page
 import os
 import time
 from pathlib import Path
@@ -12,13 +13,15 @@ from manager.managerhandler import ManagerHandler
 from ingestor.usx.files.agreements import DBLAgreement
 
 class Ingestor:
-    def __init__(self, manager: ManagerHandler = None, dbl_id = None, agreement_id = None, all_translations: list = None):
-        self.manager = manager
-        if manager == None:
-            self.manager = ManagerHandler()
-            self.manager.get_obj().set_default_bucket("bible-dbl-raw")
-
-        # StrongsIngestor(self.manager)
+    def __init__(
+        self,
+        manager: ManagerHandler | None = None,
+        dbl_id: str | None = None,
+        agreement_id: int | None = None,
+        all_translations: list | None = None,
+    ):
+        self.manager = manager or ManagerHandler()
+        self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
         self.dbl_id = dbl_id
         self.agreement_id = agreement_id
@@ -27,29 +30,29 @@ class Ingestor:
         self.env = self.manager.get_env()
         self.db = self.manager.get_db()
 
-        # Worth adding option, that if dbl_id and agreement_id have been passed in, run just the class for that translation
-        #       This would be useful when enforcing foreign key constraints with translation relationships
-
-        self.start_time = time.time()
-
-        # Folder where you want downloads to go
         self.download_path = Path(__file__).parents[2] / "downloads"
         os.makedirs(self.download_path, exist_ok=True)
 
-        self.open_dbl_session()
+    async def run(self):
+        start_time = time.time()
 
-        self.db.commit()
-        self.db.close()
+        try:
+            await self.open_dbl_session()
+            self.db.commit()
+        finally:
+            self.db.close()
 
-        duration = time.time() - self.start_time
+        duration = time.time() - start_time
+        self._print_duration(duration)
+
+    def _print_duration(self, duration: float):
         hours = int(duration // 3600)
         minutes = int((duration % 3600) // 60)
         seconds = int(duration % 60)
-        milliseconds = int((duration % 1) * 1000)  # or *100 for .mm format
+        milliseconds = int((duration % 1) * 1000)
 
-        formatted_duration = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
-
-        print(f"✅ Completed Ingestor in [{formatted_duration}]!\n")
+        formatted = f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
+        print(f"✅ Completed Ingestor in [{formatted}]!\n")
 
     # DEPRACATED SINCE EXPANDED BY DEFAULT NOW
     def expand_all_folders(self, page):
@@ -82,43 +85,43 @@ class Ingestor:
 
         print("✅ All folders expanded.")
 
-    def verify_log_in(self, page: Page):
+    async def verify_log_in(self, page: Page):
         # Do we need to login?
-        if page.query_selector("input[name='email']"):
+        if await page.query_selector("input[name='email']"):
             # Fill in the username/email and password
             dbl_credentials = self.env.get_dbl_credentials()
-            page.fill("input[name='email']", dbl_credentials["username"])
-            page.fill("input[name='password']", dbl_credentials["password"])
-            page.click("button#rememberMe") # Try Remember me for 30 days, to prevent excessive logging and checking
+            await page.fill("input[name='email']", dbl_credentials["username"])
+            await page.fill("input[name='password']", dbl_credentials["password"])
+            await page.click("button#rememberMe") # Try Remember me for 30 days, to prevent excessive logging and checking
 
             # Click the login button
-            page.click("button:has-text('Sign in')")
+            await page.click("button:has-text('Sign in')")
 
             # Wait for navigation after login
-            page.wait_for_url("https://app.library.bible/")
+            await page.wait_for_url("https://app.library.bible/")
             print("✅ Succesful Log In")
         else:
             print("     Already logged in") # Assumes that we couldn't find email field in link means we are logged in already
 
-    def open_dbl_session(self):
-        with sync_playwright() as p:
+    async def open_dbl_session(self):
+        async with async_playwright() as p:
             # Launch browser
-            browser = p.chromium.launch(headless=False, timeout=999999)  # headless=False shows the browser
-            context = browser.new_context(accept_downloads=True)  # Important to handle downloads
+            browser = await p.chromium.launch(headless=False, timeout=999999)  # headless=False shows the browser
+            context = await browser.new_context(accept_downloads=True)  # Important to handle downloads
 
-            page = context.new_page()
+            page = await context.new_page()
         
             # Go to the normal page
-            page.goto("https://app.library.bible/")
+            await page.goto("https://app.library.bible/")
 
-            page.wait_for_load_state("networkidle") # Wait until no network requests for ~500ms (are we being redirected to login?)
+            await page.wait_for_load_state("networkidle") # Wait until no network requests for ~500ms (are we being redirected to login?)
 
-            self.verify_log_in(page)
+            await self.verify_log_in(page)
 
             translations = None
             if self.all_translations == None:
                 # translations = self.db.fetch_all("""SELECT dbl_id, agreement_id FROM bible.DBLInfo WHERE supported = TRUE;""")
-                translations = [self.dbl_id, self.agreement_id]
+                translations = [(self.dbl_id, self.agreement_id)]
             else:
                 translations = self.all_translations
 
@@ -140,15 +143,15 @@ class Ingestor:
 
                 # Go to the DBL translation page
                 
-                self.choose_browse_method(dbl_id, agreement_id, browse_method, page)
+                await self.choose_browse_method(dbl_id, agreement_id, browse_method, page)
 
-                page.wait_for_load_state("networkidle")
+                await page.wait_for_load_state("networkidle")
 
-                self.download_files(dbl_id, agreement_id, page)
+                await self.download_files(page)
 
-            browser.close()
+            await browser.close()
 
-    def choose_browse_method(dbl_id: str | None, agreement_id: int, method: int, page: Page):
+    async def choose_browse_method(self, dbl_id: str | None, agreement_id: int, method: int, page: Page):
         # Allows choosing what url to go to
         url = None
 
@@ -156,16 +159,16 @@ class Ingestor:
             case 1: # --------------------------- FINAL URL LOCATION FOR DOWNLOAD ---------------------------
                 # https://app.library.bible/content/[DBL_ID]/download?agreementId=[AGREEMENT_ID]
                 url = "https://app.library.bible/content/" + dbl_id + "/download?agreementId=" + str(agreement_id)
-                page.goto(url, wait_until="domcontentloaded")  # Replace with your URL
+                await page.goto(url, wait_until="domcontentloaded")  # Replace with your URL
 
             case 2: # --------------------------- DIRECTS TO METHOD 1 (USING ONLY AGREEMENT) ---------------------------
                 # https://app.library.bible/agreements/[AGREEMENT_ID]
                 url = "https://app.library.bible/agreements/" + str(agreement_id)
-                page.goto(url, wait_until="domcontentloaded")  # Replace with your URL
+                await page.goto(url, wait_until="domcontentloaded")  # Replace with your URL
 
-                page.wait_for_selector("button:has-text('Access Files')")  
-                page.click("button:has-text('Access Files')")
-                page.wait_for_url(wait_until="domcontentloaded")
+                await page.wait_for_selector("button:has-text('Access Files')")  
+                await page.click("button:has-text('Access Files')")
+                await page.wait_for_url(wait_until="domcontentloaded")
 
             # ------------------------------------------ OTHER METHODS ------------------------------------------
             # NOTE: These aren't reliable for our use case to download files currently, but they do exist, and might have future uses
@@ -241,7 +244,7 @@ class Ingestor:
 
         return f"{code} 4.0"
 
-    def download_files(self, page: Page):
+    async def download_files(self, page: Page):
         # Wait for the download button to appear
         # Inspect the page and adjust the selector to match the button
         page.wait_for_selector("button:has-text('Download All')")  
@@ -250,7 +253,7 @@ class Ingestor:
 
         dbl_id, agreement_id, source_url = self.read_translation_from_url(page)
 
-        agreement = DBLAgreement(agreement_id, self.get_licence_code(page))
+        agreement = DBLAgreement(self.db, agreement_id, await self.get_licence_code(page))
 
         zip_button = page.query_selector("button:has-text('Download All')")
         if zip_button:
@@ -300,7 +303,19 @@ class Ingestor:
 
             Translation(self.manager, "audio", new_path, source_url, dbl_id, agreement)
 
+async def main(
+        dbl_id: str | None,
+        agreement_id: int
+    ):
+    await Ingestor(
+        dbl_id=dbl_id,
+        agreement_id=agreement_id
+    ).run()
+
 if __name__ == "__main__":
     # Can be set up to run all supported translations
-    Ingestor(dbl_id="7142879509583d59", agreement_id="240016")
+    asyncio.run(main(
+        dbl_id="7142879509583d59",
+        agreement_id="240016"
+    ))
     # Ingestor(dbl_id="65eec8e0b60e656b", agreement_id="246069")
