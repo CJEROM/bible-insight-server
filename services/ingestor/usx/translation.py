@@ -38,7 +38,6 @@ class Translation:
         
         self.translation_title = f"{self.medium}-{self.dbl_id}-{self.agreement_id}"
 
-        self.translation_name = None
         self.bible_structure_info = None
 
         self.style_dict = {}
@@ -73,7 +72,7 @@ class Translation:
         #     self.log.log_to_file(error_message, "TRANSLATION", "ERROR")
         #     print(f"❌ Failed to Upload Translation {self.dbl_id}-{self.agreement_id} with error {e}")
 
-        self.log.log_to_file(f"Completed Translation [{self.translation_name}] Ingestion!", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Completed Translation Ingestion!", "TRANSLATION", "INFO")
 
     def get_metadata(self):
         return self.metadata
@@ -117,7 +116,11 @@ class Translation:
         self.agreement_object.link_agreement_revision(self.metadata.get_metadata("revision"))
 
         # Create Label Studio Project for this specific translation of the bible
-        self.labelproject = self.label.create_new_translation_project(self.translation_id, self.translation_name, self.translation_title)
+        self.labelproject = self.label.create_new_translation_project(
+            self.translation_id, 
+            self.metadata.get_metadata("name"), 
+            self.translation_title
+        )
 
         # Clean up files - Only after successful run, don't automatically delete all files
         self.delete_files(file_location)
