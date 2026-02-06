@@ -589,15 +589,14 @@ class USXWriteBoundary(WriteBoundary):
 
     def start_ingestion(self,
             source_id: int,
-            start_time: str,
-            version_id: str = None
+            start_time: str
         ) -> int: 
         query = """
-            INSERT INTO audit.ingestion_stats (source_id, version_id, start_time)
-            VALUES (%s, %s, %s)
+            INSERT INTO audit.ingestion_stats (source_id, start_time)
+            VALUES (%s, %s)
             RETURNING id;
         """
-        ingestion_id = self.db.fetch_clean_one(query, (source_id, version_id, start_time))
+        ingestion_id = self.db.fetch_clean_one(query, (source_id, start_time))
         return ingestion_id
 
     def end_ingestion(self,
