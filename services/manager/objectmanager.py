@@ -5,6 +5,8 @@ if TYPE_CHECKING:
     from manager.managerhandler import ManagerHandler
     from manager.envmanager import EnvManager
 
+from database.boundary.base_boundary import ReadBoundary, WriteBoundary
+
 class ObjectManager:
     def __init__(self, this_manager: "ManagerHandler" = None, default_bucket=None):
         self.this_manager = this_manager
@@ -16,6 +18,9 @@ class ObjectManager:
 
         config = self.env.get_minio_config()
         self.db = self.this_manager.get_db()
+
+        self.read = ReadBoundary(self.db)
+        self.write = WriteBoundary(self.db)
 
         # Passes Minio client connection on to the MinioUSXUpload class
         self.client = Minio(
@@ -80,9 +85,7 @@ class ObjectManager:
 
     # EDIT METHOD: Needs to also account for Object versioning
     def stream_file_from_file_id(self, file_id):
-        file_object_name, file_bucket = self.db.fetch_one("""
-            SELECT file_path AS object_name, bucket FROM audit.files WHERE id = %s
-        """, (file_id,))
+        file_object_name, file_bucket, version_id = self.read.read_file(file_id)
         return self.stream_file(file_object_name, file_bucket)
 
     # ADD METHOD TO CHEck FILE EXISTS ALREADY? IF SO UPDATE IT, DO DB WRITING HERE? INSTEAD OF IN INGESTOR CODE? OR PROCESESS THAT THERE INSTEAD

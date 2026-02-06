@@ -8,6 +8,14 @@ class QueryBoundary:
 
 class ReadBoundary(QueryBoundary):
     pass
+    def read_file(self, 
+            file_id: int
+        ): 
+        query = """
+            SELECT file_path AS object_name, bucket, version_id FROM audit.files WHERE id = %s
+        """
+        results = self.db.execute(query, (file_id, ))
+        return results
 
 class WriteBoundary(QueryBoundary):
     pass
