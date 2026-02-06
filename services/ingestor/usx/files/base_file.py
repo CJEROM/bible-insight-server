@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 from database.boundary.usx_boundary import USXReadBoundary, USXWriteBoundary
 
 class BaseFile:
-    def __init__(self, main_manager: "ManagerHandler", log: "LogManager", source_id: int, file_path: Path = None):
+    def __init__(self, main_manager: "ManagerHandler", log: "LogManager", source_id: int | None, file_path: Path = None):
         self.manager = main_manager
         self.obj = main_manager.get_obj()
         self.db = main_manager.get_db()

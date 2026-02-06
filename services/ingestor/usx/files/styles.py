@@ -2,8 +2,17 @@ from ingestor.usx.files.base_file import BaseFile
 
 from bs4 import BeautifulSoup
 
+from pathlib import Path
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from manager.managerhandler import ManagerHandler
+    from manager.logmanager import LogManager
+
 class Styles(BaseFile):
-    def __init__(self, styles_file_id: int):
+    def __init__(self, styles_file_id: int, main_manager: "ManagerHandler", log: "LogManager", source_id: int | None, file_path: Path = None):
+        super.__init__(main_manager, log, source_id, file_path)
+        
         self.style_dict = {}
 
         self.createStylesAndProperties(self.read_file(), styles_file_id)
