@@ -55,7 +55,7 @@ class Ingestor:
         print(f"✅ Completed Ingestor in [{formatted}]!\n")
 
     # DEPRACATED SINCE EXPANDED BY DEFAULT NOW
-    def expand_all_folders(self, page):
+    async def expand_all_folders(self, page):
         """
         Expands all collapsible folders on the DBL download page
         so that every nested level (release, audio, ROM, etc.) becomes visible.
@@ -63,7 +63,7 @@ class Ingestor:
 
         while True:
             # Find all buttons that can expand folders
-            expand_buttons = page.query_selector_all("button[aria-label^='Expand ']")
+            expand_buttons = await page.query_selector_all("button[aria-label^='Expand ']")
 
             if not expand_buttons:
                 # No more expandable folders found
@@ -74,8 +74,8 @@ class Ingestor:
             for btn in expand_buttons:
                 try:
                     label = btn.get_attribute("aria-label")
-                    btn.scroll_into_view_if_needed()
-                    btn.click()
+                    await btn.scroll_into_view_if_needed()
+                    await btn.click()
                     time.sleep(0.3)  # small delay for DOM update
                 except Exception as e:
                     print(f"⚠️ Failed to expand {label}: {e}")
@@ -256,17 +256,17 @@ class Ingestor:
         licence_code = await self.get_licence_code(page)
         agreement = DBLAgreement(self.db, agreement_id, licence_code)
 
-        zip_button = page.query_selector("button:has-text('Download All')")
+        zip_button = await page.query_selector("button:has-text('Download All')")
         if zip_button:
 
             # Trigger the download
-            with page.expect_download() as download_info:
-                page.click("button:has-text('Download All')")  # Click the download button
-            download = download_info.value
+            async with page.expect_download() as download_info:
+                await page.click("button:has-text('Download All')")  # Click the download button
+            download = await download_info.value
 
             # Save to your folder
             new_path = Path(self.download_path) / download.suggested_filename
-            download.save_as(os.path.join(self.download_path, download.suggested_filename))
+            await download.save_as(os.path.join(self.download_path, download.suggested_filename))
             print(f"✅ Downloaded ZIP: {new_path}")
 
             Translation(self.manager, "text", new_path, source_url, dbl_id, agreement)
@@ -275,14 +275,14 @@ class Ingestor:
             # Expand all folders
             # self.expand_all_folders(page)
 
-            page.wait_for_load_state("networkidle")
+            await page.wait_for_load_state("networkidle")
             
             download_folder_name = f"audio-{dbl_id}"
 
-            file_buttons = page.query_selector_all("button[aria-label^='Download']")
+            file_buttons = await page.query_selector_all("button[aria-label^='Download']")
 
             for btn in file_buttons:
-                filename = btn.get_attribute("aria-label").replace("Download ", "").strip()
+                filename = await btn.get_attribute("aria-label").replace("Download ", "").strip()
 
                 book = filename.split(".")[0].split("_")[0]
                 folder_names = ["release", "audio", book]
@@ -293,10 +293,10 @@ class Ingestor:
                 os.makedirs(folder_path, exist_ok=True)
 
                 # Trigger download
-                with page.expect_download() as download_info:
-                    btn.click()
-                download = download_info.value
-                download.save_as(os.path.join(folder_path, filename))
+                async with page.expect_download() as download_info:
+                    await btn.click()
+                download = await download_info.value
+                await download.save_as(os.path.join(folder_path, filename))
 
             new_path = Path(self.download_path) / download_folder_name
             
