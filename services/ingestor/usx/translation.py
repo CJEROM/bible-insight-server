@@ -88,9 +88,6 @@ class Translation:
     def get_translation_project_id(self):
         return self.labelproject
     
-    def get_translation_title(self):
-        return self.translation_title
-    
     # def get_language_id(self):
     #     return self.language_id
     
@@ -115,7 +112,7 @@ class Translation:
         self.labelproject = self.label.create_new_translation_project(
             self.translation_id, 
             self.metadata.get_metadata("name"), 
-            self.translation_title
+            f"{self.dbl_id}-{self.agreement_id}"
         )
 
         # Clean up files - Only after successful run, don't automatically delete all files
