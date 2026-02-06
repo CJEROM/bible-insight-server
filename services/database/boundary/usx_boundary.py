@@ -3,6 +3,20 @@ from database.boundary.base_boundary import ReadBoundary, WriteBoundary, DeleteB
 
 import json
 
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional
+
+@dataclass
+class AgreementRecord:
+    agreement_id: int
+    dbl_id: str
+    licence_file_id: int
+    base_licence_id: int
+    dateLicence: datetime
+    dateLicenceExpiry: datetime
+    notes: Optional[str]
+
 class USXReadBoundary(ReadBoundary):
     # GET       = Number of items
     # FIND      = Specific item
@@ -125,13 +139,17 @@ class USXReadBoundary(ReadBoundary):
     
     def find_agreement(self,
             agreement_id: int
-        ) -> int:
+        ) -> AgreementRecord | None:
         query = """
-            SELECT dbl_id, agreement_id FROM audit.dbl_agreements WHERE agreement_id=%s;
+            SELECT dbl_id, agreement_id, licence_file_id, base_licence_id, dateLicence, dateLicenceExpiry, notes
+            FROM audit.dbl_agreements WHERE agreement_id=%s;
         """
         result = self.db.fetch_one(query, (agreement_id,))
-        return result
-    
+        if not result:
+            return None
+
+        return AgreementRecord(*result)
+
     def find_agreement_expired(self,
             agreement_id: int
         ) -> bool:

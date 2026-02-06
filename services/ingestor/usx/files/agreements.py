@@ -71,17 +71,29 @@ class DBLAgreement(BaseFile):
         if found: # i.e. != None
             self.exists = True
             self.log.log_to_file(f"Agreement Exists, Now Verifying ...", "AGREEMENT", "INFO")
-            self.check_agreement_valid()
+            self.valid = self.check_agreement_valid(found.dateLicenceExpiry)
         else:
             self.new = True
             self.log.log_to_file(f"New Agreement found, Creating New in Database", "AGREEMENT", "INFO")
             self.log.log_to_file(f"NOTE: The asociated Translation will be marked as a Test Import!", "AGREEMENT", "INFO")
             self.write.init_agreement(self.agreement_id)
 
-    def check_agreement_valid(self):
+    def check_agreement_valid(self, expiry: datetime | None) -> bool:
+        valid = False
+        
+        # if licence exists, but no expiry set, then valid (we will update it during ingestion)
+        if expiry is None:
+            valid = True
+            self.log.log_to_file(f"Agreement Validation result: {valid}", "AGREEMENT", "INFO")
+            return valid
+
         # If license exists, and is not expired, license = valid
-        self.valid = self.read.find_agreement_expired(self.agreement_id)
-        self.log.log_to_file(f"Agreement Validation result: {self.valid}", "AGREEMENT", "INFO")
+        # If licence exists, and is expired, licence = not valid
+        valid = self.read.find_agreement_expired(self.agreement_id)
+
+        self.log.log_to_file(f"Agreement Validation result: {valid}", "AGREEMENT", "INFO")
+
+        return valid
 
     # ======================================== MANUAL CALLS ========================================
 

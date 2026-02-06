@@ -261,6 +261,9 @@ class Ingestor:
 
         licence_code = await self.get_licence_code(page)
         agreement = DBLAgreement(self.manager, agreement_id, licence_code, self.log)
+        if agreement.get_valid() == False:
+            self.log.log_to_file(f"Ingestion Cancelled due to invalid Agreement!", "INGESTOR", "INFO")
+            return
 
         zip_button = await page.query_selector("button:has-text('Download All')")
         if zip_button:
