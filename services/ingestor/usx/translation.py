@@ -56,21 +56,22 @@ class Translation:
         self.ingest()
         
     def ingest(self):
-        try:
-            match self.medium:
-                case "text": # USX Files e.g. for deeper analysis
-                    # unzip first
-                    self.unzip_folder(self.process_location)
-                case "video": # Videos e.g. for the deaf (sign language)
-                    # self.check_files(self.process_location)
-                    pass
-                case "audio": # Audio e.g. for the blind or preference
-                    # Start Ingestion Pipeline for all files
-                    self.process_metadata(self.process_location)
-        except Exception as e:
-            error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
-            self.log.log_to_file(error_message, "TRANSLATION", "ERROR")
-            print(f"❌ Failed to Upload Translation {self.dbl_id}-{self.agreement_id} with error {e}")
+        match self.medium:
+            case "text": # USX Files e.g. for deeper analysis
+                # unzip first
+                self.unzip_folder(self.process_location)
+            case "video": # Videos e.g. for the deaf (sign language)
+                # self.check_files(self.process_location)
+                pass
+            case "audio": # Audio e.g. for the blind or preference
+                # Start Ingestion Pipeline for all files
+                self.process_metadata(self.process_location)
+        # try:
+            
+        # except Exception as e:
+        #     error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+        #     self.log.log_to_file(error_message, "TRANSLATION", "ERROR")
+        #     print(f"❌ Failed to Upload Translation {self.dbl_id}-{self.agreement_id} with error {e}")
 
         self.log.log_to_file(f"Completed Translation [{self.translation_name}] Ingestion!", "TRANSLATION", "INFO")
 
