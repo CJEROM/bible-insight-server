@@ -5,6 +5,7 @@ from database.boundary.usx_boundary import USXReadBoundary, USXWriteBoundary
 
 from pathlib import Path
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 from manager.dbmanager import DBManager
 
@@ -95,7 +96,10 @@ class DBLAgreement(BaseFile):
         self.this_file_path = self.translation_file_path / file_name
         self.file_id = self.upload_file(
             object_name=f"{object_start}/{file_name}",
-            file_path=self.this_file_path
+            file_path=self.this_file_path,
+            content_type='application/xml',
+            data_format="XML",
+            version_note="Ingested: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
 
     def create_agreement(self):
