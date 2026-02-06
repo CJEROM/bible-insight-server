@@ -197,14 +197,14 @@ class Metadata(BaseFile):
         )
 
         if is_supported is None:
-            self.log.log_to_file(f"Validating Result = SUCCESS. New Translation will be marked as Test Import!", "METADATA", "DEBUG")
+            self.log.log_to_file(f"Validating Result = PASS. New Translation will be marked as Test Import!", "METADATA", "DEBUG")
             return True
 
         if not is_supported:
             self.log.log_to_file(f"Validating Result = FAIL -> Translation NOT supported!", "METADATA", "DEBUG")
             return False
 
-        self.log.log_to_file(f"Validating Result = SUCCESS!", "METADATA", "DEBUG")
+        self.log.log_to_file(f"Validating Result = PASS!", "METADATA", "DEBUG")
         return True
     
     def create_source(self, source_url):

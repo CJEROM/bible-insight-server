@@ -84,14 +84,15 @@ class DBLAgreement(BaseFile):
         # if licence exists, but no expiry set, then valid (we will update it during ingestion)
         if expiry is None:
             valid = True
-            self.log.log_to_file(f"Agreement Validation result: {valid}", "AGREEMENT", "INFO")
+            self.log.log_to_file(f"Agreement Validation result = PASS", "AGREEMENT", "INFO")
             return valid
 
         # If license exists, and is not expired, license = valid
         # If licence exists, and is expired, licence = not valid
         valid = self.read.find_agreement_expired(self.agreement_id)
 
-        self.log.log_to_file(f"Agreement Validation result: {valid}", "AGREEMENT", "INFO")
+        result = "PASS" if valid else "FAIL"
+        self.log.log_to_file(f"Agreement Validation result: {result}", "AGREEMENT", "INFO")
 
         return valid
 
