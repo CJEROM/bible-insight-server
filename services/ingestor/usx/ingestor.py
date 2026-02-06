@@ -247,7 +247,7 @@ class Ingestor:
     async def download_files(self, page: Page):
         # Wait for the download button to appear
         # Inspect the page and adjust the selector to match the button
-        page.wait_for_selector("button:has-text('Download All')")  
+        await page.wait_for_selector("button:has-text('Download All')")  
 
         new_path = None
 
