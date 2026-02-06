@@ -115,7 +115,7 @@ class Metadata(BaseFile):
                 to_revision=relation_revision,
                 relation_type=relation_type
             )
-            self.log.log_to_file(f"Created Translation Relationship with [ID: {relation_dbl_id}] [Revision: {relation_revision}] [medium: {relation_type}]", "TRANSLATION", "DEBUG")
+            self.log.log_to_file(f"Created Translation Relationship with [ID: {relation_dbl_id}] [Revision: {relation_revision}] [medium: {relation_type}]", "METADATA", "DEBUG")
 
     def match_language(self):
         # Should find what language we are in
@@ -186,9 +186,7 @@ class Metadata(BaseFile):
             revision=revision
         )
 
-        already_exists = existing_translation is not None
-
-        if already_exists:
+        if existing_translation is not None:
             self.log.log_to_file(f"Validating Result = FAIL -> Translation already exists!", "METADATA", "DEBUG")
             return False
 
@@ -197,6 +195,10 @@ class Metadata(BaseFile):
             dbl_id=dbl_id,
             revision=revision
         )
+
+        if is_supported is None:
+            self.log.log_to_file(f"Validating Result = SUCCESS. New Translation will be marked as Test Import!", "METADATA", "DEBUG")
+            return True
 
         if not is_supported:
             self.log.log_to_file(f"Validating Result = FAIL -> Translation NOT supported!", "METADATA", "DEBUG")
@@ -237,7 +239,7 @@ class Metadata(BaseFile):
 
         self.this_translation.get_agreement().set_source(new_source_id)
 
-        self.log.log_to_file(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "METADATA", "INFO")
         return new_source_id
     
     def create_source_mappings(self):
@@ -294,7 +296,7 @@ class Metadata(BaseFile):
             self.write.end_ingestion(
                 ingestion_id=ingestion_id,
                 end_time=self.get_time(),
-                error_message="Translation already exists!"
+                error_message="Translation invalid!"
             )
 
     def upload_support_files(self, metadata_xml: BeautifulSoup):
