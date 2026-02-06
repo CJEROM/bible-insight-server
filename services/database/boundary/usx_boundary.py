@@ -510,6 +510,7 @@ class USXWriteBoundary(WriteBoundary):
         ) -> None:
         query = """
             INSERT INTO audit.dbl_revision_agreements (agreement_id, revision)
+            VALUES (%s, %s);
         """
         self.db.execute(query, (agreement_id, revision))
 
@@ -520,6 +521,7 @@ class USXWriteBoundary(WriteBoundary):
         ) -> None:
         query = """
             INSERT INTO audit.agreement_attributes (agreement_id, attribute_code, attribute_value)
+            VALUES (%s, %s, %s);
         """
         self.db.execute(query, (agreement_id, attribute_code, attribute_value))
 
