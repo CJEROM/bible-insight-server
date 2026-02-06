@@ -1,13 +1,22 @@
 from ingestor.usx.files.base_file import BaseFile
 from ingestor.usx.translation import Translation
 
+from database.boundary.usx_boundary import USXReadBoundary, USXWriteBoundary
+
 from pathlib import Path
 from bs4 import BeautifulSoup
 
+from manager.dbmanager import DBManager
+
 class DBLAgreement(BaseFile):
-    def __init__(self, agreement_id, license_code):
+    def __init__(self, db: DBManager, agreement_id, license_code):
+        self.db = db
+        self.log = None
+
         self.translation = None
         self.translation_file_path = None
+        self.this_file_path = None
+        self.file_id = None
 
         self.agreement_id = agreement_id
         self.license_code = license_code
@@ -18,6 +27,9 @@ class DBLAgreement(BaseFile):
         self.new = False # Is this a newly introduced agreement?
 
         self.details = {}
+
+        self.read = USXReadBoundary(db)
+        self.write = USXWriteBoundary(db)
 
         self.check_agreement_exists(agreement_id)
 
@@ -60,6 +72,8 @@ class DBLAgreement(BaseFile):
     def set_translation(self, translation: Translation, translation_file_path: Path):
         self.translation = translation
         self.translation_file_path = translation_file_path
+
+        self.log = translation.log
 
         self.upload_license_file()
         if self.exists == False and self.valid == False:
