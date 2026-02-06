@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS audit.dbl_agreements (
 
     notes               TEXT,
 
-    FOREIGN KEY (dbl_id) REFERENCES audit.dbl_info(dbl_id),
     FOREIGN KEY (base_licence_id) REFERENCES audit.licences(id),
     FOREIGN KEY (licence_file_id) REFERENCES audit.files(id)
 );
