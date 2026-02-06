@@ -90,7 +90,7 @@ class Metadata(BaseFile):
         self.metadata["copyright"]      = metadata_xml.find("copyright").find("statementContent").text
         self.metadata["promotion"]      = metadata_xml.find("promotion").find("promoVersionInfo").text
 
-        self.metadata["revision"]       = metadata_xml.find("DBLMetadata").get("revision")
+        self.metadata["revision"]       = int(metadata_xml.find("DBLMetadata").get("revision"))
         self.metadata["revision_note"]  = metadata_xml.find("archiveStatus").find("comments").text
         self.metadata["revision_date"]  = metadata_xml.find("archiveStatus").find("dateUpdated").text
 
@@ -109,7 +109,7 @@ class Metadata(BaseFile):
             relation_revision = relation.get("revision")
             relation_type = relation.get("relationType")
             self.write.persist_translation_relation(
-                from_dbl_id=self.this_translation.get_dbl_id(),
+                from_dbl_id=self.get_metadata("dbl_id"),
                 from_revision=self.get_metadata("revision"),
                 to_dbl_id=relation_dbl_id,
                 to_revision=relation_revision,
@@ -165,7 +165,7 @@ class Metadata(BaseFile):
         # If the agreement is new then mark as test import
         self.log.log_to_file(f"Creating DBL INFO Entry ...", "METADATA", "DEBUG")
         self.write.persist_translation_info(
-            dbl_id              =self.this_translation.get_dbl_id(),
+            dbl_id              =self.get_metadata("dbl_id"),
             revision            =self.get_metadata("revision"),
             is_translation      =False,
             is_supported        =True,
@@ -176,7 +176,7 @@ class Metadata(BaseFile):
         # Non test translation's are those that are included in initial DB seeding
 
     def validate_translation_import(self) -> bool:
-        dbl_id = self.this_translation.get_dbl_id()
+        dbl_id = self.get_metadata("dbl_id")
         revision = self.get_metadata("revision")
         self.log.log_to_file(f"Validating Translation Import ...", "METADATA", "DEBUG")
 
