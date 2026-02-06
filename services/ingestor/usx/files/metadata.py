@@ -94,7 +94,7 @@ class Metadata(BaseFile):
         self.metadata["revision_note"]  = metadata_xml.find("archiveStatus").find("comments").text
         self.metadata["revision_date"]  = metadata_xml.find("archiveStatus").find("dateUpdated").text
 
-        self.metadata["dbl_id"]         = metadata_xml.find("DBLMetadata").find("id").text
+        self.metadata["dbl_id"]         = metadata_xml.find("DBLMetadata").get("id")
         self.metadata["file_version"]   = metadata_xml.find("DBLMetadata").get("version")
 
         self.translation_name           = f"{self.metadata["abbreviation"]}: {self.metadata["name"]}"
@@ -226,7 +226,7 @@ class Metadata(BaseFile):
             code=source_unique_code,
             name=self.get_metadata("name"),
             description=self.get_metadata("description"),
-            version=self.get_metadata("file_version"),
+            version=None,   # self.get_metadata("file_version")
             url=source_url,
             note=None,
             parent_source=parent_source_id,
