@@ -110,7 +110,8 @@ class Translation:
             this_translation        = self,
             translation_file_path   = file_location, 
             log                     = self.log, 
-            source_url              = self.source_url
+            source_url              = self.source_url,
+            main_manager            = self.manager
         )
 
         self.agreement_object.link_agreement_revision(self.metadata.get_metadata("revision"))

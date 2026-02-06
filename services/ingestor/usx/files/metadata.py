@@ -9,16 +9,25 @@ from ingestor.usx.files.ldml import LDML
 from ingestor.usx.files.styles import Styles
 from ingestor.usx.files.versification import Versification
 
+from database.boundary.usx_boundary import USXReadBoundary, USXWriteBoundary
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ingestor.usx.translation import Translation
+    from manager.managerhandler import ManagerHandler
     from manager.logmanager import LogManager
 
 class Metadata(BaseFile):
-    def __init__(self, this_translation: "Translation", translation_file_path: Path, log: "LogManager", source_url):
+    def __init__(self, this_translation: "Translation", translation_file_path: Path, log: "LogManager", source_url, main_manager: "ManagerHandler"):
         self.translation_file_path = translation_file_path
         self.this_translation = this_translation
         self.log = log
+        self.manager = main_manager
+        self.obj = main_manager.get_obj()
+        self.db = main_manager.get_db()
+
+        self.read = USXReadBoundary(self.db)
+        self.write = USXWriteBoundary(self.db)
 
         # Now should it create a new source every time it downloads? 
         #       or have the same one for this translation
@@ -83,7 +92,7 @@ class Metadata(BaseFile):
         self.metadata["revision_date"]  = metadata_xml.find("archiveStatus").find("dateUpdated").text
 
         self.metadata["dbl_id"]         = metadata_xml.find("DBLMetadata").find("id").text
-        self.metadata["file_version"]   = metadata_xml.find("DBLMetadata").find("version").text
+        self.metadata["file_version"]   = metadata_xml.find("DBLMetadata").get("version")
 
         self.translation_name           = f"{self.metadata["abbreviation"]}: {self.metadata["name"]}"
 
@@ -228,7 +237,7 @@ class Metadata(BaseFile):
         self.extract_metadata(metadata_xml)
 
         # We don't rely on agreement to store files, we build from dbl_id and revision
-        self.object_start = f"{self.get_metadata("dbl_id")}/{self.get_metadata("revision")}/"
+        self.object_start = f"{self.get_metadata("dbl_id")}/{self.get_metadata("revision")}"
 
         self.create_source(self.source_url)
 
