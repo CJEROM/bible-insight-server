@@ -253,7 +253,8 @@ class Ingestor:
 
         dbl_id, agreement_id, source_url = self.read_translation_from_url(page)
 
-        agreement = DBLAgreement(self.db, agreement_id, await self.get_licence_code(page))
+        licence_code = await self.get_licence_code(page)
+        agreement = DBLAgreement(self.db, agreement_id, licence_code)
 
         zip_button = page.query_selector("button:has-text('Download All')")
         if zip_button:

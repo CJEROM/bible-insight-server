@@ -127,10 +127,10 @@ class USXReadBoundary(ReadBoundary):
             agreement_id: int
         ) -> int:
         query = """
-            SELECT dbl_id FROM audit.dbl_agreements WHERE agreement_id=%s;
+            SELECT dbl_id, agreement_id FROM audit.dbl_agreements WHERE agreement_id=%s;
         """
-        dbl_id = self.db.fetch_clean_one(query, (agreement_id,))
-        return dbl_id
+        result = self.db.fetch_one(query, (agreement_id,))
+        return result
     
     def find_agreement_expired(self,
             agreement_id: int
@@ -138,7 +138,8 @@ class USXReadBoundary(ReadBoundary):
         query = """
             SELECT *
             FROM audit.dbl_agreements
-            WHERE dateLicenceExpiry < NOW();
+            WHERE dateLicenceExpiry < NOW()
+            AND agreement_id=%s;
         """
         result = self.db.fetch_one(query, (agreement_id,))
         return True if result else False
@@ -474,7 +475,7 @@ class USXWriteBoundary(WriteBoundary):
             dbl_id: str,
             base_licence_id: int,
             dateLicence: str,
-            dateLicenseExpiry: str,
+            dateLicenceExpiry: str,
             licence_file_id: int
         ) -> None:
         query = """
@@ -486,7 +487,7 @@ class USXWriteBoundary(WriteBoundary):
                 licence_file_id = %s
             WHERE agreement_id = %s;
         """
-        self.db.execute(query, (dbl_id, base_licence_id, dateLicence, dateLicenseExpiry, licence_file_id, agreement_id))
+        self.db.execute(query, (dbl_id, base_licence_id, dateLicence, dateLicenceExpiry, licence_file_id, agreement_id))
     
     def persist_agreement_revision_mapping(self,
             agreement_id: int,

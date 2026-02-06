@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS audit.dbl_agreements (
     licence_file_id     INTEGER,
     base_licence_id     INTEGER, -- Licence to extend current one
 
+    dateLicence         TIMESTAMP,
+    dateLicenceExpiry   TIMESTAMP,
+
     notes               TEXT,
 
     FOREIGN KEY (dbl_id) REFERENCES audit.dbl_info(dbl_id),
