@@ -109,7 +109,7 @@ class Translation:
         # Create Label Studio Project for this specific translation of the bible
         self.labelproject = self.label.create_new_translation_project(self.translation_id, self.translation_name, self.translation_title)
 
-        # Clean up files
+        # Clean up files - Only after successful run, don't automatically delete all files
         self.delete_files(file_location)
 
     def unzip_folder(self, zip_path):
@@ -131,7 +131,7 @@ class Translation:
             new_location = downloads_location / top_folder
             self.log.log_to_file(f"Unzipping [{len(all_files)}] files from {zip_path} in {new_location}", "TRANSLATION", "INFO")
 
-            self.process_metadata()
+            self.process_metadata(new_location)
 
         # After unzipping delete the old zip file
         shutil.rmtree(zip_path, ignore_errors=True)
