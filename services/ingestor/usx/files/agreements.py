@@ -7,17 +7,23 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-from manager.dbmanager import DBManager
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from manager.managerhandler import ManagerHandler
 
 class DBLAgreement(BaseFile):
-    def __init__(self, db: DBManager, agreement_id, license_code):
-        self.db = db
+    def __init__(self, manager: "ManagerHandler", agreement_id, license_code):
+        self.manager = manager
+        self.db = manager.get_db()
+        self.obj = manager.get_obj()
         self.log = None
 
         self.translation = None
         self.translation_file_path = None
         self.this_file_path = None
         self.file_id = None
+
+        self.source_id = None
 
         self.agreement_id = agreement_id
         self.license_code = license_code
@@ -29,8 +35,8 @@ class DBLAgreement(BaseFile):
 
         self.details = {}
 
-        self.read = USXReadBoundary(db)
-        self.write = USXWriteBoundary(db)
+        self.read = USXReadBoundary(self.db)
+        self.write = USXWriteBoundary(self.db)
 
         self.check_agreement_exists(agreement_id)
 
@@ -42,6 +48,9 @@ class DBLAgreement(BaseFile):
     
     def is_new(self):
         return self.new
+    
+    def set_source(self, source_id):
+        self.source_id = source_id
     
     def get_details(self, key):
         if key is not None:

@@ -20,8 +20,10 @@ class Metadata(BaseFile):
         self.this_translation = this_translation
         self.log = log
 
-        self.source_url = source_url
+        # Now should it create a new source every time it downloads? 
+        #       or have the same one for this translation
         self.source_id = None
+        self.source_url = source_url
 
         self.metadata = {}
 
@@ -178,26 +180,44 @@ class Metadata(BaseFile):
     
     def create_source(self, source_url):
         # Find if url is already stored source in database
-        source_id = self.db.fetch_clean_one("""SELECT id FROM audit.sources WHERE url = %s;""", (source_url,))
+        source_unique_code = f"DBL-{self.get_metadata("language_iso")}-{self.get_metadata("abbreviation")}"
+        source_id = self.read.find_source(code=source_unique_code)
         if source_id != None:
+            self.this_translation.get_agreement().set_source(source_id)
             return source_id
-        # Find if source already in the database
-        source_id = self.read.find_source(code='DBL')
-        # source_id = self.read.
-
-        # if it is return, if it isn't then create it
         
+        # Find parent source (DBL - Distrubtor) - In the future customise to link to publishers better?
+        parent_source_id = self.read.find_source(code='DBL')
         
         # If not create new and return it
         new_source_id = self.write.persist_source(
-            url=source_url
+            source_type="DAT", # Dataset
+            code=source_unique_code,
+            name=self.get_metadata("name"),
+            description=self.get_metadata("description"),
+            version=self.get_metadata("file_version"),
+            url=source_url,
+            note=None,
+            parent_source=parent_source_id,
+            # official_citation=,
+            # date_published=,
+            # metadata=,
         )
+
+        self.this_translation.get_agreement().set_source(new_source_id)
 
         self.log.log_to_file(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "TRANSLATION", "INFO")
         return new_source_id
+    
+    def create_source_mappings(self):
+        # For mapping publishers etc. to translation from metadata information we receive
+
+        # Only required on first instance of creation of source for a particular translation
+        pass
 
     def read_metadata_file(self, file_path):
-        metadata_file_path = Path(file_path) / "metadata.xml"
+        file_name = "metadata.xml"
+        metadata_file_path = Path(file_path) / file_name
         self.this_file_path = metadata_file_path
         metadata_file_content = ""
         with open(metadata_file_path, encoding="utf-8") as file:
@@ -209,6 +229,16 @@ class Metadata(BaseFile):
 
         # We don't rely on agreement to store files, we build from dbl_id and revision
         self.object_start = f"{self.get_metadata("dbl_id")}/{self.get_metadata("revision")}/"
+
+        self.create_source(self.source_url)
+
+        self.upload_file(
+            object_name=f"{self.object_start}/{file_name}",
+            file_path=self.this_file_path,
+            content_type='application/xml',
+            data_format="XML",
+            version_note=self.get_metadata("file_version")
+        )
 
         valid = self.validate_translation_import()
 
@@ -288,26 +318,26 @@ class Metadata(BaseFile):
         match file_name.split(".")[0].capitalize():
             case "Versification":
                 self.files["versification"] = Versification(
-                    self.manager, 
-                    self.log, 
-                    self.source_id, 
-                    new_file_path, 
-                    self.translation_id
+                    translation_id  = self.translation_id,
+                    main_manager    = self.manager,
+                    log             = self.log,
+                    source_id       = self.source_id,
+                    file_path       = new_file_path
                 )
             case "Styles":
                 self.files["styles"]        = Styles(
-                    self.manager, 
-                    self.log, 
-                    self.source_id, 
-                    new_file_path, 
-                    file_id
+                    styles_file_id  = file_id,
+                    main_manager    = self.manager, 
+                    log             = self.log, 
+                    source_id       = self.source_id, 
+                    file_path       = new_file_path
                 )
             case "LDML":
                 self.files["ldml"]          = LDML(
-                    self.manager, 
-                    self.log, 
-                    self.source_id, 
-                    new_file_path
+                    main_manager    = self.manager, 
+                    log             = self.log, 
+                    source_id       = self.source_id, 
+                    file_path       = new_file_path
                 )
 
     def get_book_files(self, metadata_xml: BeautifulSoup):

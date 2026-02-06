@@ -213,6 +213,43 @@ class USXWriteBoundary(WriteBoundary):
         paragraph_id = self.db.fetch_clean_one(query, (paragraph_node_id, style_id, is_versetext))
         return paragraph_id
     
+    def init_source(self,
+            source_type: str,
+            url: str
+        ):
+        query = """
+            INSERT INTO audit.sources(source_type, url)
+            VALUES (%s, %s)
+            RETURNING id;
+        """
+        source_id = self.db.execute(query, (source_type, url))
+        return source_id
+    
+    def update_source(self,
+            code: str,
+            name: str,
+            description: str,
+            version: str, 
+            note: str,
+            parent_source: str,
+            official_citation: str = None,
+            date_published: str = None,
+            metadata: json = None
+        ):
+        query = """
+            UPDATE audit.sources
+            SET code = %s,
+                name = %s,
+                description = %s,
+                version = %s,
+                note = %s,
+                official_citation = %s,
+                date_published = %s,
+                metadata = %s,
+            WHERE id = %s
+        """
+        self.db.fetch_clean_one(query, (code, name, description, version, note, parent_source, official_citation, date_published, metadata))
+    
     def persist_source(self,
             source_type: str,
             code: str,
@@ -324,7 +361,7 @@ class USXWriteBoundary(WriteBoundary):
             version_note: str = None,
         ) -> int:
         query = """
-            INSERT INTO audit.files (etag, type, file_path, bucket, source_id, version_id, version_note, data_format) 
+            INSERT INTO audit.files (etag, type, object_path, bucket, source_id, version_id, version_note, data_format) 
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
