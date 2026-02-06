@@ -257,7 +257,7 @@ class Ingestor:
         self.translation_title = f"{self.dbl_id}-{self.agreement_id}"
 
         self.log = self.manager.create_log_in_folder(["logs", "ingestor"], f"{self.translation_title}")
-        self.log.set_logging_level(2)
+        self.log.set_logging_level(1) # DEBUG logging
 
         licence_code = await self.get_licence_code(page)
         agreement = DBLAgreement(self.manager, agreement_id, licence_code, self.log)
@@ -268,6 +268,8 @@ class Ingestor:
         zip_button = await page.query_selector("button:has-text('Download All')")
         if zip_button:
 
+            self.log.log_to_file(f"ZIP Found, Downloading ...", "INGESTOR", "INFO")
+
             # Trigger the download
             async with page.expect_download() as download_info:
                 await page.click("button:has-text('Download All')")  # Click the download button
@@ -277,10 +279,12 @@ class Ingestor:
             new_path = Path(self.download_path) / download.suggested_filename
             await download.save_as(os.path.join(self.download_path, download.suggested_filename))
             print(f"✅ Downloaded ZIP: {new_path}")
+            self.log.log_to_file(f"Downloaded zip file to {new_path}", "INGESTOR", "INFO")
 
             Translation(self.manager, "text", new_path, source_url, dbl_id, agreement, self.log)
         else:
             print("⚠️ No ZIP button found, assuming audio download instead")
+            self.log.log_to_file(f"No ZIP button found, assuming audio download instead ...", "INGESTOR", "WARN")
             # Expand all folders
             # self.expand_all_folders(page)
 
@@ -310,6 +314,7 @@ class Ingestor:
             new_path = Path(self.download_path) / download_folder_name
             
             print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
+            self.log.log_to_file(f"Downloaded {len(file_buttons)} Audio Files to: [{new_path}]", "INGESTOR", "INFO")            
 
             Translation(self.manager, "audio", new_path, source_url, dbl_id, agreement, self.log)
 
