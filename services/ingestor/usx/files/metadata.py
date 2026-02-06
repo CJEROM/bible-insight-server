@@ -1,6 +1,6 @@
 from ingestor.usx.files.base_file import BaseFile
 from bs4 import BeautifulSoup
-import time
+from datetime import datetime
 from pathlib import Path
 
 from ingestor.usx.book import Book
@@ -42,7 +42,7 @@ class Metadata(BaseFile):
         # Object Storage Start Path
         self.object_start = None
 
-        self.ingestion_start = time.time()
+        self.ingestion_start = self.get_time()
 
         self.files = {
             # "metadata": None,
@@ -53,6 +53,9 @@ class Metadata(BaseFile):
         }
 
         self.read_metadata_file(translation_file_path)
+
+    def get_time(self):
+        return datetime.now()#.strftime("%Y-%m-%d %H:%M:%S")
 
     def get_metadata(self, key:str = None):
         if key is not None:
@@ -264,12 +267,12 @@ class Metadata(BaseFile):
             self.get_book_files(metadata_xml)
             self.write.end_ingestion(
                 ingestion_id=ingestion_id,
-                end_time=time.time()
+                end_time=self.get_time()
             )
         else:
             self.write.end_ingestion(
                 ingestion_id=ingestion_id,
-                end_time=time.time(),
+                end_time=self.get_time(),
                 error_message="Translation already exists!"
             )
 

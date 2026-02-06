@@ -574,7 +574,8 @@ class USXWriteBoundary(WriteBoundary):
         ) -> int: 
         query = """
             INSERT INTO audit.ingestion_stats (source_id, version_id, start_time)
-            VALUES (%s, %s, %s);
+            VALUES (%s, %s, %s)
+            RETURNING id;
         """
         ingestion_id = self.db.fetch_clean_one(query, (source_id, version_id, start_time))
         return ingestion_id
