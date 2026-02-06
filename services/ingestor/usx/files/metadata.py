@@ -99,6 +99,8 @@ class Metadata(BaseFile):
 
         self.translation_name           = f"{self.metadata["abbreviation"]}: {self.metadata["name"]}"
 
+        self.log.log_to_file()
+
     def create_translation_relationships(self, metadata_xml: BeautifulSoup):
         translation_relationships = metadata_xml.find("relationships")
         for relation in translation_relationships.find_all("relation"):
@@ -106,10 +108,13 @@ class Metadata(BaseFile):
             relation_dbl_id = relation.get("id")
             relation_revision = relation.get("revision")
             relation_type = relation.get("relationType")
-            self.db.execute("""
-                INSERT INTO bible.translationrelationships (from_translation, from_revision, to_translation, to_revision, type) 
-                VALUES (%s, %s, %s, %s, %s)
-            """, (self.translation_id, self.revision, relation_dbl_id, relation_revision, relation_type))
+            self.write.persist_translation_relation(
+                from_dbl_id=self.this_translation.get_dbl_id(),
+                from_revision=self.get_metadata("revision"),
+                to_dbl_id=relation_dbl_id,
+                to_revision=relation_revision,
+                relation_type=relation_type
+            )
             self.log.log_to_file(f"Created Translation Relationship with [ID: {relation_dbl_id}] [Revision: {relation_revision}] [medium: {relation_type}]", "TRANSLATION", "DEBUG")
 
     def match_language(self):
