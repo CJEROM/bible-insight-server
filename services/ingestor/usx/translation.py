@@ -19,12 +19,16 @@ class Translation:
         self.db = manager.get_db()
         self.label = manager.get_label()
 
+        self.write = USXWriteBoundary(self.db)
+        self.read = USXReadBoundary(self.db)
+
+        self.dbl_id = dbl_id
+
         self.medium = medium # Audio | Video | Text (USX)
         self.process_location = process_location
-        self.translation_id = self.write.persist_usx_translation(
-            self.dbl_id
-        )
-        self.dbl_id = dbl_id
+
+        self.translation_id = None
+       
         self.agreement_object = agreement
         self.agreement_id = agreement.get_agreement_id()
 
@@ -42,13 +46,10 @@ class Translation:
         self.labelproject = None
 
         # Initialise logfile
-        self.log = self.manager.create_log_in_folder(["logs", "ingestor"], f"{self.translation_id}-{self.translation_title}")
+        self.log = self.manager.create_log_in_folder(["logs", "ingestor"], f"{self.translation_title}")
         self.log.set_logging_level(2)
 
-        self.log.log_to_file(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]", "TRANSLATION", "INFO")
-
-        self.write = USXWriteBoundary(self.db)
-        self.read = USXReadBoundary(self.db)
+        self.log.log_to_file(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}]", "TRANSLATION", "INFO")
 
         self.metadata = None
 
@@ -85,8 +86,8 @@ class Translation:
     def get_agreement(self):
         return self.agreement_object
     
-    def get_translation_id(self):
-        return self.translation_id
+    def set_translation_id(self, translation_id):
+        self.translation_id = translation_id
     
     def get_translation_project_id(self):
         return self.labelproject
@@ -104,7 +105,7 @@ class Translation:
         self.agreement_object.set_translation(self, file_location)
 
         # Start Ingestion Pipeline for all files
-        self.metadata = Metadata(self.translation_id, file_location, self.log, self.source_url)
+        self.metadata = Metadata(file_location, self.log, self.source_url)
 
         self.agreement_object.link_agreement_revision(self.metadata.get_metadata("revision"))
 

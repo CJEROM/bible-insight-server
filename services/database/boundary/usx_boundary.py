@@ -238,20 +238,7 @@ class USXWriteBoundary(WriteBoundary):
         pass
 
     def persist_usx_translation(self,
-            dbl_id: str
-        ) -> int:
-        # Prepares placeholder translation - to be populated properly with details when we have them
-        query = """
-            INSERT INTO bible.translations (dbl_id) 
-            VALUES (%s)
-            RETURNING id;
-        """
-        translation_id = self.db.fetch_clean_one(query, (dbl_id,))
-        self.db.commit()
-        return translation_id
-    
-    def update_usx_translation(self,
-            translation_id: int,
+            dbl_id: str,
             revision: int,
             revision_note: str,
             revision_date: str,
@@ -264,21 +251,12 @@ class USXWriteBoundary(WriteBoundary):
             promotion: str,
         ) -> int:
         query = """
-            UPDATE bible.translations
-            SET revision = %s,
-                revision_note = %s,
-                revision_date = %s,
-                language_id = %s,
-                medium = %s,
-                name = %s,
-                nameLocal = %s,
-                abbreviation = %s,
-                copyright = %s,
-                promotion = %s,
-            WHERE id = %s;
+            INSERT INTO bible.translations (dbl_id, revision, revision_note, revision_date, language_id, medium, name, nameLocal, abbreviation, copyright, promotion) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id;
         """
-        self.db.fetch_clean_one(query, (revision, revision_note, revision_date, language_id, medium, name, name_local, abbreviation, copyright, promotion, translation_id))
-        self.db.commit()
+        translation_id = self.db.fetch_clean_one(query, (dbl_id, revision, revision_note, revision_date, language_id, medium, name, name_local, abbreviation, copyright, promotion))
+        return translation_id
     
     def persit_dbl_agreement(self,
             dbl_id: str,

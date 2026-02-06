@@ -121,9 +121,9 @@ class Metadata(BaseFile):
     
         return language_id
 
-    def update_translation_details(self):
-        self.write.update_usx_translation(
-            translation_id  = self.translation_id,
+    def create_translation_details(self):
+        self.translation_id = self.write.persist_usx_translation(
+            dbl_id          = self.get_metadata("dbl_id"),
             revision        = self.get_metadata("revision"),
             revision_note   = self.get_metadata("revision_note"),
             revision_date   = self.get_metadata("revision_date"),
@@ -135,6 +135,8 @@ class Metadata(BaseFile):
             promotion       = self.get_metadata("promotion"),
             language_id     = self.match_language()
         )
+
+        self.this_translation.set_translation_id(self.translation_id)
 
     def create_dbl_info(self):
         # If the agreement is new then mark as test import
@@ -216,11 +218,11 @@ class Metadata(BaseFile):
         )
 
         if valid:
-            self.update_translation_details()
+            self.create_dbl_info()
+            self.create_translation_details()
             self.create_translation_relationships(metadata_xml)
             self.upload_support_files(metadata_xml)
             self.get_book_files(metadata_xml)
-            self.create_dbl_info()
             self.write.end_ingestion(
                 ingestion_id=ingestion_id,
                 end_time=time.time()
