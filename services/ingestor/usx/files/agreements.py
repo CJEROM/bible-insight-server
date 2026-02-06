@@ -10,13 +10,16 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from manager.managerhandler import ManagerHandler
+    from manager.logmanager import LogManager
 
 class DBLAgreement(BaseFile):
-    def __init__(self, manager: "ManagerHandler", agreement_id, license_code):
+    def __init__(self, manager: "ManagerHandler", agreement_id, license_code, log: "LogManager"):
         self.manager = manager
         self.db = manager.get_db()
         self.obj = manager.get_obj()
-        self.log = None
+        self.log = log
+
+        self.log.log_to_file(f"Initialising Agreement ...", "AGREEMENT", "INFO")
 
         self.translation = None
         self.translation_file_path = None
@@ -67,14 +70,18 @@ class DBLAgreement(BaseFile):
         )
         if found: # i.e. != None
             self.exists = True
+            self.log.log_to_file(f"Agreement Exists, Now Verifying ...", "AGREEMENT", "INFO")
             self.check_agreement_valid()
         else:
             self.new = True
+            self.log.log_to_file(f"New Agreement found, Creating New in Database", "AGREEMENT", "INFO")
+            self.log.log_to_file(f"NOTE: The asociated Translation will be marked as a Test Import!", "AGREEMENT", "INFO")
             self.write.init_agreement(self.agreement_id)
 
     def check_agreement_valid(self):
         # If license exists, and is not expired, license = valid
         self.valid = self.read.find_agreement_expired(self.agreement_id)
+        self.log.log_to_file(f"Agreement Validation result: {self.valid}", "AGREEMENT", "INFO")
 
     # ======================================== MANUAL CALLS ========================================
 
@@ -83,7 +90,7 @@ class DBLAgreement(BaseFile):
         self.translation = translation
         self.translation_file_path = translation_file_path
 
-        self.log = translation.log
+        self.log.log_to_file(f"Agreement updated with Translation", "AGREEMENT", "INFO")
 
         self.upload_license_file()
         if self.exists == False and self.valid == False:
@@ -111,6 +118,8 @@ class DBLAgreement(BaseFile):
             version_note="Ingested: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
 
+        self.log.log_to_file(f"Uploaded licence file for the agreement with ID [{self.file_id}]", "AGREEMENT", "INFO")
+
     def create_agreement(self):
         file_xml = BeautifulSoup(self.read_file(), "xml")
 
@@ -122,6 +131,8 @@ class DBLAgreement(BaseFile):
             dateLicenseExpiry   = file_xml.find("dateLicenseExpiry").text,
             licence_file_id     = self.file_id
         )
+
+        self.log.log_to_file(f"Updated / Created Agreement in Database", "AGREEMENT", "INFO")
 
         self.create_agreement_attributes()
 
@@ -141,9 +152,13 @@ class DBLAgreement(BaseFile):
                 attribute_value=value == "true"     # bool
             )
 
+            self.log.log_to_file(f"Mapped [{right.name}] as [{value}] to Agreement", "AGREEMENT", "DEBUG")
+
     def check_license(self):
         if self.license_code == None:
+            self.log.log_to_file(f"No base licene found", "AGREEMENT", "DEBUG")
             return None
         
         licence_id = self.read.find_license(license_code=self.license_code)
+        self.log.log_to_file(f"Linked base licence with ID [{licence_id}] to Agreement", "AGREEMENT", "DEBUG")
         return licence_id

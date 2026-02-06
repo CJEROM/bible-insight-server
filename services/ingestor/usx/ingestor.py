@@ -253,8 +253,14 @@ class Ingestor:
 
         dbl_id, agreement_id, source_url = self.read_translation_from_url(page)
 
+        # Initialise logfile
+        self.translation_title = f"{self.dbl_id}-{self.agreement_id}"
+
+        self.log = self.manager.create_log_in_folder(["logs", "ingestor"], f"{self.translation_title}")
+        self.log.set_logging_level(2)
+
         licence_code = await self.get_licence_code(page)
-        agreement = DBLAgreement(self.manager, agreement_id, licence_code)
+        agreement = DBLAgreement(self.manager, agreement_id, licence_code, self.log)
 
         zip_button = await page.query_selector("button:has-text('Download All')")
         if zip_button:
@@ -269,7 +275,7 @@ class Ingestor:
             await download.save_as(os.path.join(self.download_path, download.suggested_filename))
             print(f"✅ Downloaded ZIP: {new_path}")
 
-            Translation(self.manager, "text", new_path, source_url, dbl_id, agreement)
+            Translation(self.manager, "text", new_path, source_url, dbl_id, agreement, self.log)
         else:
             print("⚠️ No ZIP button found, assuming audio download instead")
             # Expand all folders
@@ -302,7 +308,7 @@ class Ingestor:
             
             print(f"✅ Downloaded {len(file_buttons)} Audio Files: {new_path}")
 
-            Translation(self.manager, "audio", new_path, source_url, dbl_id, agreement)
+            Translation(self.manager, "audio", new_path, source_url, dbl_id, agreement, self.log)
 
 async def main(
         dbl_id: str | None,

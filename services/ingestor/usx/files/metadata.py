@@ -99,7 +99,7 @@ class Metadata(BaseFile):
 
         self.translation_name           = f"{self.metadata["abbreviation"]}: {self.metadata["name"]}"
 
-        self.log.log_to_file()
+        self.log.log_to_file(f"Extracted Metedata!", "METADATA", "DEBUG")
 
     def create_translation_relationships(self, metadata_xml: BeautifulSoup):
         translation_relationships = metadata_xml.find("relationships")
@@ -137,6 +137,8 @@ class Metadata(BaseFile):
         language_id = self.read.find_language(
             iso_code=self.get_metadata("language_iso")
         )
+
+        self.log.log_to_file(f"Matched language for translation to ID: {language_id} with ISO: {self.get_metadata("language_iso")}!", "METADATA", "DEBUG")
     
         return language_id
 
@@ -155,10 +157,13 @@ class Metadata(BaseFile):
             language_id     = self.match_language()
         )
 
+        self.log.log_to_file(f"Created Translation Entry -> ID = {self.translation_id}!", "METADATA", "DEBUG")
+
         self.this_translation.set_translation_id(self.translation_id)
 
     def create_dbl_info(self):
         # If the agreement is new then mark as test import
+        self.log.log_to_file(f"Creating DBL INFO Entry ...", "METADATA", "DEBUG")
         self.write.persist_translation_info(
             dbl_id              =self.this_translation.get_dbl_id(),
             revision            =self.get_metadata("revision"),
@@ -167,11 +172,13 @@ class Metadata(BaseFile):
             is_test_import      =self.this_translation.get_agreement().is_new(),
             reason_not_supported=None
         )
+        self.log.log_to_file(f"DBL INFO Created!", "METADATA", "DEBUG")
         # Non test translation's are those that are included in initial DB seeding
 
     def validate_translation_import(self) -> bool:
         dbl_id = self.this_translation.get_dbl_id()
         revision = self.get_metadata("revision")
+        self.log.log_to_file(f"Validating Translation Import ...", "METADATA", "DEBUG")
 
         # 1. Check if translation / revision already exists
         existing_translation = self.read.find_translation(
@@ -182,6 +189,7 @@ class Metadata(BaseFile):
         already_exists = existing_translation is not None
 
         if already_exists:
+            self.log.log_to_file(f"Validating Result = FAIL -> Translation already exists!", "METADATA", "DEBUG")
             return False
 
         # 2. Check if translation / revision is supported
@@ -191,20 +199,26 @@ class Metadata(BaseFile):
         )
 
         if not is_supported:
+            self.log.log_to_file(f"Validating Result = FAIL -> Translation NOT supported!", "METADATA", "DEBUG")
             return False
 
+        self.log.log_to_file(f"Validating Result = SUCCESS!", "METADATA", "DEBUG")
         return True
     
     def create_source(self, source_url):
         # Find if url is already stored source in database
+        self.log.log_to_file(f"Creating Translation Source!", "METADATA", "DEBUG")
+
         source_unique_code = f"DBL-{self.get_metadata("language_iso")}-{self.get_metadata("abbreviation")}"
         source_id = self.read.find_source(code=source_unique_code)
         if source_id != None:
             self.this_translation.get_agreement().set_source(source_id)
+            self.log.log_to_file(f"Translation Source Already Exists, with ID [{source_id}]!", "METADATA", "DEBUG")
             return source_id
         
         # Find parent source (DBL - Distrubtor) - In the future customise to link to publishers better?
         parent_source_id = self.read.find_source(code='DBL')
+        self.log.log_to_file(f"DBL Parent Source found with ID [{parent_source_id}]!", "METADATA", "DEBUG")
         
         # If not create new and return it
         new_source_id = self.write.persist_source(
@@ -249,13 +263,14 @@ class Metadata(BaseFile):
 
         self.create_source(self.source_url)
 
-        self.upload_file(
+        file_id = self.upload_file(
             object_name=f"{self.object_start}/{file_name}",
             file_path=self.this_file_path,
             content_type='application/xml',
             data_format="XML",
             version_note=self.get_metadata("file_version")
         )
+        self.log.log_to_file(f"Uploaded Metadata file with ID [{file_id}]!", "METADATA", "DEBUG")
 
         valid = self.validate_translation_import()
 
@@ -263,6 +278,7 @@ class Metadata(BaseFile):
             source_id=self.source_id,
             start_time=self.ingestion_start
         )
+        self.log.log_to_file(f"Ingestion Started!", "METADATA", "INFO")
 
         if valid:
             self.create_dbl_info()
@@ -324,6 +340,7 @@ class Metadata(BaseFile):
         support_file_type = file_name.split(".")[0].capitalize()
         if file_extension == ".ldml":
             support_file_type = "LDML"
+        self.log.log_to_file(f"Uploaded {support_file_type} file with ID [{file_id}]!", "METADATA", "DEBUG")
 
         self.write.persist_translation_file(
             translation_id=self.translation_id,
@@ -331,6 +348,7 @@ class Metadata(BaseFile):
             type=support_file_type,
             version=version_notes
         )
+        self.log.log_to_file(f"Mapped File to Translation ID [{self.translation_id}]!", "METADATA", "DEBUG")
 
         match file_name.split(".")[0].capitalize():
             case "Versification":
@@ -359,6 +377,8 @@ class Metadata(BaseFile):
 
     def get_book_files(self, metadata_xml: BeautifulSoup):
         contents = metadata_xml.find("publication", default="true").find_all("content")
+
+        self.log.log_to_file(f"Starting Bible Book processing ...", "METADATA", "DEBUG")
 
         self.log.set_progress_total(len(contents))
 

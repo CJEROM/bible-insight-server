@@ -10,14 +10,16 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from manager.managerhandler import ManagerHandler
     from ingestor.usx.files.agreements import DBLAgreement
+    from manager.logmanager import LogManager
 
 class Translation:
-    def __init__(self, manager: "ManagerHandler", medium: str, process_location: Path, source_url: str, dbl_id: str, agreement: "DBLAgreement"):
+    def __init__(self, manager: "ManagerHandler", medium: str, process_location: Path, source_url: str, dbl_id: str, agreement: "DBLAgreement", log: "LogManager"):
         self.manager = manager
         self.env = manager.get_env()
         self.obj = manager.get_obj()
         self.db = manager.get_db()
         self.label = manager.get_label()
+        self.log = log
 
         self.write = USXWriteBoundary(self.db)
         self.read = USXReadBoundary(self.db)
@@ -35,18 +37,12 @@ class Translation:
         self.source_url = source_url
 
         print("✅ Starting Upload ...")
-        
-        self.translation_title = f"{self.medium}-{self.dbl_id}-{self.agreement_id}"
 
         self.bible_structure_info = None
 
         self.style_dict = {}
 
         self.labelproject = None
-
-        # Initialise logfile
-        self.log = self.manager.create_log_in_folder(["logs", "ingestor"], f"{self.translation_title}")
-        self.log.set_logging_level(2)
 
         self.log.log_to_file(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}]", "TRANSLATION", "INFO")
 
