@@ -53,10 +53,47 @@ class ReadBoundary(QueryBoundary):
             (content_hash, data_format)
         )
         return file_id
+    
+    def get_all_label_projects(self) -> list[tuple[int, int, str, str]]:
+        query = """
+            SELECT tlp.project_id, tlp.translation_id, lp.name, lp.description
+            FROM nlp.translation_labelling_projects tlp
+            JOIN nlp.labelling_projects lp ON tlp.project_id = lp.id;
+        """
+        result = self.db.fetch_all(query)
+        return result
 
 class WriteBoundary(QueryBoundary):
-    pass
+    def persist_label_studio_project(self,
+            label_project_id    : int,
+            project_name        : str,
+            project_description : str
+        ) -> None:
+        query = """
+            INSERT INTO nlp.labelling_projects (id, name, description) 
+            VALUES (%s, %s, %s);
+        """
+        self.db.fetch_clean_one(query, (
+            label_project_id,
+            project_name,
+            project_description
+        ))
 
+    def map_label_studio_project(self,
+            translation_id      : int,
+            label_project_id    : int
+        ) -> int:
+        query = """
+            INSERT INTO nlp.translation_labelling_projects (translation_id, project_id) 
+            VALUES (%s, %s)
+            RETURNING id;
+        """
+        mapping_id = self.db.execute(query, (
+            translation_id,
+            label_project_id
+        ))
+        return mapping_id
+    
 class DeleteBoundary(QueryBoundary):
     pass
 
