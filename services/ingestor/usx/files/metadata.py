@@ -59,12 +59,6 @@ class Metadata(BaseFile):
         if key is not None:
             return self.metadata.get(key)
         return self.metadata
-    
-    def get_translation_name(self):
-        return self.translation_name
-    
-    def get_object_start(self):
-        return self.object_start
 
     def extract_metadata(self, metadata_xml: BeautifulSoup):
         self.metadata["language_iso"]   = metadata_xml.find("language").find("iso").text
