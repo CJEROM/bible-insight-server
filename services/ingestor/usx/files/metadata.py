@@ -19,9 +19,8 @@ if TYPE_CHECKING:
     from ingestor.usx.files.agreements import DBLAgreement
 
 class Metadata(BaseFile):
-    def __init__(self, this_translation: "Translation", translation_file_path: Path, log: "LogManager", source_url, main_manager: "ManagerHandler", agreement: "DBLAgreement"):
+    def __init__(self, translation_file_path: Path, log: "LogManager", source_url, main_manager: "ManagerHandler", agreement: "DBLAgreement"):
         self.translation_file_path  = translation_file_path
-        self.this_translation       = this_translation
         self.log                    = log
         self.manager                = main_manager
         self.obj                    = main_manager.get_obj()

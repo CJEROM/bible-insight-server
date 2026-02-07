@@ -81,7 +81,7 @@ class Translation:
 
         # Start Ingestion Pipeline for all files
         self.metadata = Metadata(
-            this_translation        = self,
+            # this_translation        = self,
             translation_file_path   = file_location, 
             log                     = self.log, 
             source_url              = self.source_url,
