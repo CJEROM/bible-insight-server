@@ -89,9 +89,9 @@ class ObjectManager:
         response = None
         try:
             response = self.client.get_object(
-                bucket_name=bucket,
-                object_name=object_name,
-                version_id=version_id
+                bucket_name     = bucket,
+                object_name     = object_name,
+                version_id      = version_id
             )
 
             if decode:
