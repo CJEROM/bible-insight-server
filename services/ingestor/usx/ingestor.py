@@ -21,7 +21,11 @@ class USXIngestor:
         all_translations: list | None = None,
     ):
         self.manager = manager or ManagerHandler()
-        self.manager.get_obj().set_default_bucket("bible-dbl-raw")
+        self.manager.obj.create_bucket(
+            bucket_name     = "bible-dbl-raw",
+            is_versioned    = True,
+            is_default      = True
+        )
 
         StrongsIngestor(self.manager)
 

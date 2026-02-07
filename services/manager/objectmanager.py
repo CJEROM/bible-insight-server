@@ -11,8 +11,7 @@ from database.boundary.base_boundary import ReadBoundary, WriteBoundary
 
 class ObjectManager:
     def __init__(self, 
-            this_manager    : "ManagerHandler"  = None, 
-            default_bucket  : str               = None
+            this_manager    : "ManagerHandler"  = None
         ):
         self.this_manager   = this_manager
         self.env            = None
@@ -40,22 +39,11 @@ class ObjectManager:
 
         # Set bucket creation to be called and done within ingestion pipeline relevant to it, 
         #       this makes sure no drift in names + can set default bucket for each pipeline
-        self.create_bucket(
-            bucket_name     = "bible-dbl-raw",
-            is_versioned    = True
-        )
-        self.create_bucket(
-            bucket_name     = "open-bible-location-data",
-        )
-        self.create_bucket(
-            bucket_name     = "bible-nlp"
-        )
-        
-        # Allow for setting default bucket
-        self.create_bucket(
-            bucket_name     = default_bucket,
-            is_default      = True
-        )
+        # self.create_bucket(
+        #     bucket_name     = "bible-dbl-raw",
+        #     is_versioned    = True,
+        #     is_default      = True
+        # )
     
     def create_bucket(self, 
             bucket_name     : str, 
