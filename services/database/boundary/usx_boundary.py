@@ -485,13 +485,12 @@ class USXWriteBoundary(WriteBoundary):
     def persist_verse_correction(self,
             non_standard_verse_ref: str,
             verse_ref: str
-        ) -> int:
+        ) -> None:
         query = """
             INSERT INTO bible.verse_correction (non_standard_verse_ref, verse_ref) 
-            VALUES (%s, %s);
+            VALUES (%s, %s)
         """
-        verse_correction_id = self.db.fetch_clean_one(query, (non_standard_verse_ref, verse_ref))
-        return verse_correction_id
+        self.db.execute(query, (non_standard_verse_ref, verse_ref))
     
     def persist_verse_occurence(self,
             chapter_id: int,
