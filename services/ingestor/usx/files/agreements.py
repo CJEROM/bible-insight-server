@@ -14,32 +14,32 @@ if TYPE_CHECKING:
 
 class DBLAgreement(BaseFile):
     def __init__(self, manager: "ManagerHandler", agreement_id, license_code, log: "LogManager"):
-        self.manager = manager
-        self.db = manager.get_db()
-        self.obj = manager.get_obj()
-        self.log = log
+        self.manager                = manager
+        self.db                     = manager.get_db()
+        self.obj                    = manager.get_obj()
+        self.log                    = log
 
         self.log.log_to_file(f"Initialising Agreement ...", "AGREEMENT", "INFO")
 
-        self.translation = None
-        self.translation_file_path = None
-        self.this_file_path = None
-        self.file_id = None
+        self.translation            = None
+        self.translation_file_path  = None
+        self.this_file_path         = None
+        self.file_id                = None
 
-        self.source_id = None
+        self.source_id              = None
 
-        self.agreement_id = agreement_id
-        self.license_code = license_code
+        self.agreement_id           = agreement_id
+        self.license_code           = license_code
 
-        self.valid = False
-        self.exists = False
+        self.valid                  = False
+        self.exists                 = False
 
-        self.new = False # Is this a newly introduced agreement?
+        self.new                    = False # Is this a newly introduced agreement?
 
-        self.details = {}
+        self.details                = {}
 
-        self.read = USXReadBoundary(self.db)
-        self.write = USXWriteBoundary(self.db)
+        self.read                   = USXReadBoundary(self.db)
+        self.write                  = USXWriteBoundary(self.db)
 
         self.check_agreement_exists(agreement_id)
 
@@ -66,14 +66,14 @@ class DBLAgreement(BaseFile):
 
     def check_agreement_exists(self, agreement_id):
         found = self.read.find_agreement(
-            agreement_id=agreement_id
+            agreement_id    = agreement_id
         )
         if found: # i.e. != None
-            self.exists = True
+            self.exists     = True
             self.log.log_to_file(f"Agreement Exists, Now Verifying ...", "AGREEMENT", "INFO")
-            self.valid = self.check_agreement_valid(found.dateLicenceExpiry)
+            self.valid      = self.check_agreement_valid(found.dateLicenceExpiry)
         else:
-            self.new = True
+            self.new        = True
             self.log.log_to_file(f"New Agreement found, Creating New in Database", "AGREEMENT", "INFO")
             self.log.log_to_file(f"NOTE: The asociated Translation will be marked as a Test Import!", "AGREEMENT", "INFO")
             self.write.init_agreement(self.agreement_id)
@@ -89,9 +89,9 @@ class DBLAgreement(BaseFile):
 
         # If license exists, and is not expired, license = valid
         # If licence exists, and is expired, licence = not valid
-        valid = self.read.find_agreement_expired(self.agreement_id)
+        valid   = self.read.find_agreement_expired(self.agreement_id)
 
-        result = "PASS" if valid else "FAIL"
+        result  = "PASS" if valid else "FAIL"
         self.log.log_to_file(f"Agreement Validation result: {result}", "AGREEMENT", "INFO")
 
         return valid
@@ -100,8 +100,8 @@ class DBLAgreement(BaseFile):
 
     # Done After Translation Creation
     def set_translation(self, translation: Translation, translation_file_path: Path):
-        self.translation = translation
-        self.translation_file_path = translation_file_path
+        self.translation            = translation
+        self.translation_file_path  = translation_file_path
 
         self.log.log_to_file(f"Agreement updated with Translation", "AGREEMENT", "INFO")
 
@@ -112,8 +112,8 @@ class DBLAgreement(BaseFile):
     # Done after MetaData processing
     def link_agreement_revision(self, revision):
         self.write.persist_agreement_revision_mapping(
-            agreement_id=self.agreement_id, 
-            revision=revision
+            agreement_id    = self.agreement_id, 
+            revision        = revision
         )
 
     # ----------------------------------------- DERIVATIVE -----------------------------------------
@@ -121,14 +121,15 @@ class DBLAgreement(BaseFile):
     def upload_license_file(self):
         file_name = "license.xml"
 
-        object_start = self.translation.get_dbl_id()
+        object_start        = self.translation.get_dbl_id()
         self.this_file_path = self.translation_file_path / file_name
+
         self.file_id = self.upload_file(
-            object_name=f"{object_start}/{file_name}",
-            file_path=self.this_file_path,
-            content_type='application/xml',
-            data_format="XML",
-            version_note="Ingested: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            object_name     = f"{object_start}/{file_name}",
+            file_path       = self.this_file_path,
+            content_type    = 'application/xml',
+            data_format     = "XML",
+            version_note    = "Ingested: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         )
 
         self.log.log_to_file(f"Uploaded licence file for the agreement with ID [{self.file_id}]", "AGREEMENT", "INFO")
@@ -160,9 +161,9 @@ class DBLAgreement(BaseFile):
             value = right.text.strip().lower()
 
             self.write.persist_agreement_attributes(
-                agreement_id=self.agreement_id,
-                attribute_code=right.name,          # allowIntroductions
-                attribute_value=value == "true"     # bool
+                agreement_id        = self.agreement_id,
+                attribute_code      = right.name,          # allowIntroductions
+                attribute_value     = value == "true"     # bool
             )
 
             self.log.log_to_file(f"Mapped [{right.name}] as [{value}] to Agreement", "AGREEMENT", "DEBUG")
