@@ -44,7 +44,7 @@ class Nodes:
 
         node_id_counter = 1
 
-        node_chapter_ref = self.this_book.book_code + " 1"
+        node_chapter_ref = f"{self.this_book.book_code} 1"
 
         for node in self.book_soup.descendants:
             # Initialise node_id for the note we are going to create in DB
