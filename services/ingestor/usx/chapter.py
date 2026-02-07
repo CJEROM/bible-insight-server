@@ -89,7 +89,7 @@ class Chapter:
             return
 
         self.log.log_to_file(f"Creating [{len(para_node_ids)}] Paragraphs ...", f"CHAPTER: {self.chapter_ref}", "INFO")
-        self.log.log_to_file(f"Creating With Paragraph Node Ids => {para_node_ids}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
+        self.log.log_to_file(f"Creating With Paragraph Node Ids => {para_node_ids}", f"CHAPTER: {self.chapter_ref}", "TRACE")
 
         for i, (para) in enumerate(all_paragraphs):
             Paragraph(self, para_node_ids[i], para, self.log)
@@ -145,7 +145,7 @@ class Chapter:
             return
         
         self.log.log_to_file(f"Creating [{len(all_note_node_ids)}] Translation Notes ...", f"CHAPTER: {self.chapter_ref}", "INFO")
-        self.log.log_to_file(f"Creating Translation Notes Node Ids => {all_note_node_ids}", f"CHAPTER: {self.chapter_ref}", "DEBUG")
+        self.log.log_to_file(f"Creating Translation Notes Node Ids => {all_note_node_ids}", f"CHAPTER: {self.chapter_ref}", "TRACE")
 
         # Go through chapter and grab all cross references and footnotes, and write to database
         for i, this_note in enumerate(self.chapter_xml.find_all("note")):
