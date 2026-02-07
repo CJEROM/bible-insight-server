@@ -42,19 +42,6 @@ from ingestor.usx.verse import Verse
 #endregion
 
 class TranslationNote:
-    SQL = {
-        "translation_ref_note": """
-            INSERT INTO bible.translationrefnotes (node_id, from_verse_ref, to_verse_ref, from_chapter_ref, to_chapter_ref) 
-            VALUES %s
-            RETURNING id;
-        """,
-        "translation_foot_note": """
-            INSERT INTO bible.translationfootnotes (node_id, chapter_ref, verse_ref) 
-            VALUES (%s, %s, %s)
-            RETURNING id;
-        """
-    }
-
     def standardise_ref(self, ref):
         new_ref = None
         if isinstance(ref, Tag):
@@ -207,7 +194,7 @@ class TranslationNote:
         if source_type == "verse":
             Verse(self.this_chapter, verse_ref=source_ref, log=self.log, is_special_case=True)
 
-        self.log.log_to_file(f"Created [{source_type}] Source Ref: [{note_ref}] -> [{cleaned_ref}] -> [{source_ref}] <=> [Format: {format}] [Format_Name: {format_name}] ", "NOTE", "DEBUG")
+        self.log.log_to_file(f"Created [{source_type}] Source Ref: [{note_ref}] -> [{cleaned_ref}] -> [{source_ref}] <=> [Format: {format}] [Format_Name: {format_name}] ", "NOTE", "TRACE")
         
         return source_ref, source_type
     
@@ -285,7 +272,7 @@ class TranslationNote:
 
         self.parent_note = None
 
-        self.log.log_to_file(f"Created [{destination_type}] Source Ref: [{original_ref}] -> [{cleaned_ref}] -> [{destination_ref}] <=> [Format: {format_types}] [Format_Name: {format_name}] ", "NOTE", "DEBUG")
+        self.log.log_to_file(f"Created [{destination_type}] Source Ref: [{original_ref}] -> [{cleaned_ref}] -> [{destination_ref}] <=> [Format: {format_types}] [Format_Name: {format_name}] ", "NOTE", "TRACE")
 
         # only first fragment is returned, since the others link to first fragment as parent
         return main_note

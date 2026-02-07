@@ -36,10 +36,10 @@ class Paragraph:
         return style_id, versetext
         
     def createParagraph(self):
-        self.write.persist_paragraph(
+        self.paragraph_id = self.write.persist_paragraph(
             paragraph_node_id   = self.paragraph_node_id,
             style_id            = self.style_id,
             is_versetext        = self.versetext
             # parent_para         = None
         )
-        self.log.log_to_file(f"Created New Paragraph [ID: {self.paragraph_id}] [Verse_Text: {str(self.versetext).capitalize()}]", f"PARAGRAPH", "DEBUG")
+        self.log.log_to_file(f"Created New Paragraph [ID: {self.paragraph_id}] [Verse_Text: {str(self.versetext).capitalize()}]", f"PARAGRAPH", "TRACE")
