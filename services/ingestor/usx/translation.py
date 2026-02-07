@@ -40,9 +40,9 @@ class Translation:
 
         self.metadata           = None
 
-        self.ingest()
+        # self.ingest()
         # Can Choose to run outside of Try block for harsher fails (more error details for now?)
-        # self.choose_medium() 
+        self.choose_medium() 
         
     def ingest(self):
         try:

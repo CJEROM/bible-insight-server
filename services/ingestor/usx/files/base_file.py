@@ -9,17 +9,17 @@ from database.boundary.usx_boundary import USXReadBoundary, USXWriteBoundary
 
 class BaseFile:
     def __init__(self, main_manager: "ManagerHandler", log: "LogManager", source_id: int | None, file_path: Path = None):
-        self.manager = main_manager
-        self.obj = main_manager.get_obj()
-        self.db = main_manager.get_db()
-        self.log = log
+        self.manager        = main_manager
+        self.obj            = main_manager.get_obj()
+        self.db             = main_manager.get_db()
+        self.log            = log
 
-        self.source_id = source_id
+        self.source_id      = source_id
         self.this_file_path = file_path
-        self.file_id = None
+        self.file_id        = None
 
-        self.read = USXReadBoundary(self.manager.get_db())
-        self.write = USXWriteBoundary(self.manager.get_db())
+        self.read           = USXReadBoundary(self.manager.get_db())
+        self.write          = USXWriteBoundary(self.manager.get_db())
 
         self.check_file_exists()
 
@@ -37,17 +37,17 @@ class BaseFile:
         info = self.obj.upload_file(object_name, str(file_path), content_type)
 
         file_id = self.write.persist_file(
-            etag=info.etag,
-            type=info.content_type,
-            file_path=info.object_name,
-            bucket=info.bucket_name,
-            source_id=self.source_id,
-            version_id=info.version_id,
-            data_format=data_format,
-            version_note=version_note
+            etag            = info.etag,
+            type            = info.content_type,
+            file_path       = info.object_name,
+            bucket          = info.bucket_name,
+            source_id       = self.source_id,
+            version_id      = info.version_id,
+            data_format     = data_format,
+            version_note    = version_note
         )
 
-        self.log.log_to_file(f"Created New File: [{info.object_name}] [File ID:{file_id}] [Bucket: {info.bucket_name}] [etag: {info.etag}]", "TRANSLATION", "DEBUG")
+        self.log.log_to_file(f"Created New File: [{info.object_name}] [File ID:{file_id}] [Bucket: {info.bucket_name}] [etag: {info.etag}]", "BASE_FILE", "DEBUG")
 
         return file_id # Return file_id to link to
     

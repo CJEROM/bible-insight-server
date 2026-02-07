@@ -31,7 +31,7 @@ class Chapter:
         
         self.createChapter()
 
-        all_chapter_nodes   = self.this_book.get_book_nodes().get_chapters().get(self.chapter_ref)
+        all_chapter_nodes   = self.this_book.book_nodes.get_chapters().get(self.chapter_ref)
         
         if all_chapter_nodes == None:
             self.log.log_to_file(f"Chapter {chapter_ref} invalid, skipping...", f"CHAPTER: {self.chapter_ref}", "DEBUG")
@@ -49,7 +49,7 @@ class Chapter:
             end_node        = self.end_node
         )
 
-        self.log.log_to_file(f"Created Chapter Occurence [ID: {self.chapter_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.end_node}]", f"[CHAPTER: {self.chapter_ref}]", "DEBUG")
+        self.log.log_to_file(f"Created Chapter Occurence [ID: {self.chapter_occurence_id}] [Start Node: {self.start_node}] [End Node: {self.end_node}]", f"CHAPTER: {self.chapter_ref}", "DEBUG")
 
         self.db.commit()
 
@@ -137,7 +137,7 @@ class Chapter:
         return new_ref
 
     def createTranslationNotes(self):
-        all_note_node_ids = self.this_book.get_book_nodes().get_notes().get(self.chapter_ref)
+        all_note_node_ids = self.this_book.book_nodes.get_notes().get(self.chapter_ref)
 
         # Translation Notes aren't guaranteed to be created, so don't create them if they don't exist
         if all_note_node_ids == None:

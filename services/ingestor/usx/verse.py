@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 class Verse:
     def __init__(self, this_chapter: "Chapter", verse_ref: str, log: "LogManager", is_special_case=False):
         self.this_chapter           = this_chapter
-        self.this_book              = self.this_chapter.get_this_book()
+        self.this_book              = self.this_chapter.this_book
         self.metadata               = self.this_book.metadata
 
         self.log                    = log

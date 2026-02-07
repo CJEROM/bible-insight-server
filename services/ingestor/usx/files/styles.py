@@ -11,7 +11,8 @@ if TYPE_CHECKING:
 
 class Styles(BaseFile):
     def __init__(self, styles_file_id: int, main_manager: "ManagerHandler", log: "LogManager", source_id: int | None, file_path: Path = None):
-        super.__init__(main_manager, log, source_id, file_path)
+        super().__init__(main_manager, log, source_id, file_path)
+        self.log.log_to_file(f"Processing Styles ...", "STYLES", "INFO")
         
         self.style_dict = {}
 
@@ -82,5 +83,5 @@ class Styles(BaseFile):
         if property_additions > 0:
             print(f"    [{property_additions}] Properties loaded into database")
 
-        self.log.log_to_file(f"Initialised {style_additions} Styles!", "TRANSLATION", "INFO")
-        self.log.log_to_file(f"Initialised {property_additions} Properties!", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Initialised {style_additions} Styles!", "STYLES", "INFO")
+        self.log.log_to_file(f"Initialised {property_additions} Properties!", "STYLES", "INFO")

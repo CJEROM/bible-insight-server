@@ -9,7 +9,9 @@ if TYPE_CHECKING:
 
 class LDML(BaseFile):
     def __init__(self, main_manager: "ManagerHandler", log: "LogManager", source_id: int | None, file_path: Path = None):
-        super.__init__(self, main_manager, log, source_id, file_path)
+        super().__init__(self, main_manager, log, source_id, file_path)
         # Currently no functionality derived from it, but we may use it for improving NLP
         #   Clean up so that tokenisation can be more accurate.
+        self.log.log_to_file(f"Processing LDML ...", "LDML", "INFO")
+        
         pass

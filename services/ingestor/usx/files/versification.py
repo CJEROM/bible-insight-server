@@ -10,9 +10,11 @@ if TYPE_CHECKING:
 
 class Versification(BaseFile):
     def __init__(self, translation_id: int, main_manager: "ManagerHandler", log: "LogManager", source_id: int | None, file_path: Path = None):
-        super.__init__(main_manager, log, source_id, file_path)
+        super().__init__(main_manager, log, source_id, file_path)
         self.translation_id = translation_id
         self.bible_structure_info = None
+
+        self.log.log_to_file(f"Processing Versification ...", "VERSIFICATION", "INFO")
 
         self.createVersification()
         self.createVerses(self.bible_structure_info)
@@ -81,18 +83,18 @@ class Versification(BaseFile):
                 )
                 additions+=1
                 
-                self.log.log_to_file(f"Created Excluded Verse: {verse_ref}", "TRANSLATION", "INFO")
+                self.log.log_to_file(f"Created Excluded Verse: {verse_ref}", "VERSIFICATION", "INFO")
 
         if additions > 0:
             print(f"    [{additions}] Excluded Verses added to database")
 
-        self.log.log_to_file(f"Created {additions} excluded verses", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Created {additions} excluded verses", "VERSIFICATION", "INFO")
     
     def createVerses(self, section_text):
         verse_additions = 0
         chapter_additions = 0
 
-        self.log.log_to_file(f"Initializing Verses...", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Initializing Verses...", "VERSIFICATION", "INFO")
         # Create all Verses Tables instances - different from VerseOccurences, just chceck they all exist
         for line in section_text.splitlines():
             sections = line.split(" ")
@@ -120,11 +122,11 @@ class Versification(BaseFile):
                             is_standard=False
                         )
                         print(f"     Non-Standard Chapter Created: {chapter_ref}")
-                        self.log.log_to_file(f"Created Non-Standard Chapter: {chapter_ref}", "TRANSLATION", "INFO")
+                        self.log.log_to_file(f"Created Non-Standard Chapter: {chapter_ref}", "VERSIFICATION", "INFO")
                         chapter_additions+=1
                     except Exception as e:
                         print(f"❌ Skipped Chapter Creation of [{chapter_ref}] because of {e}")
-                        self.log.log_to_file(f"Skipped Chapter Creation of [{chapter_ref}] because of {e}", "TRANSLATION", "ERROR")
+                        self.log.log_to_file(f"Skipped Chapter Creation of [{chapter_ref}] because of {e}", "VERSIFICATION", "ERROR")
                         # In the case it can't seem to create a new chapter then skip the chapter (won't take it as important)
 
                 for verse in range(1, (int(verse_count)+1)):
@@ -141,10 +143,10 @@ class Versification(BaseFile):
                             verse=str(verse)
                         )
                         verse_additions += 1
-                        self.log.log_to_file(f"Created Verse: {verse_ref}", "TRANSLATION", "TRACE")
+                        self.log.log_to_file(f"Created Verse: {verse_ref}", "VERSIFICATION", "TRACE")
         
         if verse_additions > 0:
             print(f"    [{verse_additions}] Verses Initialized into database")
             
-        self.log.log_to_file(f"Initialised {verse_additions} Verses!", "TRANSLATION", "INFO")
-        self.log.log_to_file(f"Initialised {chapter_additions} Chapters (Non Standard)!", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Initialised {verse_additions} Verses!", "VERSIFICATION", "INFO")
+        self.log.log_to_file(f"Initialised {chapter_additions} Chapters (Non Standard)!", "VERSIFICATION", "INFO")

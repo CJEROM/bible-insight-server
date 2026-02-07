@@ -1,5 +1,5 @@
 from ingestor.usx.files.base_file import BaseFile
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from datetime import datetime
 from pathlib import Path
 
@@ -13,7 +13,6 @@ from database.boundary.usx_boundary import USXReadBoundary, USXWriteBoundary
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from ingestor.usx.translation import Translation
     from manager.managerhandler import ManagerHandler
     from manager.logmanager import LogManager
     from ingestor.usx.files.agreements import DBLAgreement
@@ -25,7 +24,7 @@ class Metadata(BaseFile):
         self.manager                = main_manager
         self.obj                    = main_manager.get_obj()
         self.db                     = main_manager.get_db()
-        self.label                  = main_manager.get_label()
+        # self.label                  = main_manager.get_label()
         self.dbl_agreement          = agreement
 
         self.read               = USXReadBoundary(self.db)
@@ -262,7 +261,7 @@ class Metadata(BaseFile):
         # We don't rely on agreement to store files, we build from dbl_id and revision
         self.object_start = f"{self.get_metadata("dbl_id")}/{self.get_metadata("revision")}"
 
-        self.create_source(self.source_url)
+        self.source_id = self.create_source(self.source_url)
 
         file_id = self.upload_file(
             object_name     = f"{self.object_start}/{file_name}",
@@ -271,13 +270,14 @@ class Metadata(BaseFile):
             data_format     = "XML",
             version_note    = self.get_metadata("file_version")
         )
+
         self.log.log_to_file(f"Uploaded Metadata file with ID [{file_id}]!", "METADATA", "DEBUG")
 
         valid = self.validate_translation_import()
 
         ingestion_id = self.write.start_ingestion(
-            source_id=self.source_id,
-            start_time=self.ingestion_start
+            source_id       = self.source_id,
+            start_time      = self.ingestion_start
         )
         self.log.log_to_file(f"Ingestion Started!", "METADATA", "INFO")
 
@@ -285,6 +285,14 @@ class Metadata(BaseFile):
             self.create_dbl_info()
             self.create_translation_details()
             self.create_translation_relationships(metadata_xml)
+
+            self.write.persist_translation_file( # Map Metadata to Translation through translation_files table
+                translation_id  = self.translation_id,
+                file_id         = file_id,
+                type            = "Metadata",
+                version         = self.get_metadata("file_version")
+            )
+            
             self.upload_support_files(metadata_xml)
             self.get_book_files(metadata_xml)
 
@@ -309,18 +317,16 @@ class Metadata(BaseFile):
 
     def upload_support_files(self, metadata_xml: BeautifulSoup):
         # License File => Passed on, and not stored in metadata
-        ldml_file           = metadata_xml.select_one('resource[uri$=".ldml"]')
-        versification_file  = metadata_xml.select_one('resource[uri$="versification"]')
-        styles_file         = metadata_xml.select_one('resource[uri$="styles"]')
-        metadata_file       = metadata_xml.select_one('resource[uri$="metadata"]')
+        ldml_file           = metadata_xml.select_one('resource[uri$=".ldml"]')         # Ends with
+        versification_file  = metadata_xml.select_one('resource[uri*="versification"]') # Contains
+        styles_file         = metadata_xml.select_one('resource[uri*="styles"]')        # Contains
 
-        self.populate_support_file(metadata_file,       "XML", self.get_metadata("file_version"))
         self.populate_support_file(versification_file,  "TXT", None)
         self.populate_support_file(styles_file,         "XML", "1.0")
         self.populate_support_file(ldml_file,           "LDML", None)
 
     def populate_support_file(self, 
-            file_metadata_xml: BeautifulSoup, 
+            file_metadata_xml: Tag, 
             data_format: str, 
             version_notes: str = None
         ):
@@ -339,7 +345,7 @@ class Metadata(BaseFile):
 
         # Write File to DB
         file_id = self.upload_file(
-            object_name     = self.object_start + file_name,
+            object_name     = f"{self.object_start}/{file_name}",
             file_path       = new_file_path,
             content_type    = mimeType,
             data_format     = data_format,
@@ -437,7 +443,7 @@ class Metadata(BaseFile):
                     )
 
                     # We are uploading Books
-                    Book(self, found_book, book_map_id, file_id, file_path, self.log)   
+                    Book(self, book, book_map_id, file_id, file_path, self.log)   
 
                     self.log.set_progress(found_book, i+1)  
 
