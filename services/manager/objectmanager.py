@@ -48,14 +48,19 @@ class ObjectManager:
         )
     
     def create_bucket(self, 
-            bucket_name: str, 
-            is_versioned: bool = False,
-            is_default: bool = False
+            bucket_name     : str, 
+            is_versioned    : bool = False,
+            is_default      : bool = False
         ):
-        self.client.make_bucket(bucket_name)
+        if not self.client.bucket_exists(bucket_name):
+            self.client.make_bucket(bucket_name)
 
-        if is_versioned:
-            self.client.set_bucket_versioning(bucket_name, VersioningConfig(ENABLED))
+        cfg = self.client.get_bucket_versioning(bucket_name)
+        if is_versioned and cfg.status != ENABLED:
+            self.client.set_bucket_versioning(
+                bucket_name,
+                VersioningConfig(ENABLED)
+            )
 
         if bucket_name not in self.configured_buckets:
             self.configured_buckets.append(bucket_name)
@@ -65,7 +70,7 @@ class ObjectManager:
 
     def stream_file(self, 
             object_name : str, 
-            verion_id   : str,
+            version_id   : str,
             bucket      : str = None
         ):
 
@@ -77,7 +82,7 @@ class ObjectManager:
             response = self.client.get_object(
                 bucket_name     = bucket,
                 object_name     = object_name,
-                version_id      = verion_id
+                version_id      = version_id
             )
             # Read the data as bytes, then decode as UTF-8
             data = response.read().decode("utf-8")
@@ -93,7 +98,7 @@ class ObjectManager:
         return self.stream_file(
             object_name     = file_object_name, 
             bucket          = file_bucket,
-            verion_id       = version_id
+            version_id      = version_id
         )
 
     # ADD METHOD TO CHEck FILE EXISTS ALREADY? IF SO UPDATE IT, DO DB WRITING HERE? INSTEAD OF IN INGESTOR CODE? OR PROCESESS THAT THERE INSTEAD
