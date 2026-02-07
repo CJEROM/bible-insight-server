@@ -63,7 +63,12 @@ class ObjectManager:
         if is_default:
             self.bucket = bucket_name
 
-    def stream_file(self, object_name, bucket=None):
+    def stream_file(self, 
+            object_name : str, 
+            verion_id   : str,
+            bucket      : str = None
+        ):
+
         if bucket == None:
             bucket = self.bucket
         # Get file
@@ -72,6 +77,7 @@ class ObjectManager:
             response = self.client.get_object(
                 bucket_name     = bucket,
                 object_name     = object_name,
+                version_id      = verion_id
             )
             # Read the data as bytes, then decode as UTF-8
             data = response.read().decode("utf-8")
@@ -81,15 +87,24 @@ class ObjectManager:
                 response.close()
                 response.release_conn()
 
-    # EDIT METHOD: Needs to also account for Object versioning
     def stream_file_from_file_id(self, file_id):
         file_object_name, file_bucket, version_id = self.read.read_file(file_id)
-        return self.stream_file(file_object_name, file_bucket)
+
+        return self.stream_file(
+            object_name     = file_object_name, 
+            bucket          = file_bucket,
+            verion_id       = version_id
+        )
 
     # ADD METHOD TO CHEck FILE EXISTS ALREADY? IF SO UPDATE IT, DO DB WRITING HERE? INSTEAD OF IN INGESTOR CODE? OR PROCESESS THAT THERE INSTEAD
 
     # EDIT METHOD: Needs to also include Object versioning
-    def upload_file(self, object_name, file_path, content_type, bucket=None):
+    def upload_file(self, 
+            object_name : str, 
+            file_path   : str, 
+            content_type: str, 
+            bucket      : str = None
+        ):
         if bucket == None:
             bucket  = self.bucket
         self.client.fput_object(bucket, object_name, str(file_path), content_type=content_type)
