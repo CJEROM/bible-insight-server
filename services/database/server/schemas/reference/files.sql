@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS audit.files (
     version_id      TEXT, -- Object storage version id
     version_note    TEXT, -- e.g., for Git commit hash or similar
     active          BOOLEAN DEFAULT TRUE, -- the preferred/current version for this logical file
+
+    content_hash    TEXT NOT NULL,
+
     FOREIGN KEY (source_id) REFERENCES audit.sources (id) ON DELETE SET NULL,
     FOREIGN KEY (data_format) REFERENCES lookup.data_formats (code)
     -- UNIQUE (bucket, object_path, version_id)

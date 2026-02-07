@@ -1,4 +1,5 @@
 from pathlib import Path
+import hashlib
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -24,15 +25,23 @@ class BaseFile:
         self.check_file_exists()
 
     # CHECK FILE EXISTS FIRST?
-    # IF IT DOES, USE UPDATE INSTEAD OF INSERT
+    # IF IT DOES, USE UPDATE INSTEAD OF INSERT?
+
+
+    def sha256_file(path: str) -> str:
+        hasher = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                hasher.update(chunk)
+        return hasher.hexdigest()
 
     # EDIT METHOD: Needs to also include Object versioning
     def upload_file(self, 
-            object_name, 
-            file_path, 
-            content_type, 
-            data_format: str,
-            version_note: str = None
+            object_name     : str, 
+            file_path       : Path, 
+            content_type    : str, 
+            data_format     : str,
+            version_note    : str = None
         ) -> int:
         info = self.obj.upload_file(object_name, str(file_path), content_type)
 
@@ -44,7 +53,8 @@ class BaseFile:
             source_id       = self.source_id,
             version_id      = info.version_id,
             data_format     = data_format,
-            version_note    = version_note
+            version_note    = version_note,
+            content_hash    = self.sha256_file(file_path)
         )
 
         self.log.log_to_file(f"Created New File: [{info.object_name}] [File ID:{file_id}] [Bucket: {info.bucket_name}] [etag: {info.etag}]", "BASE_FILE", "DEBUG")
