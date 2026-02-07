@@ -281,39 +281,47 @@ class Metadata(BaseFile):
         )
         self.log.log_to_file(f"Ingestion Started!", "METADATA", "INFO")
 
-        if valid:
-            self.create_dbl_info()
-            self.create_translation_details()
-            self.create_translation_relationships(metadata_xml)
+        try: 
+            if valid:
+                self.create_dbl_info()
+                self.create_translation_details()
+                self.create_translation_relationships(metadata_xml)
 
-            self.write.persist_translation_file( # Map Metadata to Translation through translation_files table
-                translation_id  = self.translation_id,
-                file_id         = file_id,
-                type            = "Metadata",
-                version         = self.get_metadata("file_version")
-            )
-            
-            self.upload_support_files(metadata_xml)
-            self.get_book_files(metadata_xml)
+                self.write.persist_translation_file( # Map Metadata to Translation through translation_files table
+                    translation_id  = self.translation_id,
+                    file_id         = file_id,
+                    type            = "Metadata",
+                    version         = self.get_metadata("file_version")
+                )
+                
+                self.upload_support_files(metadata_xml)
+                self.get_book_files(metadata_xml)
 
-            self.write.end_ingestion(
-                ingestion_id    = ingestion_id,
-                end_time        = self.get_time()
-            )
+                self.write.end_ingestion(
+                    ingestion_id    = ingestion_id,
+                    end_time        = self.get_time()
+                )
 
-            # Create Label Studio Project for this specific translation of the bible
-            self.labelproject = self.label.create_new_translation_project(
-                translation_id      = self.translation_id, 
-                project_name        = self.get_metadata("name"), 
-                project_description = f"{self.get_metadata("dbl_id")}-{self.dbl_agreement.get_id()}"
-            )
-        else:
+                # Create Label Studio Project for this specific translation of the bible
+                self.labelproject = self.label.create_new_translation_project(
+                    translation_id      = self.translation_id, 
+                    project_name        = self.get_metadata("name"), 
+                    project_description = f"{self.get_metadata("dbl_id")}-{self.dbl_agreement.get_id()}"
+                )
+            else:
+                self.write.end_ingestion(
+                    ingestion_id    = ingestion_id,
+                    end_time        = self.get_time(),
+                    error_message   = "Translation invalid!"
+                )
+                # Consider deleting data so far on failure
+        except Exception as e:
+            print(e)
             self.write.end_ingestion(
                 ingestion_id    = ingestion_id,
                 end_time        = self.get_time(),
-                error_message   = "Translation invalid!"
+                error_message   = f"[TRANSLATION ERROR] {e}"
             )
-            # Consider deleting data so far on failure
 
     def upload_support_files(self, metadata_xml: BeautifulSoup):
         # License File => Passed on, and not stored in metadata
