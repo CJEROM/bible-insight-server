@@ -56,7 +56,7 @@ class Styles(BaseFile):
                 style_versetext     = style_parent.get("versetext")
                 style_publishable   = style_parent.get("publishable")
 
-                self.write.persist_style(
+                style_id = self.write.persist_style(
                     style           = style,
                     name            = style_name,
                     description     = style_description,
