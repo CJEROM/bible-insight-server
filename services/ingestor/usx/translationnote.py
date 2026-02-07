@@ -111,27 +111,30 @@ class TranslationNote:
 
         return (options[0]), None
 
-    def __init__(self, this_chapter: "Chapter", note_xml, node_id, log: "LogManager"):
-        self.this_chapter =         this_chapter
-        self.this_book =            self.this_chapter.get_this_book()
-        self.this_translation =     self.this_book.get_this_translation()
+    def __init__(self, this_chapter: "Chapter", note_xml: BeautifulSoup, node_id: int, log: "LogManager"):
+        self.this_chapter           = this_chapter
+        self.this_book              = self.this_chapter.this_book
+        self.metadata               = self.this_book.metadata
 
-        self.book_map_id = self.this_book.get_book_map_id()
-        self.translation_id = self.this_translation.get_translation_id()
-        self.note_xml = note_xml
-        self.node_id = node_id
+        self.read                   = self.metadata.read
+        self.write                  = self.metadata.write
 
-        self.parent_note = None
+        self.book_map_id            = self.this_book.book_map_id
+        self.translation_id         = self.metadata.translation_id
+        self.note_xml               = note_xml
+        self.node_id                = node_id
 
-        self.log = log
-        self.manager = self.log.get_manager_handler()
-        self.db = self.manager.get_db()
+        self.parent_note            = None
 
-        self.note_type = self.get_note_type()
+        self.log                    = log
+        self.manager                = self.log.get_manager_handler()
+        self.db                     = self.manager.get_db()
+
+        self.note_type              = self.get_note_type()
         if self.note_type == None:
             return # if note not valid
         
-        self.source_book_code = self.this_book.get_book_code()
+        self.source_book_code       = self.this_book.book_code
         self.source_ref, self.source_type = self.get_source_ref()
         
         if self.note_type == "f":
@@ -142,15 +145,6 @@ class TranslationNote:
                 self.log.log_to_file(f"Created Cross Reference [ID: {crossreference_id}]", "NOTE:CROSSREF", "DEBUG")
 
         self.db.commit()
-
-    def get_note_xml(self):
-        return self.note_xml
-    
-    def get_node_id(self):
-        return self.node_id
-    
-    def get_note_type(self):
-        return self.note_type
 
     def get_note_type(self):
         note_type = None
@@ -166,14 +160,16 @@ class TranslationNote:
 
     def get_source_ref(self):
         # Get text from note xml to indicate chapter and verse
-        note_ref = self.note_xml.find("char", style="fr")
+        note_ref        = self.note_xml.find("char", style="fr")
+
         if note_ref == None:
             note_ref = self.note_xml.find("char", style="xo")
-        # Clean up into correct format and then
-        cleaned_ref = f"{self.source_book_code} {self.standardise_ref(note_ref)}"
 
-        source_ref = None
-        source_type = None
+        # Clean up into correct format and then
+        cleaned_ref     = f"{self.source_book_code} {self.standardise_ref(note_ref)}"
+
+        source_ref      = None
+        source_type     = None
 
         format, format_name = self.detect_reference_format(cleaned_ref)
 
@@ -182,13 +178,14 @@ class TranslationNote:
         #   Double format will only ever extend another 1 verse, and it migth turn into multi if that's into the next chapter (supress these)
 
         fragment_format = format
+
         if len(format) > 1:
             fragment_format = format[0]
         
         if fragment_format == None:
             return None, None
         
-        source_type = fragment_format
+        source_type     = fragment_format
 
         if len(format) == 1: # Single Format
             source_ref = cleaned_ref
@@ -216,9 +213,9 @@ class TranslationNote:
     
     def create_destination_ref(self, ref, ref_node_id):
         destination_ref, destination_type = (None, None)
-        original_ref = ref.get("loc")
+        original_ref    = ref.get("loc")
 
-        cleaned_ref = self.standardise_ref(original_ref)
+        cleaned_ref     = self.standardise_ref(original_ref)
         ref_book_code, ref_origin = cleaned_ref.split(" ") # e.g GEN 1 => "GEN", "1"
 
         format_types, format_name = self.detect_reference_format(cleaned_ref)
@@ -229,24 +226,24 @@ class TranslationNote:
 
         # Logic for creating fragments for destination references
         if len(format_types) == 1: # Single Format
-            destination_ref = cleaned_ref
-            destination_type = format_types[0]
+            destination_ref     = cleaned_ref
+            destination_type    = format_types[0]
             
             main_note = self.create_cross_reference(ref_node_id, destination_ref, destination_type)
 
         elif len(format_types) == 2: # Double Fragment Format
             if format_name == "verse_range": # Verse class robust enough to handle it so just pass along
-                destination_type = format_types[0]
-                destination_ref = cleaned_ref
+                destination_type    = format_types[0]
+                destination_ref     = cleaned_ref
                 
                 self.create_cross_reference(ref_node_id, destination_ref, destination_type)
             else:  # currently only have chapter range so this is tailored to that
-                start_range, end_range = ref_origin.split("-")
-                start_chapter = int(start_range.split(":")[0])
-                end_chapter = int(end_range.split(":")[0])
+                start_range, end_range  = ref_origin.split("-")
+                start_chapter           = int(start_range.split(":")[0])
+                end_chapter             = int(end_range.split(":")[0])
 
                 for chapter in range(start_chapter, end_chapter+1):
-                    destination_ref = f"{ref_book_code} {chapter}"
+                    destination_ref      = f"{ref_book_code} {chapter}"
                     if chapter == start_chapter:
                         destination_type = format_types[0]
 
@@ -258,13 +255,13 @@ class TranslationNote:
                         self.create_cross_reference(ref_node_id, destination_ref, destination_type)
 
         elif len(format_types) == 3: # Multi Fragment Format
-            start_range, end_range = ref_origin.split("-")
-            start_chapter = int(start_range.split(":")[0])
-            end_chapter = int(end_range.split(":")[0])
+            start_range, end_range      = ref_origin.split("-")
+            start_chapter               = int(start_range.split(":")[0])
+            end_chapter                 = int(end_range.split(":")[0])
 
             for chapter in range(start_chapter, end_chapter+1):
                 if chapter == start_chapter:
-                    destination_type = format_types[0]
+                    destination_type    = format_types[0]
                     if destination_type == "chapter":
                         destination_ref = f"{ref_book_code} {chapter}"
                     elif destination_type == "verse":
@@ -273,7 +270,7 @@ class TranslationNote:
                     main_note = self.create_cross_reference(ref_node_id, destination_ref, destination_type)
                     self.parent_note = main_note
                 elif chapter == end_chapter:
-                    destination_type = format_types[2]
+                    destination_type    = format_types[2]
                     if destination_type == "chapter":
                         destination_ref = f"{ref_book_code} {chapter}"
                     elif destination_type == "verse":
@@ -281,8 +278,8 @@ class TranslationNote:
 
                     self.create_cross_reference(ref_node_id, destination_ref, destination_type)
                 else:
-                    destination_type = format_types[1]
-                    destination_ref = f"{ref_book_code} {chapter}"
+                    destination_type    = format_types[1]
+                    destination_ref     = f"{ref_book_code} {chapter}"
 
                     self.create_cross_reference(ref_node_id, destination_ref, destination_type)
 
@@ -299,10 +296,19 @@ class TranslationNote:
 
         # Simpler logic since can only have foot note for a chapter "PSA 46" or verse "LUK 1:17", (verse can be non-standard "MIC 4:14a" or mixed "MAT 12:18-21")
         if self.source_type == "verse":
-            footnote_id = self.db.fetch_clean_one(self.SQL.get("translation_foot_note"), (self.node_id, None, self.source_ref))
-        elif self.source_type == "chapter":
-            footnote_id = self.db.fetch_clean_one(self.SQL.get("translation_foot_note"), (self.node_id, self.source_ref, None))
+            footnote_id = self.write.persist_footnote(
+                node_id         = self.node_id,
+                chapter_ref     = None,
+                verse_ref       = self.source_ref
+            )
 
+        elif self.source_type == "chapter":
+            footnote_id = self.write.persist_footnote(
+                node_id         = self.node_id,
+                chapter_ref     = self.source_ref,
+                verse_ref       = None
+            )
+            
         self.log.log_to_file(f"Created Footnote [ID: {footnote_id}] ", "NOTE:FOOTNOTE", "DEBUG")
 
         for ref in self.note_xml.find_all("ref"):
@@ -315,28 +321,34 @@ class TranslationNote:
         if destination_type == "verse":
             Verse(self.this_chapter, verse_ref=destination_ref, log=self.log, is_special_case=True)
 
-        this_ref[0] = node_id # node_id
-        # this_ref[1] = # from_verse_ref
-        # this_ref[2] = # to_verse_ref
-        # this_ref[3] = # from_chapter_ref
-        # this_ref[4] = # to_chapter_ref
+        this_ref[0] = node_id
            
         if self.source_type == "verse" and destination_type == "chapter":
-            this_ref[1] = self.source_ref # from_verse_ref
-            this_ref[4] = destination_ref# to_chapter_ref
+            this_ref[1] = self.source_ref   # from_verse_ref
+            this_ref[4] = destination_ref   # to_chapter_ref
+
         elif self.source_type == "verse" and destination_type == "verse":
-            this_ref[1] = self.source_ref# from_verse_ref
-            this_ref[2] = destination_ref# to_verse_ref
+            this_ref[1] = self.source_re    # from_verse_ref
+            this_ref[2] = destination_ref   # to_verse_ref
+
         elif self.source_type == "chapter" and destination_type == "chapter":
-            this_ref[3] = self.source_ref # from_chapter_ref
-            this_ref[4] = destination_ref# to_chapter_ref
+            this_ref[3] = self.source_ref   # from_chapter_ref
+            this_ref[4] = destination_ref   # to_chapter_ref
+
         elif self.source_type == "chapter" and destination_type == "verse":
-            this_ref[2] = destination_ref# to_verse_ref
-            this_ref[3] = self.source_ref # from_chapter_ref
+            this_ref[2] = destination_ref   # to_verse_ref
+            this_ref[3] = self.source_ref   # from_chapter_ref
+
         else:
             return None # if not any of these combos then quit
 
-        cross_reference_id = self.db.fetch_clean_one(self.SQL.get("translation_ref_note"), this_ref)
+        cross_reference_id = self.write.persist_cross_reference(
+            node_id             = this_ref[0],
+            from_verse_ref      = this_ref[1],
+            to_verse_ref        = this_ref[2],
+            from_chapter_ref    = this_ref[3],
+            to_chapter_ref      = this_ref[4]
+        )
         return cross_reference_id
 
 # ✅ Test examples:

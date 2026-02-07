@@ -16,41 +16,41 @@ if TYPE_CHECKING:
     from ingestor.usx.translation import Translation
     from manager.managerhandler import ManagerHandler
     from manager.logmanager import LogManager
+    from ingestor.usx.files.agreements import DBLAgreement
 
 class Metadata(BaseFile):
-    def __init__(self, this_translation: "Translation", translation_file_path: Path, log: "LogManager", source_url, main_manager: "ManagerHandler"):
-        self.translation_file_path = translation_file_path
-        self.this_translation = this_translation
-        self.log = log
-        self.manager = main_manager
-        self.obj = main_manager.get_obj()
-        self.db = main_manager.get_db()
+    def __init__(self, this_translation: "Translation", translation_file_path: Path, log: "LogManager", source_url, main_manager: "ManagerHandler", agreement: "DBLAgreement"):
+        self.translation_file_path  = translation_file_path
+        self.this_translation       = this_translation
+        self.log                    = log
+        self.manager                = main_manager
+        self.obj                    = main_manager.get_obj()
+        self.db                     = main_manager.get_db()
+        self.label                  = main_manager.get_label()
+        self.dbl_agreement          = agreement
 
-        self.read = USXReadBoundary(self.db)
-        self.write = USXWriteBoundary(self.db)
+        self.read               = USXReadBoundary(self.db)
+        self.write              = USXWriteBoundary(self.db)
 
         # Now should it create a new source every time it downloads? 
         #       or have the same one for this translation
-        self.source_id = None
-        self.source_url = source_url
+        self.source_id          = None
+        self.source_url         = source_url
 
-        self.metadata = {}
+        self.metadata           = {}
 
-        self.translation_id = this_translation.get_translation_id()
-        self.translation_name = None
+        self.translation_id     = None
+        self.translation_name   = None
+        self.language_id        = None
 
         # Object Storage Start Path
-        self.object_start = None
+        self.object_start       = None
 
-        self.ingestion_start = self.get_time()
+        self.ingestion_start    = self.get_time()
 
-        self.files = {
-            # "metadata": None,
-            # "licence": None,
-            "ldml": None,
-            "versification": None,
-            "styles": None,
-        }
+        self.styles         = None
+        self.ldml           = None
+        self.versification  = None
 
         self.read_metadata_file(translation_file_path)
 
@@ -67,9 +67,6 @@ class Metadata(BaseFile):
     
     def get_object_start(self):
         return self.object_start
-    
-    def get_file(self, type):
-        return self.files.get(type)
 
     def extract_metadata(self, metadata_xml: BeautifulSoup):
         self.metadata["language_iso"]   = metadata_xml.find("language").find("iso").text
@@ -106,15 +103,16 @@ class Metadata(BaseFile):
         translation_relationships = metadata_xml.find("relationships")
         for relation in translation_relationships.find_all("relation"):
             # Example: <relation id="9879dbb7cfe39e4d" revision="4" type="text" relationType="source"/>
-            relation_dbl_id = relation.get("id")
-            relation_revision = relation.get("revision")
-            relation_type = relation.get("relationType")
+            relation_dbl_id     = relation.get("id")
+            relation_revision   = relation.get("revision")
+            relation_type   = relation.get("relationType")
+
             self.write.persist_translation_relation(
-                from_dbl_id=self.get_metadata("dbl_id"),
-                from_revision=self.get_metadata("revision"),
-                to_dbl_id=relation_dbl_id,
-                to_revision=relation_revision,
-                relation_type=relation_type
+                from_dbl_id     = self.get_metadata("dbl_id"),
+                from_revision   = self.get_metadata("revision"),
+                to_dbl_id       = relation_dbl_id,
+                to_revision     = relation_revision,
+                relation_type   = relation_type
             )
             self.log.log_to_file(f"Created Translation Relationship with [ID: {relation_dbl_id}] [Revision: {relation_revision}] [medium: {relation_type}]", "METADATA", "DEBUG")
 
@@ -141,6 +139,8 @@ class Metadata(BaseFile):
 
         self.log.log_to_file(f"Matched language for translation to ID: {language_id} with ISO: {self.get_metadata("language_iso")}!", "METADATA", "DEBUG")
     
+        self.language_id = language_id
+
         return language_id
 
     def create_translation_details(self):
@@ -161,8 +161,6 @@ class Metadata(BaseFile):
 
         self.log.log_to_file(f"Created Translation Entry -> ID = {self.translation_id}!", "METADATA", "DEBUG")
 
-        self.this_translation.set_translation_id(self.translation_id)
-
     def create_dbl_info(self):
         # If the agreement is new then mark as test import
         self.log.log_to_file(f"Creating DBL INFO Entry ...", "METADATA", "DEBUG")
@@ -170,20 +168,20 @@ class Metadata(BaseFile):
             dbl_id              = self.get_metadata("dbl_id"),
             revision            = self.get_metadata("revision"),
             is_supported        = True,
-            is_test_import      = self.this_translation.get_agreement().is_new()
+            is_test_import      = self.dbl_agreement.is_new()
         )
         self.log.log_to_file(f"DBL INFO Created!", "METADATA", "DEBUG")
         # Non test translation's are those that are included in initial DB seeding
 
     def validate_translation_import(self) -> bool:
-        dbl_id = self.get_metadata("dbl_id")
-        revision = self.get_metadata("revision")
+        dbl_id      = self.get_metadata("dbl_id")
+        revision    = self.get_metadata("revision")
         self.log.log_to_file(f"Validating Translation Import ...", "METADATA", "DEBUG")
 
         # 1. Check if translation / revision already exists
         existing_translation = self.read.find_translation(
-            dbl_id=dbl_id,
-            revision=revision
+            dbl_id      = dbl_id,
+            revision    = revision
         )
 
         if existing_translation is not None:
@@ -192,8 +190,8 @@ class Metadata(BaseFile):
 
         # 2. Check if translation / revision is supported
         is_supported = self.read.is_translation_supported(
-            dbl_id=dbl_id,
-            revision=revision
+            dbl_id      = dbl_id,
+            revision    = revision
         )
 
         if is_supported is None:
@@ -211,10 +209,11 @@ class Metadata(BaseFile):
         # Find if url is already stored source in database
         self.log.log_to_file(f"Creating Translation Source!", "METADATA", "DEBUG")
 
-        source_unique_code = f"DBL-{self.get_metadata("abbreviation")}"
-        source_id = self.read.find_source(code=source_unique_code)
+        source_unique_code  = f"DBL-{self.get_metadata("abbreviation")}"
+        source_id           = self.read.find_source(code=source_unique_code)
+
         if source_id != None:
-            self.this_translation.get_agreement().set_source(source_id)
+            self.dbl_agreement.set_source(source_id)
             self.log.log_to_file(f"Translation Source Already Exists, with ID [{source_id}]!", "METADATA", "DEBUG")
             return source_id
         
@@ -224,20 +223,20 @@ class Metadata(BaseFile):
         
         # If not create new and return it
         new_source_id = self.write.persist_source(
-            source_type="DAT", # Dataset
-            code=source_unique_code,
-            name=self.get_metadata("name"),
-            description=self.get_metadata("description"),
-            version=None,   # self.get_metadata("file_version")
-            url=source_url,
-            note=None,
-            parent_source=parent_source_id,
+            source_type         = "DAT", # Dataset
+            code                = source_unique_code,
+            name                = self.get_metadata("name"),
+            description         = self.get_metadata("description"),
+            version             = None,   # self.get_metadata("file_version")
+            url                 = source_url,
+            note                = None,
+            parent_source       = parent_source_id,
             # official_citation=,
             # date_published=,
             # metadata=,
         )
 
-        self.this_translation.get_agreement().set_source(new_source_id)
+        self.dbl_agreement.set_source(new_source_id)
 
         self.log.log_to_file(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "METADATA", "INFO")
         return new_source_id
@@ -249,10 +248,11 @@ class Metadata(BaseFile):
         pass
 
     def read_metadata_file(self, file_path):
-        file_name = "metadata.xml"
-        metadata_file_path = Path(file_path) / file_name
-        self.this_file_path = metadata_file_path
-        metadata_file_content = ""
+        file_name               = "metadata.xml"
+        metadata_file_path      = Path(file_path) / file_name
+        self.this_file_path     = metadata_file_path
+        metadata_file_content   = ""
+
         with open(metadata_file_path, encoding="utf-8") as file:
             metadata_file_content = file.read()
 
@@ -266,11 +266,11 @@ class Metadata(BaseFile):
         self.create_source(self.source_url)
 
         file_id = self.upload_file(
-            object_name=f"{self.object_start}/{file_name}",
-            file_path=self.this_file_path,
-            content_type='application/xml',
-            data_format="XML",
-            version_note=self.get_metadata("file_version")
+            object_name     = f"{self.object_start}/{file_name}",
+            file_path       = self.this_file_path,
+            content_type    = 'application/xml',
+            data_format     = "XML",
+            version_note    = self.get_metadata("file_version")
         )
         self.log.log_to_file(f"Uploaded Metadata file with ID [{file_id}]!", "METADATA", "DEBUG")
 
@@ -288,16 +288,25 @@ class Metadata(BaseFile):
             self.create_translation_relationships(metadata_xml)
             self.upload_support_files(metadata_xml)
             self.get_book_files(metadata_xml)
+
             self.write.end_ingestion(
-                ingestion_id=ingestion_id,
-                end_time=self.get_time()
+                ingestion_id    = ingestion_id,
+                end_time        = self.get_time()
+            )
+
+            # Create Label Studio Project for this specific translation of the bible
+            self.labelproject = self.label.create_new_translation_project(
+                translation_id      = self.translation_id, 
+                project_name        = self.get_metadata("name"), 
+                project_description = f"{self.get_metadata("dbl_id")}-{self.dbl_agreement.get_id()}"
             )
         else:
             self.write.end_ingestion(
-                ingestion_id=ingestion_id,
-                end_time=self.get_time(),
-                error_message="Translation invalid!"
+                ingestion_id    = ingestion_id,
+                end_time        = self.get_time(),
+                error_message   = "Translation invalid!"
             )
+            # Consider deleting data so far on failure
 
     def upload_support_files(self, metadata_xml: BeautifulSoup):
         # License File => Passed on, and not stored in metadata
@@ -331,11 +340,11 @@ class Metadata(BaseFile):
 
         # Write File to DB
         file_id = self.upload_file(
-            object_name=self.object_start + file_name,
-            file_path=new_file_path,
-            content_type=mimeType,
-            data_format=data_format,
-            version_note=version_notes
+            object_name     = self.object_start + file_name,
+            file_path       = new_file_path,
+            content_type    = mimeType,
+            data_format     = data_format,
+            version_note    = version_notes
         )
 
         # Write Translation File Map to DB
@@ -345,16 +354,16 @@ class Metadata(BaseFile):
         self.log.log_to_file(f"Uploaded {support_file_type} file with ID [{file_id}]!", "METADATA", "DEBUG")
 
         self.write.persist_translation_file(
-            translation_id=self.translation_id,
-            file_id=file_id,
-            type=support_file_type,
-            version=version_notes
+            translation_id  = self.translation_id,
+            file_id         = file_id,
+            type            = support_file_type,
+            version         = version_notes
         )
         self.log.log_to_file(f"Mapped File to Translation ID [{self.translation_id}]!", "METADATA", "DEBUG")
 
         match file_name.split(".")[0].capitalize():
             case "Versification":
-                self.files["versification"] = Versification(
+                self.versification  = Versification(
                     translation_id  = self.translation_id,
                     main_manager    = self.manager,
                     log             = self.log,
@@ -362,7 +371,7 @@ class Metadata(BaseFile):
                     file_path       = new_file_path
                 )
             case "Styles":
-                self.files["styles"]        = Styles(
+                self.styles         = Styles(
                     styles_file_id  = file_id,
                     main_manager    = self.manager, 
                     log             = self.log, 
@@ -370,7 +379,7 @@ class Metadata(BaseFile):
                     file_path       = new_file_path
                 )
             case "LDML":
-                self.files["ldml"]          = LDML(
+                self.ldml           = LDML(
                     main_manager    = self.manager, 
                     log             = self.log, 
                     source_id       = self.source_id, 
@@ -402,60 +411,60 @@ class Metadata(BaseFile):
 
                 # Prepare data
                 object_name = f"{self.object_start}/{file_name}"
-                resource = metadata_xml.find("resource", uri=content.get("src"))
-                mimeType = resource.get("mimeType")
+                resource    = metadata_xml.find("resource", uri=content.get("src"))
+                mimeType    = resource.get("mimeType")
 
-                book_info = metadata_xml.find("name", id=content.get("name"))
-                short_name = book_info.find("short").text
-                long_name = book_info.find("long").text
+                book_info   = metadata_xml.find("name", id=content.get("name"))
+                short_name  = book_info.find("short").text
+                long_name   = book_info.find("long").text
 
                 # Responsible for mapping file depening on medium
                 if self.get_metadata("medium") == "text":
                     # Upload files and mapping
                     file_id = self.upload_file(
-                        object_name=object_name,
-                        file_path=file_path,
-                        content_type=mimeType,
-                        data_format="USX",
-                        version_note="3.0" # USX version used, add as note (why not)
+                        object_name     = object_name,
+                        file_path       = file_path,
+                        content_type    = mimeType,
+                        data_format     = "USX",
+                        version_note    = "3.0" # USX version used, add as note (why not)
                     )
 
                     book_map_id = self.write.persist_book_file(
-                        book_code=book,
-                        translation_id=self.translation_id,
-                        file_id=file_id,
-                        short=short_name,
-                        long=long_name
+                        book_code       = book,
+                        translation_id  = self.translation_id,
+                        file_id         = file_id,
+                        short           = short_name,
+                        long            = long_name
                     )
 
                     # We are uploading Books
-                    Book(self.this_translation, found_book, book_map_id, file_id, file_path, self.log)   
+                    Book(self, found_book, book_map_id, file_id, file_path, self.log)   
 
                     self.log.set_progress(found_book, i+1)  
 
                 elif self.get_metadata("medium") == "audio":
                     # Upload files and mapping
                     file_id = self.upload_file(
-                        object_name=object_name,
-                        file_path=file_path,
-                        content_type=mimeType,
-                        data_format="MP3"
+                        object_name     = object_name,
+                        file_path       = file_path,
+                        content_type    = mimeType,
+                        data_format     = "MP3"
                     )
 
                     book_map_id = self.write.persist_book_file(
-                        book_code=book,
-                        translation_id=self.translation_id,
-                        file_id=None, # Audio only has chapter files and no book files
-                        short=short_name,
-                        long=long_name
+                        book_code       = book,
+                        translation_id  = self.translation_id,
+                        file_id         = None, # Audio only has chapter files and no book files
+                        short           = short_name,
+                        long            = long_name
                     )
 
                     # We are uploading Chapters - 
                     #   We create Chapter Occurence since no further text processing and no audio processsing pipeline
                     self.write.persist_chapter_occurence(
-                        chapter_ref=chapter_ref,
-                        book_map_id=book_map_id,
-                        translation_id=self.translation_id
+                        chapter_ref     = chapter_ref,
+                        book_map_id     = book_map_id,
+                        translation_id  = self.translation_id
                     )
 
                     self.log.set_progress(chapter_ref, i+1)

@@ -161,6 +161,28 @@ class USXReadBoundary(ReadBoundary):
         """
         licence_id = self.db.fetch_clean_one(query, (license_code, ))
         return licence_id
+    
+    def get_node_count(self):
+        query = """
+            SELECT COALESCE(MAX(id), 0) FROM bible.nodes;
+        """
+        node_count = self.db.fetch_clean_one(query)
+        return node_count
+    
+    def is_paragraph_versetext(self,
+            style: str,
+            style_file_id: int
+        ) -> bool:
+        query = """
+            SELECT versetext FROM bible.styles WHERE style = %s AND source_file_id = %s
+        """
+        result = self.db.fetch_clean_one(query, (style, style_file_id))
+        
+        if result == "true": 
+            return True
+        
+        # if result == "false" or result is None:
+        return False
 
 class USXWriteBoundary(WriteBoundary):
     def persist_chapter_occurence(self, 
@@ -211,14 +233,17 @@ class USXWriteBoundary(WriteBoundary):
         self.db.bulk_insert(query, new_nodes)
 
     def persist_paragraph(self, 
-            paragraph_node_id: int, style_id: int, is_versetext: bool
+            paragraph_node_id: int, 
+            style_id: int, 
+            is_versetext: bool,
+            parent_para_id: int = None
         ) -> int:
         query = """
             INSERT INTO bible.paragraphs (node_id, style_id, parent_para, is_versetext) 
             VALUES (%s, %s, %s, %s)
             RETURNING id;
         """
-        paragraph_id = self.db.fetch_clean_one(query, (paragraph_node_id, style_id, is_versetext))
+        paragraph_id = self.db.fetch_clean_one(query, (paragraph_node_id, style_id, parent_para_id, is_versetext))
         return paragraph_id
     
     def init_source(self,
@@ -328,10 +353,10 @@ class USXWriteBoundary(WriteBoundary):
             version: str
         ) -> None:
         query = """
-            INSERT INTO bible.translationtofile (file_id, translation_id, type, version) 
+            INSERT INTO bible.translation_files (file_id, translation_id, type, version) 
             VALUES (%s, %s, %s, %s)
         """
-        self.db.fetch_clean_one(query, (file_id, translation_id, type, version))
+        self.db.execute(query, (file_id, translation_id, type, version))
 
     def persist_translation_relation(self,
             from_dbl_id: int,
@@ -443,7 +468,6 @@ class USXWriteBoundary(WriteBoundary):
         return footnote_id
     
     def persist_cross_reference(self,
-            cross_refs: tuple,
             node_id: int,
             from_verse_ref: str,
             to_verse_ref: str,
@@ -455,7 +479,7 @@ class USXWriteBoundary(WriteBoundary):
             VALUES %s
             RETURNING id;
         """
-        cross_reference_id = self.db.fetch_clean_one(query, (cross_refs, node_id, from_verse_ref, to_verse_ref, from_chapter_ref, to_chapter_ref))
+        cross_reference_id = self.db.fetch_clean_one(query, (node_id, from_verse_ref, to_verse_ref, from_chapter_ref, to_chapter_ref))
         return cross_reference_id
     
     def persist_verse_correction(self,

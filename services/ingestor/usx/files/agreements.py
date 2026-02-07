@@ -61,7 +61,7 @@ class DBLAgreement(BaseFile):
         else:
             return self.details
         
-    def get_agreement_id(self):
+    def get_id(self):
         return self.agreement_id
 
     def check_agreement_exists(self, agreement_id):

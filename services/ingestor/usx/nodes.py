@@ -7,33 +7,20 @@ if TYPE_CHECKING:
 
 # Will be created from books class
 class Nodes:
-    SQL = {
-        "new_node": """
-            INSERT INTO bible.nodes (node_text, node_type, code, sid, eid, vid, style, number, caller, closed, version, strong, loc, parent_node_id, index_in_parent, book_map_id, canonical_path, align, translation_id, is_tokenisable) 
-            VALUES %s;
-        """,
-        "max_node_count": """
-            SELECT COALESCE(MAX(id), 0) FROM bible.nodes;
-        """,
-        "is_para_versetext": """
-            SELECT versetext FROM bible.styles WHERE style = %s AND source_file_id = %s
-        """
-    }
-
-    def __init__(self, this_book: "Book", log: "LogManager", book_xml):
-        self.this_book =            this_book
-        self.this_translation =     self.this_book.get_this_translation()
+    def __init__(self, this_book: "Book", log: "LogManager"):
+        self.this_book          = this_book
+        self.metadata           = this_book.metadata
 
         # Adds a database connection
-        self.log = log
-        self.manager = self.log.get_manager_handler()
-        self.db = self.manager.get_db()
+        self.log                = log
+        self.manager            = self.log.get_manager_handler()
+        self.db                 = self.manager.get_db()
 
         # Initialise variables 
-        self.book_soup = BeautifulSoup(book_xml, "xml")
-        self.book_map_id = self.this_book.get_book_map_id()
-        self.book_style_file_id = self.this_translation.get_file("styles")
-        self.translation_id = self.this_translation.get_translation_id()
+        self.book_soup          = BeautifulSoup(self.this_book.usx, "xml")
+        self.book_map_id        = self.this_book.book_map_id
+        self.book_style_file_id = self.metadata.styles
+        self.translation_id     = self.metadata.translation_id
 
         self.created_nodes = {
             "chapter": {},
@@ -53,11 +40,11 @@ class Nodes:
 
         all_new_nodes = []
 
-        node_id_offset = self.db.fetch_clean_one(self.SQL.get("max_node_count"))
+        node_id_offset = self.metadata.read.get_node_count()
 
         node_id_counter = 1
 
-        node_chapter_ref = self.this_book.get_book_code() + " 1"
+        node_chapter_ref = self.this_book.book_code + " 1"
 
         for node in self.book_soup.descendants:
             # Initialise node_id for the note we are going to create in DB
@@ -98,7 +85,11 @@ class Nodes:
                     elif node_parent.name == "para":
                         # if inside a para node
                         parent_style = node_parent.get("style")
-                        this_node[19] = self.db.fetch_clean_one(self.SQL.get("is_para_versetext"), (parent_style, self.book_style_file_id)) # is_tokenisable, 19
+
+                        this_node[19] = self.metadata.read.is_paragraph_versetext( # is_tokenisable, 19
+                            style=parent_style,
+                            style_file_id=self.book_style_file_id
+                        )
                         break
 
             # ------ Skip empty nodes
@@ -166,7 +157,7 @@ class Nodes:
                 self.created_nodes[node_type][node_chapter_ref].append(node_id)
 
         # Now bulk insert all of the nodes into the database (in batches / chunks)
-        self.db.bulk_insert(self.SQL.get("new_node"), all_new_nodes)
+        self.metadata.write.persist_nodes(all_new_nodes)
 
     def get_chapters(self):
         nodes = self.created_nodes["chapter"]

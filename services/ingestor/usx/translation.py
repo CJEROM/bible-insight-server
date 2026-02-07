@@ -15,10 +15,7 @@ if TYPE_CHECKING:
 class Translation:
     def __init__(self, manager: "ManagerHandler", medium: str, process_location: Path, source_url: str, dbl_id: str, agreement: "DBLAgreement", log: "LogManager"):
         self.manager = manager
-        self.env = manager.get_env()
-        self.obj = manager.get_obj()
         self.db = manager.get_db()
-        self.label = manager.get_label()
         self.log = log
 
         self.write = USXWriteBoundary(self.db)
@@ -30,17 +27,14 @@ class Translation:
         self.process_location = process_location
 
         self.translation_id = None
+        self.language_id = None
        
-        self.agreement_object = agreement
-        self.agreement_id = agreement.get_agreement_id()
+        self.dbl_agreement = agreement
+        self.agreement_id = agreement.get_id()
 
         self.source_url = source_url
 
         print("✅ Starting Upload ...")
-
-        self.bible_structure_info = None
-
-        self.style_dict = {}
 
         self.labelproject = None
 
@@ -73,29 +67,11 @@ class Translation:
     def get_metadata(self):
         return self.metadata
     
-    def get_translation_id(self):
-        return self.translation_id
-    
     def get_dbl_id(self):
         return self.dbl_id
     
-    def get_agreement(self):
-        return self.agreement_object
-    
-    def set_translation_id(self, translation_id):
-        self.translation_id = translation_id
-    
-    def get_translation_project_id(self):
-        return self.labelproject
-    
-    # def get_language_id(self):
-    #     return self.language_id
-    
-    def get_style_dict(self):
-        return self.style_dict
-    
     def process_metadata(self, file_location: Path):
-        self.agreement_object.set_translation(self, file_location)
+        self.dbl_agreement.set_translation(self, file_location)
 
         # Start Ingestion Pipeline for all files
         self.metadata = Metadata(
@@ -103,17 +79,12 @@ class Translation:
             translation_file_path   = file_location, 
             log                     = self.log, 
             source_url              = self.source_url,
-            main_manager            = self.manager
+            main_manager            = self.manager,
+            agreement               = self.dbl_agreement
         )
 
-        self.agreement_object.link_agreement_revision(self.metadata.get_metadata("revision"))
+        self.dbl_agreement.link_agreement_revision(self.metadata.get_metadata("revision"))
 
-        # Create Label Studio Project for this specific translation of the bible
-        self.labelproject = self.label.create_new_translation_project(
-            self.translation_id, 
-            self.metadata.get_metadata("name"), 
-            f"{self.dbl_id}-{self.agreement_id}"
-        )
 
         # Clean up files - Only after successful run, don't automatically delete all files
         self.delete_files(file_location)
