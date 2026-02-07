@@ -11,22 +11,21 @@ if TYPE_CHECKING:
 class Versification(BaseFile):
     def __init__(self, translation_id: int, main_manager: "ManagerHandler", log: "LogManager", source_id: int | None, file_path: Path = None):
         super().__init__(main_manager, log, source_id, file_path)
-        self.translation_id = translation_id
-        self.bible_structure_info = None
+        self.translation_id         = translation_id
+        self.bible_structure_info   = None
 
         self.log.log_to_file(f"Processing Versification ...", "VERSIFICATION", "INFO")
 
-        self.createVersification()
-        self.createVerses(self.bible_structure_info)
+        self.createVersification(self.read_file())
 
     def get_bible_structure_info(self):
         structure = self.bible_structure_info
         # Go through bible versification
         chapter_dict = {}
         for line in structure.splitlines():
-            parts = line.split()
-            book = parts[0]
-            chapters = parts[1:]
+            parts       = line.split()
+            book        = parts[0]
+            chapters    = parts[1:]
             
             for ch in chapters:
                 chapter_num, verse_count = ch.split(':')
@@ -47,9 +46,9 @@ class Versification(BaseFile):
         ]
         
         # Build regexes that capture everything between headers (non-greedy, across lines)
-        find_bible_info = re.escape(file_sections_headers[0]) + r"(.*?)" + re.escape(file_sections_headers[1])
-        find_versification_map = re.escape(file_sections_headers[1]) + r"(.*?)" + re.escape(file_sections_headers[2])
-        find_excluded_verses = re.escape(file_sections_headers[2]) + r"(.*?)" + re.escape(file_sections_headers[3])
+        find_bible_info         = re.escape(file_sections_headers[0]) + r"(.*?)" + re.escape(file_sections_headers[1])
+        find_versification_map  = re.escape(file_sections_headers[1]) + r"(.*?)" + re.escape(file_sections_headers[2])
+        find_excluded_verses    = re.escape(file_sections_headers[2]) + r"(.*?)" + re.escape(file_sections_headers[3])
 
         # Run searches
         matches = [
@@ -62,6 +61,7 @@ class Versification(BaseFile):
         file_sections = [m.group(1).strip() if m else "" for m in matches]
 
         self.bible_structure_info = file_sections[0]
+        self.createVerses(self.bible_structure_info)
         self.createExcludedVerses(file_sections[2])
     
     def createExcludedVerses(self, section_text:str):
@@ -69,17 +69,17 @@ class Versification(BaseFile):
         # Create list of excluded verses
         for line in section_text.splitlines():
             if line.startswith("#! -"):
-                verse_ref = line[4:].strip()
-                book_code = verse_ref[0:3]
+                verse_ref   = line[4:].strip()
+                book_code   = verse_ref[0:3]
 
-                valid_book = self.read.find_book(book_code=book_code)
+                valid_book  = self.read.find_book(book_code=book_code)
 
                 if valid_book == None:
                     continue
 
                 self.write.persist_excluded_verse(
-                    verse_ref=verse_ref,
-                    translation_id=self.translation_id
+                    verse_ref       = verse_ref,
+                    translation_id  = self.translation_id
                 )
                 additions+=1
                 
@@ -90,17 +90,17 @@ class Versification(BaseFile):
 
         self.log.log_to_file(f"Created {additions} excluded verses", "VERSIFICATION", "INFO")
     
-    def createVerses(self, section_text):
-        verse_additions = 0
-        chapter_additions = 0
+    def createVerses(self, section_text: str):
+        verse_additions     = 0
+        chapter_additions   = 0
 
         self.log.log_to_file(f"Initializing Verses...", "VERSIFICATION", "INFO")
         # Create all Verses Tables instances - different from VerseOccurences, just chceck they all exist
         for line in section_text.splitlines():
-            sections = line.split(" ")
-            book_code = sections[0]
+            sections    = line.split(" ")
+            book_code   = sections[0]
 
-            book_id = self.read.find_book(book_code=book_code)
+            book_id     = self.read.find_book(book_code=book_code)
 
             if book_id == None:
                 continue
@@ -116,10 +116,10 @@ class Versification(BaseFile):
                     try:
                         # Basically, all normal Chapters already imported (on DB init), so if one missing its non standard
                         self.write.persist_chapter(
-                            book_code=book_code,
-                            chapter_num=chapter_num,
-                            chapter_ref=chapter_ref,
-                            is_standard=False
+                            book_code       = book_code,
+                            chapter_num     = chapter_num,
+                            chapter_ref     = chapter_ref,
+                            is_standard     = False
                         )
                         print(f"     Non-Standard Chapter Created: {chapter_ref}")
                         self.log.log_to_file(f"Created Non-Standard Chapter: {chapter_ref}", "VERSIFICATION", "INFO")
@@ -130,17 +130,18 @@ class Versification(BaseFile):
                         # In the case it can't seem to create a new chapter then skip the chapter (won't take it as important)
 
                 for verse in range(1, (int(verse_count)+1)):
-                    verse_ref = chapter_ref + ":" + str(verse)
+                    verse_ref   = chapter_ref + ":" + str(verse)
 
                     verse_id = self.read.find_verse(
-                        verse_ref=verse_ref
+                        verse_ref   = verse_ref
                     )
 
                     if verse_id == None:
                         self.write.persist_verse(
-                            chapter_ref=chapter_ref,
-                            verse_ref=verse_ref,
-                            verse=str(verse)
+                            chapter_ref     = chapter_ref,
+                            verse_ref       = verse_ref,
+                            verse           = str(verse),
+                            is_standard     = True
                         )
                         verse_additions += 1
                         self.log.log_to_file(f"Created Verse: {verse_ref}", "VERSIFICATION", "TRACE")

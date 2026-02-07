@@ -449,9 +449,9 @@ class USXWriteBoundary(WriteBoundary):
         ) -> int:
         query = """
             INSERT INTO bible.verses (chapter_ref, verse_ref, verse, standard) 
-            VALUES (%s, %s, %s)
+            VALUES (%s, %s, %s, %s)
         """
-        verse_id = self.db.fetch_clean_one(query, (chapter_ref, verse_ref, verse, is_standard))
+        verse_id = self.db.execute(query, (chapter_ref, verse_ref, verse, is_standard))
         return verse_id
     
     def persist_footnote(self,
@@ -634,5 +634,5 @@ class USXDeleteBoundary(DeleteBoundary):
         # Ideas is to cancel USX translation and all its derivative data
         query = """
             DELETE FROM bible.translations WHERE id = %s;
-        """ 
+        """
         self.db.execute(query, (translation_id,))
