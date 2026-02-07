@@ -19,6 +19,8 @@ class Book(BaseFile):
         self.db                 = self.manager.get_db()
 
         self.metadata           = metadata
+        self.read               = metadata.read
+        self.write              = metadata.write
 
         book_string             = self.read_file()
 
