@@ -38,6 +38,8 @@ class ObjectManager:
         self.bucket             = None
         self.configured_buckets = []
 
+        # Set bucket creation to be called and done within ingestion pipeline relevant to it, 
+        #       this makes sure no drift in names + can set default bucket for each pipeline
         self.create_bucket(
             bucket_name     = "bible-dbl-raw",
             is_versioned    = True
@@ -114,13 +116,14 @@ class ObjectManager:
 
     # EDIT METHOD: Needs to also include Object versioning
     def upload_file(self, 
-            object_name : str, 
-            file_path   : str, 
-            content_type: str, 
-            bucket      : str = None
+            object_name     : str, 
+            file_path       : str, 
+            content_type    : str, 
+            bucket          : str = None
         ):
         if bucket == None:
             bucket  = self.bucket
+        
         self.client.fput_object(bucket, object_name, str(file_path), content_type=content_type)
         info        = self.client.stat_object(self.bucket, object_name)
         return info
