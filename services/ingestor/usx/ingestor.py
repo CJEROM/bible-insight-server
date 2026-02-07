@@ -23,6 +23,8 @@ class Ingestor:
         self.manager = manager or ManagerHandler()
         self.manager.get_obj().set_default_bucket("bible-dbl-raw")
 
+        StrongsIngestor(self.manager)
+
         self.dbl_id = dbl_id
         self.agreement_id = agreement_id
         self.all_translations = all_translations

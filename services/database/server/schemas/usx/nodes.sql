@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS bible.nodes (
     FOREIGN KEY (book_map_id) REFERENCES bible.booktofile (id) ON DELETE CASCADE,
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
     FOREIGN KEY (node_type) REFERENCES lookup.node_types (node) ON DELETE CASCADE,
+    -- Comment out or change this link in the future when switching over to new lexemes
     FOREIGN KEY (strong) REFERENCES bible.lexemes (strongs_code) ON DELETE CASCADE
 );
 CREATE INDEX idx_bible_nodes_node_text ON bible.nodes (node_text) WHERE is_tokenisable = TRUE;
