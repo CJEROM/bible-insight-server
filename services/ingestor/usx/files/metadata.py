@@ -321,13 +321,14 @@ class Metadata(BaseFile):
         versification_file  = metadata_xml.select_one('resource[uri*="versification"]') # Contains
         styles_file         = metadata_xml.select_one('resource[uri*="styles"]')        # Contains
 
-        self.populate_support_file(versification_file,  "TXT", None)
-        self.populate_support_file(styles_file,         "XML", "1.0")
-        self.populate_support_file(ldml_file,           "LDML", None)
+        self.populate_support_file(versification_file,  "TXT",  "Versification", None)
+        self.populate_support_file(styles_file,         "XML",  "Styles", "1.0")
+        self.populate_support_file(ldml_file,           "LDML", "LDML", None)
 
     def populate_support_file(self, 
             file_metadata_xml: Tag, 
             data_format: str, 
+            support_file_type: str,
             version_notes: str = None
         ):
 
@@ -353,9 +354,6 @@ class Metadata(BaseFile):
         )
 
         # Write Translation File Map to DB
-        support_file_type = file_name.split(".")[0].capitalize()
-        if file_extension == ".ldml":
-            support_file_type = "LDML"
         self.log.log_to_file(f"Uploaded {support_file_type} file with ID [{file_id}]!", "METADATA", "DEBUG")
 
         self.write.persist_translation_file(

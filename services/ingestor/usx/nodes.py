@@ -161,22 +161,22 @@ class Nodes:
 
     def get_chapters(self):
         nodes = self.created_nodes["chapter"]
-        self.log.log_to_file(f"Requested Chapter Nodes: {nodes}", f"NODE", "DEBUG")
+        self.log.log_to_file(f"Requested Chapter Nodes: {nodes}", f"NODE", "TRACE")
         return nodes
     
     def get_paras(self):
         nodes = self.created_nodes["para"]
-        self.log.log_to_file(f"Requested Para Nodes: {nodes}", f"NODE", "DEBUG")
+        self.log.log_to_file(f"Requested Para Nodes: {nodes}", f"NODE", "TRACE")
         return nodes
     
     def get_verses(self):
         nodes = self.created_nodes["verse"]
-        self.log.log_to_file(f"Requested Verse Nodes: {nodes}", f"NODE", "DEBUG")
+        self.log.log_to_file(f"Requested Verse Nodes: {nodes}", f"NODE", "TRACE")
         return nodes
     
     def get_notes(self):
         nodes = self.created_nodes["note"]
-        self.log.log_to_file(f"Requested Note Nodes: {nodes}", f"NODE", "DEBUG")
+        self.log.log_to_file(f"Requested Note Nodes: {nodes}", f"NODE", "TRACE")
         return nodes
 
 # if __name__ == "__main__":
