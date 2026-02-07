@@ -12,7 +12,7 @@ services:
   #   image: hashicorp/vault-enterprise:latest
   #   environment:
   #     VAULT_DEV_ROOT_TOKEN_ID: testtoken
-  #     VAULT_LICENSE: ${VAULT_LICENSE_CI}
+  #     VAULT_LICENCE: ${VAULT_LICENCE_CI}
   #   ports:
   #     - 8200:8200
   #   privileged: true

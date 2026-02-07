@@ -1,4 +1,4 @@
-from manager.dbmanager import DBManager
+from manager.dbmanager import DBManagerFactory
 from manager.envmanager import EnvManager
 from manager.logmanager import LogManager
 from manager.objectmanager import ObjectManager
@@ -9,9 +9,9 @@ class ManagerHandler:
         self.logs = {}
         
         self.env = EnvManager(self)
-        self.db = DBManager(self)
+        self.db = DBManagerFactory(self).default()
         self.obj = ObjectManager(self)
-        self.label = LabelManager(self)
+        self.label = None # LabelManager(self)
 
     def get_env(self):
         return self.env

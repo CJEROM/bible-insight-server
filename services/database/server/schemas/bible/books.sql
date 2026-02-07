@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS bible.booktofile (
     long            TEXT, -- Long Name for the book
     FOREIGN KEY (book_code) REFERENCES bible.books (code) ON DELETE CASCADE,
     FOREIGN KEY (translation_id) REFERENCES bible.translations (id) ON DELETE CASCADE,
-    FOREIGN KEY (file_id) REFERENCES bible.files (id) ON DELETE CASCADE
+    FOREIGN KEY (file_id) REFERENCES audit.files (id) ON DELETE CASCADE
 );
 CREATE INDEX idx_bible_booktofile_book_code ON bible.booktofile (book_code);
 CREATE INDEX idx_bible_booktofile_translation_id ON bible.booktofile (translation_id);

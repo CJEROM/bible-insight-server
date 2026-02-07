@@ -1,5 +1,7 @@
 from label_studio_sdk import LabelStudio
 
+from database.boundary.base_boundary import ReadBoundary, WriteBoundary
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from manager.managerhandler import ManagerHandler
@@ -7,19 +9,22 @@ if TYPE_CHECKING:
 
 class LabelManager:
     def __init__(self, manager: "ManagerHandler" ):
-        self.manager = manager
+        self.manager            = manager
 
         # Set connected managers
-        self.env = self.manager.get_env()
-        self.db = self.manager.get_db()
-        self.log = self.manager.create_log_in_folder(["logs", "label_manager"], f"")
+        self.env                    = self.manager.get_env()
+        self.db                     = self.manager.get_db()
+        self.log                    = self.manager.create_log_in_folder(["logs", "label_manager"], f"")
         self.log.set_logging_level(2)
 
-        # Initialize Label Studio Client
-        config = self.env.get_label_studio()
-        self.client = LabelStudio(base_url=config["endpoint"], api_key=config["api_token"])
+        self.read                   = ReadBoundary(self.db)
+        self.write                  = WriteBoundary(self.db)
 
-        self.project_label_config = """
+        # Initialize Label Studio Client
+        config                      = self.env.get_label_studio()
+        self.client                 = LabelStudio(base_url=config["endpoint"], api_key=config["api_token"])
+
+        self.project_label_config   = """
             <View>
                 <Relations>
                     <Relation value="org:founded_by"/>
@@ -40,20 +45,17 @@ class LabelManager:
             </View>
         """
 
-        self.labelling_projects = self.update_labelling_projects()
+        self.labelling_projects     = self.update_labelling_projects()
 
     def init_container(self):
         # Code that can be used to replace the logic in init_label_studio.py
         pass
 
     def update_labelling_projects(self):
-        loaded_db_projects = self.db.fetch_all("""
-            SELECT tlp.project_id, tlp.translation_id, lp.name, lp.description
-            FROM nlp.translationlabellingprojects tlp
-            JOIN nlp.labellingprojects lp ON tlp.project_id = lp.id;
-        """)
 
-        temp_projects = {}
+        loaded_db_projects  = self.read.get_all_label_projects()
+
+        temp_projects       = {}
 
         if not loaded_db_projects:
             return {}
@@ -86,26 +88,30 @@ class LabelManager:
     def get_project_id(self, project_id: int):
         # Might modify to 
         return self.client.projects.get(
-            id=project_id,
+            id  = project_id,
         )
 
-    def create_new_translation_project(self, translation_id: int, project_name: str, project_description: str):
+    def create_new_translation_project(self, 
+            translation_id          : int, 
+            project_name            : str, 
+            project_description     : str
+        ):
 
         translation_project = self.client.projects.create(
-            title=project_name,
-            description=project_description,
-            label_config=self.project_label_config
+            title           = project_name,
+            description     = project_description,
+            label_config    = self.project_label_config
         )
 
         traslation_project_id = translation_project.id
 
         self.labelling_projects[traslation_project_id] = {
-            "translation_id": translation_id,
-            "project_name": project_name,
-            "project_description": project_description
+            "translation_id"        : translation_id,
+            "project_name"          : project_name,
+            "project_description"   : project_description
         }
 
-        minio_config = self.env.get_minio_config()
+        minio_config        = self.env.get_minio_config()
 
         # For now not sure how this works
         # export_storage = self.client.export_storage.s3.create(
@@ -119,25 +125,17 @@ class LabelManager:
         # )
 
         # In Bible Insight DB, update with new project details
-        self.db.execute("""
-            INSERT INTO nlp.labellingprojects (id, name, description) 
-            VALUES (%s, %s, %s)
-            RETURNING id;
-        """, (
-            traslation_project_id,
-            project_name,
-            project_description
-        ))
+        self.write.persist_label_studio_project(
+            label_project_id    = traslation_project_id,
+            project_name        = project_name,
+            project_description = project_description
+        )
 
         # In Bbile Insight DB, link translation to labelling project
-        self.db.execute("""
-            INSERT INTO nlp.translationlabellingprojects (translation_id, project_id) 
-            VALUES (%s, %s)
-            RETURNING id;
-        """, (
-            translation_id,
-            traslation_project_id
-        ))
+        self.write.map_label_studio_project(
+            translation_id      = translation_id,
+            label_project_id    = traslation_project_id
+        )
 
         self.log.log_to_file(f"Created New Label Studio Project [Project_ID: {traslation_project_id}] [Translation_ID: {translation_id}]", "LABEL", "INFO")
 

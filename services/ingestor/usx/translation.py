@@ -1,140 +1,96 @@
 from zipfile import ZipFile
 from pathlib import Path
-from bs4 import BeautifulSoup
 import shutil
-import re
 import traceback
 
-from ingestor.usx.book import Book
+from ingestor.usx.files.metadata import Metadata
+from database.boundary.usx_boundary import USXReadBoundary, USXWriteBoundary, USXDeleteBoundary
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from manager.managerhandler import ManagerHandler
+    from ingestor.usx.files.agreements import DBLAgreement
+    from manager.logmanager import LogManager
 
 class Translation:
-    def __init__(self, manager: "ManagerHandler", medium, process_location, source_url, translation_id, dbl_id, agreement_id):
-        self.manager = manager
-        self.env = manager.get_env()
-        self.obj = manager.get_obj()
-        self.db = manager.get_db()
-        self.label = manager.get_label()
+    def __init__(self, manager: "ManagerHandler", medium: str, process_location: Path, source_url: str, dbl_id: str, agreement: "DBLAgreement", log: "LogManager"):
+        self.manager            = manager
+        self.db                 = manager.get_db()
+        self.log                = log
 
-        self.medium = medium # Audio | Video | Text (USX)
-        self.process_location = process_location
-        self.translation_id = translation_id
-        self.dbl_id = dbl_id
-        self.agreement_id = agreement_id
+        self.write              = USXWriteBoundary(self.db)
+        self.read               = USXReadBoundary(self.db)
+        self.delete             = USXDeleteBoundary(self.db)
 
-        self.revision = None
+        self.dbl_id             = dbl_id
+
+        self.medium             = medium # Audio | Video | Text (USX)
+        self.process_location   = process_location
+       
+        self.dbl_agreement      = agreement
+        self.agreement_id       = agreement.get_id()
+
+        self.source_url         = source_url
 
         print("✅ Starting Upload ...")
 
-        # Fetch and print result
-        # version = self.cur.fetchone()
-        # print("Connected successfully! PostgreSQL version:", version)
+        self.log.log_to_file(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}]", "TRANSLATION", "INFO")
+
+        self.metadata           = None
+
+        # self.ingest()
+        # Can Choose to run outside of Try block for harsher fails (more error details for now?)
+        self.choose_medium() 
         
-        self.translation_title = f"{self.medium}-{self.dbl_id}-{self.agreement_id}"
-
-        self.translation_name = None
-        self.bible_structure_info = None
-
-        self.files = {
-            "metadata": None,
-            "license": None,
-            "ldml": None,
-            "versification": None,
-            "styles": None,
-        }
-        self.style_dict = {}
-
-        self.labelproject = None
-
-        # Initialise logfile
-        self.log = self.manager.create_log_in_folder(["logs", "ingestor"], f"{self.translation_id}-{self.translation_title}")
-        self.log.set_logging_level(2)
-
-        self.log.log_to_file(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}] with ID [{self.translation_id}]", "TRANSLATION", "INFO")
-
-        self.source_id = self.get_source(source_url)
-
+    def ingest(self):
         try:
-            match medium:
-                case "text": # USX Files e.g. for deeper analysis
-                    # unzip first
-                    self.unzip_folder(self.process_location)
-                case "video": # Videos e.g. for the deaf (sign language)
-                    # self.check_files(self.process_location)
-                    pass
-                case "audio": # Audio e.g. for the blind or preference
-                    self.check_files(self.process_location)
+            self.choose_medium()
         except Exception as e:
+            print(e)
             error_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
             self.log.log_to_file(error_message, "TRANSLATION", "ERROR")
-            print(f"❌ Failed to Upload Translation {dbl_id}-{agreement_id} with error {e}")
-            self.db.get_connection().rollback()
+            print(f"❌ Failed to Upload Translation {self.dbl_id}-{self.agreement_id} with error {e}")
+            # ON FAIL -> DELETE ALL TRANSLATION DATA (Clears away partial data in the DB)
+            if self.metadata is not None:
+                self.delete.delete_translation(self.metadata.translation_id)
 
-        self.log.log_to_file(f"Completed Translation [{self.translation_name}] Ingestion!", "TRANSLATION", "INFO")
+        self.log.log_to_file(f"Completed Translation Ingestion!", "TRANSLATION", "INFO")
 
-        # Create Label Studio Project for this specific translation of the bible
-        self.labelproject = self.label.create_new_translation_project(self.translation_id, self.translation_title, self.translation_name)
-        
-    def get_translation_id(self):
-        return self.translation_id
+    def choose_medium(self):
+        match self.medium:
+            case "text": # USX Files e.g. for deeper analysis
+                # unzip first
+                self.unzip_folder(self.process_location)
+            case "video": # Videos e.g. for the deaf (sign language)
+                # self.check_files(self.process_location)
+                pass
+            case "audio": # Audio e.g. for the blind or preference
+                # Start Ingestion Pipeline for all files
+                self.process_metadata(self.process_location)
+
+    def get_metadata(self):
+        return self.metadata
     
     def get_dbl_id(self):
         return self.dbl_id
     
-    def get_agreement_id(self):
-        return self.agreement_id
-    
-    def get_translation_id(self):
-        return self.translation_id
-    
-    def get_translation_project_id(self):
-        return self.labelproject
-    
-    def get_translation_title(self):
-        return self.translation_title
-    
-    def get_language_id(self):
-        return self.language_id
-    
-    def get_style_dict(self):
-        return self.style_dict
-    
-    def get_file(self, type):
-        return self.files.get(type)
-    
-    def get_bible_structure_info(self):
-        structure = self.bible_structure_info
-        # Go through bible versification
-        chapter_dict = {}
-        for line in structure.splitlines():
-            parts = line.split()
-            book = parts[0]
-            chapters = parts[1:]
-            
-            for ch in chapters:
-                chapter_num, verse_count = ch.split(':')
-                chapter_dict[f"{book} {chapter_num}"] = int(verse_count)
+    def process_metadata(self, file_location: Path):
+        self.dbl_agreement.set_translation(self, file_location)
 
-        return chapter_dict
+        # Start Ingestion Pipeline for all files
+        self.metadata = Metadata(
+            # this_translation        = self,
+            translation_file_path   = file_location, 
+            log                     = self.log, 
+            source_url              = self.source_url,
+            main_manager            = self.manager,
+            agreement               = self.dbl_agreement
+        )
 
-    def get_source(self, source_url):
-        # Find if url is already stored source in database
-        source_id = self.db.fetch_clean_one("""SELECT id FROM bible.sources WHERE url = %s;""", (source_url,))
-        if source_id != None:
-            return source_id
-        
-        # If not create new and return it
-        new_source_id = self.db.fetch_clean_one("""
-            INSERT INTO bible.sources (url) 
-            VALUES (%s)
-            RETURNING id;
-        """, (source_url,))
+        self.dbl_agreement.link_agreement_revision(self.metadata.get_metadata("revision"))
 
-        self.log.log_to_file(f"Created New Source [ID: {new_source_id}] [URL: {source_url}]", "TRANSLATION", "INFO")
-        return new_source_id
+        # Clean up files - Only after successful run, don't automatically delete all files
+        self.delete_files(file_location)
 
     def unzip_folder(self, zip_path):
         # This will unzip the zip folder, and then delete the original and replace process location with new path name
@@ -142,11 +98,11 @@ class Translation:
 
         with ZipFile(zip_path, 'r') as zip:
             # list all file paths in the ZIP
-            all_files = zip.namelist()
+            all_files   = zip.namelist()
 
             # find the top-level folder (first part before '/')
-            top_levels = {Path(f).parts[0] for f in all_files if '/' in f}
-            top_folder = next(iter(top_levels)) if top_levels else None
+            top_levels  = {Path(f).parts[0] for f in all_files if '/' in f}
+            top_folder  = next(iter(top_levels)) if top_levels else None
 
             # extract everything
             zip.extractall(downloads_location)
@@ -154,433 +110,15 @@ class Translation:
             # Saves the new location for the usx files to be ran in next part of pipeline
             new_location = downloads_location / top_folder
             self.log.log_to_file(f"Unzipping [{len(all_files)}] files from {zip_path} in {new_location}", "TRANSLATION", "INFO")
-            self.check_files(new_location)
+
+            self.process_metadata(new_location)
 
         # After unzipping delete the old zip file
         shutil.rmtree(zip_path, ignore_errors=True)
-        if zip_path.is_dir():
-            shutil.rmtree(zip_path, ignore_errors=True)  # delete folder + contents
-        elif zip_path.is_file():
-            Path(zip_path).unlink(missing_ok=True)
-
-    def get_support_files(self, file_location, object_start, file_path, content_type):
-        file_name = file_path.split("/")[-1]
-        object_name = object_start + f"{file_name}"
-
-        new_file_path = Path(file_location) / file_path
-        if new_file_path.exists():
-            return self.upload_file(object_name, new_file_path, content_type)
-        
-        return None
+        self.delete_files(zip_path)
     
-    def check_language(self, language_xml):
-        # Check if language already added to database, if not create it and return language_id
-        language_id = self.db.fetch_clean_one("""SELECT id FROM language.languages WHERE iso = %s;""", (language_xml.find("iso").text,))
-        if language_id != None:
-            return language_id
-        
-        language_name = language_xml.find("nameLocal").text
-        new_language_id = self.db.fetch_clean_one("""
-            INSERT INTO language.languages (iso, name, namelocal, scriptdirection) 
-            VALUES (%s, %s, %s, %s)
-            RETURNING id;
-        """, (
-            language_xml.find("iso").text,
-            language_xml.find("name").text,
-            language_xml.find("nameLocal").text,
-            language_xml.find("scriptDirection").text
-        ))
-        # self.cur.execute("""SELECT currval(pg_get_serial_sequence(%s, 'id'));""", ("language.languages",))
-        self.log.log_to_file(f"Created New Language [ID: {new_language_id}] [Name: {language_name}]", "TRANSLATION", "INFO")
-
-        return new_language_id
-    
-    def update_translationinfo_db(self, metadata_xml: BeautifulSoup):
-        self.language_id = self.check_language(metadata_xml.find("language"))
-
-        abbreviation = metadata_xml.find("identification").find("abbreviationLocal").text
-        translation_name = metadata_xml.find("identification").find("name").text
-        
-        copyright = str(metadata_xml.find("copyright").find("statementContent"))
-        promotion = str(metadata_xml.find("promotion").find("promoVersionInfo"))
-
-        self.db.execute("""
-            UPDATE bible.translations
-            SET medium = %s,
-                name = %s,
-                namelocal = %s,
-                description = %s,
-                abbreviationlocal = %s,
-                language_id = %s,
-                        
-                copyright = %s, 
-                promotion = %s
-            WHERE id = %s;        
-        """, (
-            self.medium, 
-            metadata_xml.find("identification").find("name").text, 
-            metadata_xml.find("identification").find("nameLocal").text,
-            metadata_xml.find("identification").find("description").text,
-            metadata_xml.find("identification").find("abbreviationLocal").text,
-            self.language_id,
-
-            copyright,
-            promotion,
-
-            self.translation_id
-        ))
-        self.log.log_to_file(f"Created Translation Info: [abbreviationLocal: {abbreviation}] [name: {translation_name}]", "TRANSLATION", "DEBUG")
-
-        self.create_translation_relationships(metadata_xml)
-
-    def create_translation_relationships(self, metadata_xml: BeautifulSoup):
-        translation_relationships = metadata_xml.find("relationships")
-        for relation in translation_relationships.find_all("relation"):
-            # Example: <relation id="9879dbb7cfe39e4d" revision="4" type="text" relationType="source"/>
-            relation_dbl_id = relation.get("id")
-            relation_revision = relation.get("revision")
-            relation_type = relation.get("relationType")
-            self.db.execute("""
-                INSERT INTO bible.translationrelationships (from_translation, from_revision, to_translation, to_revision, type) 
-                VALUES (%s, %s, %s, %s, %s)
-            """, (self.translation_id, self.revision, relation_dbl_id, relation_revision, relation_type))
-            self.log.log_to_file(f"Created Translation Relationship with [ID: {relation_dbl_id}] [Revision: {relation_revision}] [medium: {relation_type}]", "TRANSLATION", "DEBUG")
-
-    def check_files(self, file_location):
-        top_folder = str(file_location).split("\\")[-1]
-
-        # Find metadata file
-        metadata_file_path = Path(file_location) / "metadata.xml"
-        metadata_file_content = ""
-        with open(metadata_file_path, encoding="utf-8") as file:
-            metadata_file_content = file.read()
-
-        metadata_xml = BeautifulSoup(metadata_file_content, "xml")
-        self.update_translationinfo_db(metadata_xml)
-        self.translation_metadata_xml = metadata_xml
-        translation_abbreviation = metadata_xml.find("identification").find("abbreviationLocal").text
-        translation_full_name = metadata_xml.find("identification").find("name").text
-        self.translation_name = f"{translation_abbreviation}: {translation_full_name}"
-
-        self.revision = metadata_xml.find("DBLMetadata").get("revision")
-        revision_note = metadata_xml.find("archiveStatus").find("comments")
-        if revision_note != None:
-            revision_note = revision_note.text
-
-        object_start = f"{top_folder}/{self.revision}/"
-
-        # Since dependant on language
-        ldml_file = metadata_xml.select_one('resource[uri$=".ldml"]').get("uri")
-        ldml_file_id = None
-        if ldml_file is not None:
-            ldml_file_id = self.get_support_files(file_location, object_start, ldml_file, "application/xml")
-
-        self.files = {
-            "metadata": self.get_support_files(file_location, object_start, "metadata.xml", "application/xml"),
-            "license": self.get_support_files(file_location, object_start, "license.xml", "application/xml"),
-            "ldml": ldml_file_id,
-            "versification": self.get_support_files(file_location, object_start, "release/versification.vrs", "application/xml"),
-            "styles": self.get_support_files(file_location, object_start, "release/styles.xml", "application/xml"),
-        }
-
-        # Update this information for translation in database
-        self.db.execute("""
-            UPDATE bible.translations
-            SET revision = %s,
-                revision_note = %s,
-                metadata_file = %s,
-                license_file = %s,
-                ldml_file = %s,
-                versification_file = %s,
-                style_file = %s
-            WHERE id = %s;        
-        """, (
-            self.revision, 
-            revision_note, 
-            self.files["metadata"],
-            self.files["license"],
-            self.files["ldml"],
-            self.files["versification"],
-            self.files["styles"],
-            self.translation_id
-        ))
-        self.log.log_to_file(f"Updated Translation Entry File IDs", "TRANSLATION", "TRACE")
-
-        self.db.commit() # Commit all changes to database
-
-        publication = metadata_xml.find("publication", default="true") # Get default files for publication
-        contents = publication.find_all("content")
-
-        self.log.set_progress_total(len(contents))
-
-        # Selectively upload the files I want in the format I want (from metadata)
-        for i, (content) in enumerate(contents):
-            # Get the file path for current file
-            parts = content.get("src").split("/")
-            file_name = parts[-1] # Get filename
-            file_path = file_location
-            for part in parts:
-                file_path = file_path / part
-
-            chapter_ref = content.get("role")
-            book = chapter_ref.split(" ")[0]
-
-            found_book = self.db.fetch_clean_one("""
-                SELECT code FROM bible.books WHERE code = %s;
-            """, (book,))
-
-            if found_book != None:
-                # If this is text and the book is among ones we are interested in, take the file and upload it to minio
-                object_name = f"{top_folder}/{self.revision}/{file_name}"
-                content_type = metadata_xml.find("resource", uri=content.get("src")).get("mimeType")
-                file_id = self.upload_file(object_name, file_path, content_type)
-
-                book_info = metadata_xml.find("name", id=content.get("name"))
-                short_name = book_info.find("short").text
-                long_name = book_info.find("long").text
-
-                # Skip any that are not 3 John book (used when testing = shortest book in the bible)
-                # if found_book != "3JN":
-                #     continue
-                
-                # Then update the database linking to them
-                if self.medium == "text":
-                    self.log.increment_progress(found_book, increment=0)
-
-                    book_map_id = self.db.fetch_clean_one("""
-                        INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s) RETURNING id;
-                    """, (book, self.translation_id, file_id, short_name, long_name))
-
-                    Book(self, found_book, book_map_id, file_id, self.obj.stream_file(object_name), self.log)   
-                    self.log.set_progress(found_book, i+1)                 
-                if self.medium == "audio":
-                    self.log.increment_progress(chapter_ref, increment=0)
-                    # Audio and eventually video don't have any connection but in serving the files themselves for consumption
-                    #   Maybe in the future some ML analysis but not needed right now or necesitates, using the class to build
-                    #   Since below are all the database references it needs.
-                    book_map_id = self.db.fetch_clean_one("""
-                        INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) VALUES (%s, %s, %s, %s, %s) RETURNING id;
-                    """, (book, self.translation_id, None, short_name, long_name))
-
-                    self.db.execute("""
-                        INSERT INTO bible.chapteroccurences (chapter_ref, file_id, book_to_file_id) VALUES (%s, %s, %s);
-                    """, (chapter_ref, file_id, book_map_id))
-                    self.log.set_progress(chapter_ref, i+1)
-
-        self.db.commit()
-        
+    def delete_files(self, file_location: Path):
         if file_location.is_dir():
             shutil.rmtree(file_location, ignore_errors=True)  # delete folder + contents
         elif file_location.is_file():
             Path(file_location).unlink(missing_ok=True)
-
-    def upload_file(self, object_name, file_path, content_type, bucket=None):
-        info = self.obj.upload_file(object_name, str(file_path), content_type)
-        
-        file_id = self.db.fetch_clean_one("""
-            INSERT INTO bible.files (etag, type, file_path, bucket, source_id) 
-            VALUES (%s, %s, %s, %s, %s)
-            RETURNING id;
-        """, (info.etag, info.content_type, info.object_name, info.bucket_name, self.source_id))
-
-        self.log.log_to_file(f"Created New File: [{info.object_name}] [File ID:{file_id}] [Bucket: {info.bucket_name}] [etag: {info.etag}]", "TRANSLATION", "DEBUG")
-
-        if "versification" in object_name:
-            self.createVersification(self.obj.stream_file(object_name))
-        elif "styles" in object_name:
-            self.createStylesAndProperties(self.obj.stream_file(object_name), file_id)
-        # elif "ldml" in object_name:
-
-        return file_id # Return file_id to link to
-               
-    def createStylesAndProperties(self, styles_string, styles_file_id):
-        style_additions = 0
-        property_additions = 0
-
-        styles_xml = BeautifulSoup(styles_string, "xml")
-        properties = styles_xml.find_all("property")
-
-        previous_style_parent = None
-        style_id = None
-
-        for property in properties:
-            style_parent = property.find_parent("style")
-            
-            property_name = property.get("name")
-            property_unit = property.get("unit")
-            property_value = property.text
-
-            if style_parent == None:
-                # General Properties (without a parent style in stylesheet)
-                if property_unit != None:
-                    self.db.execute("""
-                        INSERT INTO bible.properties (name, value, unit) 
-                        VALUES (%s, %s, %s)
-                    """, (property_name, property_value, property_unit))
-                else:
-                    self.db.execute("""
-                        INSERT INTO bible.properties (name, value) 
-                        VALUES (%s, %s)
-                    """, (property_name, property_value))
-
-                continue
-
-            if previous_style_parent != style_parent:
-                # Create new style
-                style = style_parent.get("id")
-                style_name = style_parent.find("name").text
-                style_description = style_parent.find("description").text
-                style_versetext = style_parent.get("versetext")
-                style_publishable = style_parent.get("publishable")
-
-                style_id = self.db.fetch_clean_one("""
-                    INSERT INTO bible.styles (style, name, description, versetext, publishable, source_file_id) 
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    RETURNING id;
-                """, (style, style_name, style_description, style_versetext, style_publishable, styles_file_id))
-
-                self.style_dict[style] = {}
-                self.style_dict[style]["id"] = style_id
-                self.style_dict[style]["versetext"] = style_versetext
-
-                previous_style_parent = style_parent
-
-            if property_unit != None:
-                self.db.execute("""
-                    INSERT INTO bible.properties (name, value, unit, style_id) 
-                    VALUES (%s, %s, %s, %s)
-                """, (property_name, property_value, property_unit, style_id))
-            else:
-                self.db.execute("""
-                    INSERT INTO bible.properties (name, value, style_id) 
-                    VALUES (%s, %s, %s)
-                """, (property_name, property_value, style_id))
-
-        if style_additions > 0:
-            print(f"    [{style_additions}] Styles loaded into database")
-
-        if property_additions > 0:
-            print(f"    [{property_additions}] Properties loaded into database")
-
-        self.log.log_to_file(f"Initialised {style_additions} Styles!", "TRANSLATION", "INFO")
-        self.log.log_to_file(f"Initialised {property_additions} Properties!", "TRANSLATION", "INFO")
-
-    def createVersification(self, file_string):
-        # file_xml = BeautifulSoup(file_string, "xml")
-        # We can split file string by "#", remove blank ones, then grapb the relevant section
-        #       by finding next index after sections we want, then read that line by line for each section
-
-        file_sections_headers = [
-            "# Verse number is the maximum verse number for that chapter.",
-            "# Mappings from this versification to standard versification",
-            "# Excluded verses",
-            "# Verse segment information"
-        ]
-        
-        # Build regexes that capture everything between headers (non-greedy, across lines)
-        find_bible_info = re.escape(file_sections_headers[0]) + r"(.*?)" + re.escape(file_sections_headers[1])
-        find_versification_map = re.escape(file_sections_headers[1]) + r"(.*?)" + re.escape(file_sections_headers[2])
-        find_excluded_verses = re.escape(file_sections_headers[2]) + r"(.*?)" + re.escape(file_sections_headers[3])
-
-        # Run searches
-        matches = [
-            re.search(find_bible_info, file_string, re.DOTALL),
-            re.search(find_versification_map, file_string, re.DOTALL),
-            re.search(find_excluded_verses, file_string, re.DOTALL)
-        ]
-
-        # Extract just the captured groups (excluding headers)
-        file_sections = [m.group(1).strip() if m else "" for m in matches]
-
-        self.createVerses(file_sections[0])
-        self.bible_structure_info = file_sections[0]
-        self.createExcludedVerses(file_sections[2])
-    
-    def createExcludedVerses(self, section_text:str):
-        additions = 0
-        # Create list of excluded verses
-        for line in section_text.splitlines():
-            if line.startswith("#! -"):
-                verse_ref = line[4:].strip()
-                book_code = verse_ref[0:3]
-
-                valid_book = self.db.fetch_one("""
-                    SELECT id FROM bible.books WHERE code=%s
-                """, (book_code,))
-
-                if valid_book == None:
-                    continue
-
-                self.db.execute("""
-                    INSERT INTO bible.excludedverses (verse_ref, translation_id) 
-                    VALUES (%s, %s)
-                """, (verse_ref, self.translation_id))
-                additions+=1
-                
-                self.log.log_to_file(f"Created Excluded Verse: {verse_ref}", "TRANSLATION", "INFO")
-
-        if additions > 0:
-            print(f"    [{additions}] Excluded Verses added to database")
-
-        self.log.log_to_file(f"Created {additions} excluded verses", "TRANSLATION", "INFO")
-    
-    def createVerses(self, section_text):
-        verse_additions = 0
-        chapter_additions = 0
-
-        self.log.log_to_file(f"Initializing Verses...", "TRANSLATION", "INFO")
-        # Create all Verses Tables instances - different from VerseOccurences, just chceck they all exist
-        for line in section_text.splitlines():
-            sections = line.split(" ")
-            book_code = sections[0]
-
-            book_id = self.db.fetch_one("""
-                SELECT id FROM bible.books WHERE code=%s
-            """, (book_code,))
-
-            if book_id == None:
-                continue
-
-            for chapter in range(1,len(sections)):
-                chapter_num, verse_count = sections[chapter].split(":")
-                chapter_ref = book_code + " " + chapter_num
-
-                found_chapter = self.db.fetch_one("""
-                    SELECT id FROM bible.chapters WHERE chapter_ref=%s
-                """, (chapter_ref,))
-
-                # Validates any non standard chapters that might apear outside ones initialised originally
-                if found_chapter == None:
-                    try:
-                        self.db.execute("""
-                            INSERT INTO bible.chapters (book_code, chapter_num, chapter_ref, standard) 
-                            VALUES (%s, %s, %s, %s);
-                        """, (book_code, int(chapter_num), chapter_ref, False))
-                        print(f"     Non-Standard Chapter Created: {chapter_ref}")
-                        self.log.log_to_file(f"Created Non-Standard Chapter: {chapter_ref}", "TRANSLATION", "INFO")
-                        chapter_additions+=1
-                    except Exception as e:
-                        print(f"❌ Skipped Chapter Creation of [{chapter_ref}] because of {e}")
-                        self.log.log_to_file(f"Skipped Chapter Creation of [{chapter_ref}] because of {e}", "TRANSLATION", "ERROR")
-                        # In the case it can't seem to create a new chapter then skip the chapter (won't take it as important)
-
-                for verse in range(1, (int(verse_count)+1)):
-                    verse_ref = chapter_ref + ":" + str(verse)
-
-                    verse_id = self.db.fetch_one("""
-                        SELECT id FROM bible.verses WHERE verse_ref=%s
-                    """, (verse_ref,))
-
-                    if verse_id == None:
-                        self.db.execute("""
-                            INSERT INTO bible.verses (chapter_ref, verse_ref, verse) 
-                            VALUES (%s, %s, %s)
-                        """, (chapter_ref, verse_ref, str(verse)))
-                        verse_additions += 1
-                        self.log.log_to_file(f"Created Verse: {verse_ref}", "TRANSLATION", "TRACE")
-        
-        if verse_additions > 0:
-            print(f"    [{verse_additions}] Verses Initialized into database")
-            
-        self.log.log_to_file(f"Initialised {verse_additions} Verses!", "TRANSLATION", "INFO")
-        self.log.log_to_file(f"Initialised {chapter_additions} Chapters (Non Standard)!", "TRANSLATION", "INFO")
