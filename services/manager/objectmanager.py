@@ -9,25 +9,25 @@ from database.boundary.base_boundary import ReadBoundary, WriteBoundary
 
 class ObjectManager:
     def __init__(self, this_manager: "ManagerHandler" = None, default_bucket=None):
-        self.this_manager = this_manager
-        self.env = None
+        self.this_manager   = this_manager
+        self.env            = None
         if this_manager == None:
-            self.env = EnvManager()
+            self.env        = EnvManager()
         else:
-            self.env = self.this_manager.get_env()
+            self.env        = self.this_manager.get_env()
 
-        config = self.env.get_minio_config()
-        self.db = self.this_manager.get_db()
+        config              = self.env.get_minio_config()
+        self.db             = self.this_manager.get_db()
 
-        self.read = ReadBoundary(self.db)
-        self.write = WriteBoundary(self.db)
+        self.read           = ReadBoundary(self.db)
+        self.write          = WriteBoundary(self.db)
 
         # Passes Minio client connection on to the MinioUSXUpload class
         self.client = Minio(
-            config["endpoint"],
-            access_key=config["username"],
-            secret_key=config["password"],
-            secure=False
+            endpoint        = config["endpoint"],
+            access_key      = config["username"],
+            secret_key      = config["password"],
+            secure          = False
         )
 
         self.configured_buckets = [
@@ -40,7 +40,7 @@ class ObjectManager:
 
         self.bucket = None
         if default_bucket != None:
-            self.bucket = self.set_default_bucket(default_bucket)
+            self.bucket     = self.set_default_bucket(default_bucket)
 
     def set_default_bucket(self, default_bucket):
         if default_bucket not in self.configured_buckets:
@@ -72,8 +72,8 @@ class ObjectManager:
         response = None 
         try:
             response = self.client.get_object(
-                bucket_name=bucket,
-                object_name=object_name,
+                bucket_name     = bucket,
+                object_name     = object_name,
             )
             # Read the data as bytes, then decode as UTF-8
             data = response.read().decode("utf-8")
@@ -93,9 +93,9 @@ class ObjectManager:
     # EDIT METHOD: Needs to also include Object versioning
     def upload_file(self, object_name, file_path, content_type, bucket=None):
         if bucket == None:
-            bucket = self.bucket
+            bucket  = self.bucket
         self.client.fput_object(bucket, object_name, str(file_path), content_type=content_type)
-        info = self.client.stat_object(self.bucket, object_name)
+        info        = self.client.stat_object(self.bucket, object_name)
         return info
     
 #region Object Return Example
