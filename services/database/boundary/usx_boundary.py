@@ -388,7 +388,7 @@ class USXWriteBoundary(WriteBoundary):
     def persist_file(self,
             etag            : str,
             type            : str,
-            file_path       : str,
+            object_path     : str,
             bucket          : str,
             source_id       : int,
             version_id      : str, 
@@ -401,7 +401,7 @@ class USXWriteBoundary(WriteBoundary):
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
-        file_id = self.db.fetch_clean_one(query, (etag, type, file_path, bucket, source_id, version_id, version_note, data_format, content_hash))
+        file_id = self.db.fetch_clean_one(query, (etag, type, object_path, bucket, source_id, version_id, version_note, data_format, content_hash))
         return file_id
     
     def persist_style_property(self,

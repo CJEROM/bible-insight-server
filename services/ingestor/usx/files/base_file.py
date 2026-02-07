@@ -35,7 +35,6 @@ class BaseFile:
                 hasher.update(chunk)
         return hasher.hexdigest()
 
-    # EDIT METHOD: Needs to also include Object versioning
     def upload_file(self, 
             object_name     : str, 
             file_path       : Path, 
@@ -43,22 +42,38 @@ class BaseFile:
             data_format     : str,
             version_note    : str = None
         ) -> int:
-        info = self.obj.upload_file(object_name, str(file_path), content_type)
+        # New file's hash
+        file_hash = self.sha256_file(file_path)
 
-        file_id = self.write.persist_file(
-            etag            = info.etag,
-            type            = info.content_type,
-            file_path       = info.object_name,
-            bucket          = info.bucket_name,
-            source_id       = self.source_id,
-            version_id      = info.version_id,
-            data_format     = data_format,
-            version_note    = version_note,
-            content_hash    = self.sha256_file(file_path)
+        # Try find matching hash
+
+        matched_file = self.read.get_file_by_hash(
+            content_hash    = file_hash,
+            data_format     = data_format
         )
+        file_id = None
 
-        self.log.log_to_file(f"Created New File: [{info.object_name}] [File ID:{file_id}] [Bucket: {info.bucket_name}] [etag: {info.etag}]", "BASE_FILE", "DEBUG")
+        # Only upload the file to object storage, if it changed from its previous version
+        if matched_file is None:
+            info = self.obj.upload_file(object_name, str(file_path), content_type)
 
+            file_id = self.write.persist_file(
+                etag            = info.etag,
+                type            = info.content_type,
+                object_path     = info.object_name,
+                bucket          = info.bucket_name,
+                source_id       = self.source_id,
+                version_id      = info.version_id,
+                data_format     = data_format,
+                version_note    = version_note,
+                content_hash    = file_hash
+            )
+            self.log.log_to_file(f"Created New File: [{object_name}] [File ID:{file_id}] [Bucket: {info.bucket_name}] [etag: {info.etag}]", "BASE_FILE", "DEBUG")
+
+        else:
+            file_id = matched_file
+            self.log.log_to_file(f"File Version Matched: [{object_name}] [File ID:{file_id}] [Bucket: {self.obj.bucket}]", "BASE_FILE", "DEBUG")
+        
         return file_id # Return file_id to link to
     
     def check_file_exists(self):
