@@ -19,7 +19,7 @@ class Nodes:
         # Initialise variables 
         self.book_soup          = self.this_book.usx
         self.book_map_id        = self.this_book.book_map_id
-        self.book_style_file_id = self.metadata.styles
+        self.book_style_file_id = self.metadata.styles.file_id
         self.translation_id     = self.metadata.translation_id
 
         self.created_nodes = {
@@ -34,50 +34,50 @@ class Nodes:
         self.db.commit()
     
     def walk_parsed_xml(self):
-        node_id_map = {}    # maps bs4 node → SQL node_id
-        child_index = {}    # parent → next child index
-        path_map = {}       # bs4 node → canonical path
+        node_id_map         = {}    # maps bs4 node → SQL node_id
+        child_index         = {}    # parent → next child index
+        path_map            = {}       # bs4 node → canonical path
 
-        all_new_nodes = []
+        all_new_nodes       = []
 
-        node_id_offset = self.metadata.read.get_node_count()
+        node_id_offset      = self.metadata.read.get_node_count()
 
-        node_id_counter = 1
+        node_id_counter     = 1
 
-        node_chapter_ref = f"{self.this_book.book_code} 1"
+        node_chapter_ref    = f"{self.this_book.book_code} 1"
 
         for node in self.book_soup.descendants:
             # Initialise node_id for the note we are going to create in DB
-            node_id = node_id_counter + node_id_offset # since i will be 0, want to start at 1 instead + offset from database to say this new node is
-            node_type = None
+            node_id     = node_id_counter + node_id_offset # since i will be 0, want to start at 1 instead + offset from database to say this new node is
+            node_type   = None
             
-            this_node = [None] * 20 # create mutable list of length 17
+            this_node   = [None] * 20 # create mutable list of length 17
 
             if isinstance(node, Tag):
-                node_type =     node.name
+                node_type       = node.name
 
-                this_node[1] =  node_type # node_type, 1
-                this_node[2] =  node.get("code") # code, 2
-                sid =           node.get("sid")
-                this_node[3] =  sid # sid, 3
-                eid =           node.get("eid")
-                this_node[4] =  eid # eid, 4
-                this_node[5] =  node.get("vid") # vid, 5
-                this_node[6] =  node.get("style") # style, 6 
-                this_node[7] =  node.get("number") # number, 7
-                this_node[8] =  node.get("caller") # caller, 8
-                this_node[9] =  node.get("closed") # closed, 9
-                this_node[10] = node.get("version") # version, 10
-                strong =        node.get("strong")
-                this_node[11] = strong # strong, 11
-                this_node[12] = node.get("loc") # loc, 12
-                this_node[17] = node.get("align") # align, 17 
+                this_node[1]    = node_type # node_type, 1
+                this_node[2]    = node.get("code") # code, 2
+                sid             = node.get("sid")
+                this_node[3]    = sid # sid, 3
+                eid             = node.get("eid")
+                this_node[4]    = eid # eid, 4
+                this_node[5]    = node.get("vid") # vid, 5
+                this_node[6]    = node.get("style") # style, 6 
+                this_node[7]    = node.get("number") # number, 7
+                this_node[8]    = node.get("caller") # caller, 8
+                this_node[9]    = node.get("closed") # closed, 9
+                this_node[10]   = node.get("version") # version, 10
+                strong          = node.get("strong")
+                this_node[11]   = strong # strong, 11
+                this_node[12]   = node.get("loc") # loc, 12
+                this_node[17]   = node.get("align") # align, 17 
 
             if isinstance(node, NavigableString):  
-                node_type = "text"
+                node_type       = "text"
 
-                this_node[0] = str(node) # node_text, 0
-                this_node[1] = node_type # node_type, 1
+                this_node[0]    = str(node) # node_text, 0
+                this_node[1]    = node_type # node_type, 1
 
                 for node_parent in node.parents:
                     if node_parent.name == "note":
@@ -87,8 +87,8 @@ class Nodes:
                         parent_style = node_parent.get("style")
 
                         this_node[19] = self.metadata.read.is_paragraph_versetext( # is_tokenisable, 19
-                            style=parent_style,
-                            style_file_id=self.book_style_file_id
+                            style           = parent_style,
+                            style_file_id   = self.book_style_file_id
                         )
                         break
 
@@ -97,17 +97,17 @@ class Nodes:
                 continue
 
             # ------ Parent & child index tracking
-            node_id_map[id(node)] = node_id # add to node_map
+            node_id_map[id(node)]   = node_id # add to node_map
 
             # With mapped id, find parent and get associated node_id
-            parent_obj = node.parent
-            parent_node_id = None
-            index_in_parent = None
+            parent_obj              = node.parent
+            parent_node_id          = None
+            index_in_parent         = None
 
             # if has a parent (only xml and usx will not)
             if parent_obj:
                 # get node_id map for parsed xml
-                parent_node_id = node_id_map.get(id(parent_obj))
+                parent_node_id  = node_id_map.get(id(parent_obj))
 
                 # also increment and set count for child index under that parent
                 if id(parent_obj) not in child_index:
@@ -120,16 +120,16 @@ class Nodes:
             # ------ Build Canonical Path
             parent_path = path_map.get(id(parent_obj), "") # if not exists, gives empty string
 
-            new_path = f"/{node_type}:{index_in_parent}" 
-            canonical_path = parent_path + new_path
-            path_map[id(node)] = canonical_path
+            new_path            = f"/{node_type}:{index_in_parent}" 
+            canonical_path      = parent_path + new_path
+            path_map[id(node)]  = canonical_path
 
             # Update the rest of the node parts that required more processing
-            this_node[13] = parent_node_id          # parent_node_id, 13
-            this_node[14] = index_in_parent         # index_in_parent, 14
-            this_node[15] = self.book_map_id        # book_map_id, 15
-            this_node[16] = canonical_path          # canonical_path, 16 
-            this_node[18] = self.translation_id     # translation_id, 18
+            this_node[13]   = parent_node_id          # parent_node_id, 13
+            this_node[14]   = index_in_parent         # index_in_parent, 14
+            this_node[15]   = self.book_map_id        # book_map_id, 15
+            this_node[16]   = canonical_path          # canonical_path, 16 
+            this_node[18]   = self.translation_id     # translation_id, 18
 
             # Prepare for next node, and add for bulk insert
             all_new_nodes.append(tuple(this_node))
