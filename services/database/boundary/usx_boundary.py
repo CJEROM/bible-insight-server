@@ -398,7 +398,7 @@ class USXWriteBoundary(WriteBoundary):
         ) -> int:
         query = """
             INSERT INTO audit.files (etag, type, object_path, bucket, source_id, version_id, version_note, data_format, content_hash) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
         file_id = self.db.fetch_clean_one(query, (etag, type, object_path, bucket, source_id, version_id, version_note, data_format, content_hash))
