@@ -10,7 +10,10 @@ if TYPE_CHECKING:
 from database.boundary.base_boundary import ReadBoundary, WriteBoundary
 
 class ObjectManager:
-    def __init__(self, this_manager: "ManagerHandler" = None, default_bucket=None):
+    def __init__(self, 
+            this_manager    : "ManagerHandler"  = None, 
+            default_bucket  : str               = None
+        ):
         self.this_manager   = this_manager
         self.env            = None
         if this_manager == None:
@@ -32,19 +35,24 @@ class ObjectManager:
             secure          = False
         )
 
-        self.bucket = None
+        self.bucket             = None
         self.configured_buckets = []
 
         self.create_bucket(
             bucket_name     = "bible-dbl-raw",
-            is_versioned    = True,
-            is_default      = True
+            is_versioned    = True
         )
         self.create_bucket(
             bucket_name     = "open-bible-location-data",
         )
         self.create_bucket(
             bucket_name     = "bible-nlp"
+        )
+        
+        # Allow for setting default bucket
+        self.create_bucket(
+            bucket_name     = default_bucket,
+            is_default      = True
         )
     
     def create_bucket(self, 
@@ -68,25 +76,26 @@ class ObjectManager:
         if is_default:
             self.bucket = bucket_name
 
-    def stream_file(self, 
-            object_name : str, 
-            version_id   : str,
-            bucket      : str = None
-        ):
+    def stream_file(self,
+        object_name : str,
+        version_id  : str | None = None,
+        bucket      : str | None = None,
+        decode      : bool = True
+    ):
+        bucket = bucket or self.bucket
 
-        if bucket == None:
-            bucket = self.bucket
-        # Get file
-        response = None 
+        response = None
         try:
             response = self.client.get_object(
-                bucket_name     = bucket,
-                object_name     = object_name,
-                version_id      = version_id
+                bucket_name=bucket,
+                object_name=object_name,
+                version_id=version_id
             )
-            # Read the data as bytes, then decode as UTF-8
-            data = response.read().decode("utf-8")
-            return data
+
+            if decode:
+                return response.read().decode("utf-8")
+            return response.read()
+
         finally:
             if response:
                 response.close()
