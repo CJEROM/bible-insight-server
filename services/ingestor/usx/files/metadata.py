@@ -18,7 +18,14 @@ if TYPE_CHECKING:
     from ingestor.usx.files.agreements import DBLAgreement
 
 class Metadata(BaseFile):
-    def __init__(self, translation_file_path: Path, log: "LogManager", source_url, main_manager: "ManagerHandler", agreement: "DBLAgreement"):
+    def __init__(self, 
+            translation_file_path   : Path, 
+            log                     : "LogManager", 
+            source_url              : str, 
+            main_manager            : "ManagerHandler", 
+            agreement               : "DBLAgreement"
+        ):
+
         self.translation_file_path  = translation_file_path
         self.log                    = log
         self.manager                = main_manager
@@ -27,28 +34,28 @@ class Metadata(BaseFile):
         self.label                  = main_manager.get_label()
         self.dbl_agreement          = agreement
 
-        self.read               = USXReadBoundary(self.db)
-        self.write              = USXWriteBoundary(self.db)
+        self.read                   = USXReadBoundary(self.db)
+        self.write                  = USXWriteBoundary(self.db)
 
         # Now should it create a new source every time it downloads? 
         #       or have the same one for this translation
-        self.source_id          = None
-        self.source_url         = source_url
+        self.source_id              = None
+        self.source_url             = source_url
 
-        self.metadata           = {}
+        self.metadata               = {}
 
-        self.translation_id     = None
-        self.translation_name   = None
-        self.language_id        = None
+        self.translation_id         = None
+        self.translation_name       = None
+        self.language_id            = None
 
         # Object Storage Start Path
-        self.object_start       = None
+        self.object_start           = None
 
-        self.ingestion_start    = self.get_time()
+        self.ingestion_start        = self.get_time()
 
-        self.styles         = None
-        self.ldml           = None
-        self.versification  = None
+        self.styles                 = None
+        self.ldml                   = None
+        self.versification          = None
 
         self.read_metadata_file(translation_file_path)
 
@@ -61,33 +68,33 @@ class Metadata(BaseFile):
         return self.metadata
 
     def extract_metadata(self, metadata_xml: BeautifulSoup):
-        self.metadata["language_iso"]   = metadata_xml.find("language").find("iso").text
-        self.metadata["language_name"]  = metadata_xml.find("language").find("name").text
-        self.metadata["language_local"] = metadata_xml.find("language").find("nameLocal").text
-        self.metadata["script"]         = metadata_xml.find("language").find("script").text
-        self.metadata["scriptCode"]     = metadata_xml.find("language").find("scriptCode").text
-        self.metadata["scriptDirection"]= metadata_xml.find("language").find("scriptDirection").text
-        self.metadata["ldml"]           = metadata_xml.find("language").find("ldml").text
-        self.metadata["numerals"]       = metadata_xml.find("language").find("numerals").text
+        self.metadata["language_iso"]       = metadata_xml.find("language").find("iso").text
+        self.metadata["language_name"]      = metadata_xml.find("language").find("name").text
+        self.metadata["language_local"]     = metadata_xml.find("language").find("nameLocal").text
+        self.metadata["script"]             = metadata_xml.find("language").find("script").text
+        self.metadata["scriptCode"]         = metadata_xml.find("language").find("scriptCode").text
+        self.metadata["scriptDirection"]    = metadata_xml.find("language").find("scriptDirection").text
+        self.metadata["ldml"]               = metadata_xml.find("language").find("ldml").text
+        self.metadata["numerals"]           = metadata_xml.find("language").find("numerals").text
 
-        self.metadata["abbreviation"]   = metadata_xml.find("identification").find("abbreviation").text
-        self.metadata["abbreviationLocal"]   = metadata_xml.find("identification").find("abbreviationLocal").text
-        self.metadata["name"]           = metadata_xml.find("identification").find("name").text
-        self.metadata["nameLocal"]      = metadata_xml.find("identification").find("nameLocal").text
-        self.metadata["description"]    = metadata_xml.find("identification").find("description").text
-        self.metadata["medium"]         = metadata_xml.find("type").find("medium").text
+        self.metadata["abbreviation"]       = metadata_xml.find("identification").find("abbreviation").text
+        self.metadata["abbreviationLocal"]  = metadata_xml.find("identification").find("abbreviationLocal").text
+        self.metadata["name"]               = metadata_xml.find("identification").find("name").text
+        self.metadata["nameLocal"]          = metadata_xml.find("identification").find("nameLocal").text
+        self.metadata["description"]        = metadata_xml.find("identification").find("description").text
+        self.metadata["medium"]             = metadata_xml.find("type").find("medium").text
 
-        self.metadata["copyright"]      = metadata_xml.find("copyright").find("statementContent").text
-        self.metadata["promotion"]      = metadata_xml.find("promotion").find("promoVersionInfo").text
+        self.metadata["copyright"]          = metadata_xml.find("copyright").find("statementContent").text
+        self.metadata["promotion"]          = metadata_xml.find("promotion").find("promoVersionInfo").text
 
-        self.metadata["revision"]       = int(metadata_xml.find("DBLMetadata").get("revision"))
-        self.metadata["revision_note"]  = metadata_xml.find("archiveStatus").find("comments").text
-        self.metadata["revision_date"]  = metadata_xml.find("archiveStatus").find("dateUpdated").text
+        self.metadata["revision"]           = int(metadata_xml.find("DBLMetadata").get("revision"))
+        self.metadata["revision_note"]      = metadata_xml.find("archiveStatus").find("comments").text
+        self.metadata["revision_date"]      = metadata_xml.find("archiveStatus").find("dateUpdated").text
 
-        self.metadata["dbl_id"]         = metadata_xml.find("DBLMetadata").get("id")
-        self.metadata["file_version"]   = metadata_xml.find("DBLMetadata").get("version")
+        self.metadata["dbl_id"]             = metadata_xml.find("DBLMetadata").get("id")
+        self.metadata["file_version"]       = metadata_xml.find("DBLMetadata").get("version")
 
-        self.translation_name           = f"{self.metadata["abbreviation"]}: {self.metadata["name"]}"
+        self.translation_name               = f"{self.metadata["abbreviation"]}: {self.metadata["name"]}"
 
         self.log.log_to_file(f"Extracted Metedata!", "METADATA", "DEBUG")
 
@@ -97,7 +104,7 @@ class Metadata(BaseFile):
             # Example: <relation id="9879dbb7cfe39e4d" revision="4" type="text" relationType="source"/>
             relation_dbl_id     = relation.get("id")
             relation_revision   = relation.get("revision")
-            relation_type   = relation.get("relationType")
+            relation_type       = relation.get("relationType")
 
             self.write.persist_translation_relation(
                 from_dbl_id     = self.get_metadata("dbl_id"),
@@ -126,7 +133,7 @@ class Metadata(BaseFile):
         # Method may change as Language Ingestion is completed
         #   Currently relies on language already existing in DB to be succesful
         language_id = self.read.find_language(
-            iso_code=self.get_metadata("language_iso")
+            iso_code    = self.get_metadata("language_iso")
         )
 
         self.log.log_to_file(f"Matched language for translation to ID: {language_id} with ISO: {self.get_metadata("language_iso")}!", "METADATA", "DEBUG")
@@ -342,7 +349,6 @@ class Metadata(BaseFile):
         mimeType    = file_metadata_xml.get("mimeType")
 
         file_name = uri.split("/")[-1]
-        file_extension = file_name.split(".")[1]
 
         new_file_path = Path(self.translation_file_path) / uri
 
