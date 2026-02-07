@@ -83,7 +83,7 @@ class Versification(BaseFile):
                 )
                 additions+=1
                 
-                self.log.log_to_file(f"Created Excluded Verse: {verse_ref}", "VERSIFICATION", "INFO")
+                self.log.log_to_file(f"Created Excluded Verse: {verse_ref}", "VERSIFICATION", "DEBUG")
 
         if additions > 0:
             print(f"    [{additions}] Excluded Verses added to database")

@@ -407,13 +407,12 @@ class USXWriteBoundary(WriteBoundary):
             value: str,
             unit: str = None,
             style_id: int = None
-        ) -> int:
+        ) -> None:
         query = """
             INSERT INTO bible.properties (name, value, unit, style_id) 
             VALUES (%s, %s, %s, %s);
         """
-        style_id = self.db.fetch_clean_one(query, (name, value, unit, style_id))
-        return style_id
+        self.db.execute(query, (name, value, unit, style_id))
     
     def persist_style(self,
             style: str,
