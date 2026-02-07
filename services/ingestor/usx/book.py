@@ -33,7 +33,7 @@ class Book(BaseFile):
 
         self.log.log_to_file(f"Created with [book_map_id:{self.book_map_id}]", f"BOOK: {self.book_code}", "INFO")
 
-        self.book_nodes         = Nodes(self, self.log, book_string) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
+        self.book_nodes         = Nodes(self, self.log) # Allows for creating all associated nodes for this book first, before going down the rest of this pipeline
         
         self.createTextChapters()
 

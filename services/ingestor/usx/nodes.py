@@ -17,7 +17,7 @@ class Nodes:
         self.db                 = self.manager.get_db()
 
         # Initialise variables 
-        self.book_soup          = BeautifulSoup(self.this_book.usx, "xml")
+        self.book_soup          = self.this_book.usx
         self.book_map_id        = self.this_book.book_map_id
         self.book_style_file_id = self.metadata.styles
         self.translation_id     = self.metadata.translation_id
