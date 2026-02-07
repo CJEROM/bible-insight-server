@@ -30,7 +30,6 @@ class Book(BaseFile):
         self.file_id            = file_id
         self.usx                = BeautifulSoup(book_string, "xml")
 
-
         self.book_code          = book_code
 
         self.log.log_to_file(f"Created with [book_map_id:{self.book_map_id}]", f"BOOK: {self.book_code}", "INFO")

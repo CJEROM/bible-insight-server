@@ -377,12 +377,13 @@ class USXWriteBoundary(WriteBoundary):
             file_id: int,
             short: str,
             long: str
-        ) -> None:
+        ) -> int:
         query = """
             INSERT INTO bible.booktofile (book_code, translation_id, file_id, short, long) 
             VALUES (%s, %s, %s, %s, %s) RETURNING id;
         """
-        self.db.execute(query, (book_code, translation_id, file_id, short, long))
+        book_map_id = self.db.fetch_clean_one(query, (book_code, translation_id, file_id, short, long))
+        return book_map_id
 
     def persist_file(self,
             etag: str,
