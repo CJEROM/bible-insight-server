@@ -12,7 +12,7 @@ from ingestor.usx.strongsingestor import StrongsIngestor
 from manager.managerhandler import ManagerHandler
 from ingestor.usx.files.agreements import DBLAgreement
 
-class Ingestor:
+class USXIngestor:
     def __init__(
         self,
         manager: ManagerHandler | None = None,
@@ -324,7 +324,7 @@ async def main(
         dbl_id: str | None,
         agreement_id: int
     ):
-    await Ingestor(
+    await USXIngestor(
         dbl_id=dbl_id,
         agreement_id=agreement_id
     ).run()
