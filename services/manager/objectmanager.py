@@ -1,4 +1,6 @@
 from minio import Minio
+from minio.commonconfig import ENABLED
+from minio.versioningconfig import VersioningConfig
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -30,40 +32,36 @@ class ObjectManager:
             secure          = False
         )
 
-        self.configured_buckets = [
-            "bible-dbl-raw", 
-            "open-bible-location-data", 
-            "bible-nlp"
-        ]
-
-        self.init_object_storage_buckets()
-
         self.bucket = None
-        if default_bucket != None:
-            self.bucket     = self.set_default_bucket(default_bucket)
+        self.configured_buckets = []
 
-    def set_default_bucket(self, default_bucket):
-        if default_bucket not in self.configured_buckets:
-            self.client.make_bucket(default_bucket)
-            self.configured_buckets.append(default_bucket)
-
-        self.bucket = default_bucket
-
-    def get_configured_buckets(self):
-        return self.configured_buckets
+        self.create_bucket(
+            bucket_name     = "bible-dbl-raw",
+            is_versioned    = True,
+            is_default      = True
+        )
+        self.create_bucket(
+            bucket_name     = "open-bible-location-data",
+        )
+        self.create_bucket(
+            bucket_name     = "bible-nlp"
+        )
     
-    def get_minio_object(self):
-        return self.client
+    def create_bucket(self, 
+            bucket_name: str, 
+            is_versioned: bool = False,
+            is_default: bool = False
+        ):
+        self.client.make_bucket(bucket_name)
 
-    def init_object_storage_buckets(self):
-        for bucket in self.configured_buckets:
-            if not self.client.bucket_exists(bucket):
-                self.client.make_bucket(bucket)
-                config = self.client.get_bucket_versioning(bucket)
-                print(config)
-                # self.client.set_bucket_versioning(bucket, VersioningConfig(ENABLED))
+        if is_versioned:
+            self.client.set_bucket_versioning(bucket_name, VersioningConfig(ENABLED))
 
-        return self.client.list_buckets()
+        if bucket_name not in self.configured_buckets:
+            self.configured_buckets.append(bucket_name)
+
+        if is_default:
+            self.bucket = bucket_name
 
     def stream_file(self, object_name, bucket=None):
         if bucket == None:
