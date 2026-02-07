@@ -260,7 +260,7 @@ class Metadata(BaseFile):
         self.extract_metadata(metadata_xml)
 
         # We don't rely on agreement to store files, we build from dbl_id and revision
-        self.object_start = f"{self.get_metadata("dbl_id")}/{self.get_metadata("revision")}"
+        self.object_start = f"{self.get_metadata("dbl_id")}" # /{self.get_metadata("revision")}
 
         self.source_id = self.create_source(self.source_url)
 
