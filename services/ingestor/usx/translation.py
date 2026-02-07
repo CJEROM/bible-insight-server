@@ -53,7 +53,7 @@ class Translation:
             self.log.log_to_file(error_message, "TRANSLATION", "ERROR")
             print(f"❌ Failed to Upload Translation {self.dbl_id}-{self.agreement_id} with error {e}")
             # ON FAIL -> DELETE ALL TRANSLATION DATA (Clears away partial data in the DB)
-            if self.metadata.translation_id != None:
+            if self.metadata is not None:
                 self.delete.delete_translation(self.metadata.translation_id)
 
         self.log.log_to_file(f"Completed Translation Ingestion!", "TRANSLATION", "INFO")
