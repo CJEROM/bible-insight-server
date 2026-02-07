@@ -34,8 +34,6 @@ class Translation:
 
         print("✅ Starting Upload ...")
 
-        self.labelproject       = None
-
         self.log.log_to_file(f"TRANSLATION: [{self.dbl_id}-{self.agreement_id}]", "TRANSLATION", "INFO")
 
         self.metadata           = None

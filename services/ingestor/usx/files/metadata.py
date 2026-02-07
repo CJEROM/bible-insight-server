@@ -24,7 +24,7 @@ class Metadata(BaseFile):
         self.manager                = main_manager
         self.obj                    = main_manager.get_obj()
         self.db                     = main_manager.get_db()
-        # self.label                  = main_manager.get_label()
+        self.label                  = main_manager.get_label()
         self.dbl_agreement          = agreement
 
         self.read               = USXReadBoundary(self.db)

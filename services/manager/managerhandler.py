@@ -11,7 +11,7 @@ class ManagerHandler:
         self.env = EnvManager(self)
         self.db = DBManagerFactory(self).default()
         self.obj = ObjectManager(self)
-        self.label = LabelManager(self)
+        self.label = None # LabelManager(self)
 
     def get_env(self):
         return self.env
