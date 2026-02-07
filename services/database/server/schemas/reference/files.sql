@@ -17,9 +17,10 @@ CREATE TABLE IF NOT EXISTS audit.files (
     data_format     TEXT NOT NULL,
     version_id      TEXT, -- Object storage version id
     version_note    TEXT, -- e.g., for Git commit hash or similar
-    active          BOOLEAN DEFAULT TRUE, -- the preferred/current version for this logical file
+    active          BOOLEAN DEFAULT FALSE, -- the preferred/current version for this logical file
 
     content_hash    TEXT NOT NULL,
+    import_time     TIMESTAMP DEFAULT NOW(),
 
     FOREIGN KEY (source_id) REFERENCES audit.sources (id) ON DELETE SET NULL,
     FOREIGN KEY (data_format) REFERENCES lookup.data_formats (code)
