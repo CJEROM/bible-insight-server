@@ -23,7 +23,7 @@ CREATE TABLE sil.iso_scopes (
     description     TEXT NOT NULL
 );
 
-INSERT INTO sil.iso_scopes (code, name, description)
+INSERT INTO sil.iso_scopes (id, name, description)
 VALUES 
     ('I', 'Individual',     'Represents a single, distinct language'),
     ('M', 'Macrolanguage',  'Represents a macrolanguage rather than an individual language'),
@@ -35,7 +35,7 @@ CREATE TABLE sil.iso_types (
     description     TEXT NOT NULL
 );
 
-INSERT INTO sil.iso_types (code, name, description)
+INSERT INTO sil.iso_types (id, name, description)
 VALUES 
     ('A', 'Ancient',        'Known only from historical records'),
     ('C', 'Constructed',    'Artificially created language'),
@@ -75,7 +75,7 @@ CREATE TABLE sil.macro_status (
     description     TEXT NOT NULL
 );
 
-INSERT INTO sil.macro_status (code, name, description)
+INSERT INTO sil.macro_status (id, name, description)
 VALUES 
     ('A', 'Active',     'Code is currently valid'),
     ('R', 'Retired',    'Code has been retired');
@@ -94,8 +94,7 @@ CREATE TABLE sil.retirements (
     Effective           DATE        NOT NULL,       -- The date the retirement became effective
     FOREIGN KEY (iso_code) REFERENCES sil.iso_codes (id),
     FOREIGN KEY (retired_reason) REFERENCES sil.retirement_reasons (id),
-    FOREIGN KEY (changed_to) REFERENCES sil.iso_codes (id),
-    -- FOREIGN KEY (changed_to) REFERENCES sil.iso_codes (id),
+    FOREIGN KEY (changed_to) REFERENCES sil.iso_codes (id)
 );
 
 CREATE TABLE lookup.retirement_reasons (
@@ -104,12 +103,12 @@ CREATE TABLE lookup.retirement_reasons (
     description     TEXT NOT NULL
 )
 
-INSERT INTO sil.retirement_reasons (code, name, description)
+INSERT INTO sil.retirement_reasons (id, name, description)
 VALUES
     -- Associated with Change_To
-    ('C', 'Change', ''),
-    ('D', 'Duplicate', ''),
-    ('M', 'Merge', ''),
+    ('C', 'Change',         'Code replaced by another'),
+    ('D', 'Duplicate',      'Code duplicated another'),
+    ('M', 'Merge',          'Multiple codes merged'),
     -- Exists independently
-    ('N', 'Non-existent', ''),
-    ('S', 'Split', '');
+    ('N', 'Non-existent',   'Language determined not to exist'),
+    ('S', 'Split',          'Language split into multiple codes');
