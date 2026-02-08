@@ -18,31 +18,31 @@ CREATE TABLE sil.iso_codes (
 );
 
 CREATE TABLE sil.iso_scopes (
-    id          char(1) PRIMARY KEY,
-    name        TEXT NOT NULL,
-    description TEXT
+    id              char(1) PRIMARY KEY,
+    name            TEXT NOT NULL,
+    description     TEXT NOT NULL
 );
 
-INSERT VALUES INTO sil.iso_scopes (code, name, description)
+INSERT INTO sil.iso_scopes (code, name, description)
 VALUES 
-    ('I', 'Individual', ''),
-    ('M', 'Macrolanguage', ''),
-    ('S', 'Special', '');
+    ('I', 'Individual',     'Represents a single, distinct language'),
+    ('M', 'Macrolanguage',  'Represents a macrolanguage rather than an individual language'),
+    ('S', 'Special',        'Reserved for special purposes (e.g. undetermined)');
 
 CREATE TABLE sil.iso_types (
-    id          char(1) PRIMARY KEY,
-    name        TEXT NOT NULL,
-    description TEXT
+    id              char(1) PRIMARY KEY,
+    name            TEXT NOT NULL,
+    description     TEXT NOT NULL
 );
 
-INSERT VALUES INTO sil.iso_types (code, name, description)
+INSERT INTO sil.iso_types (code, name, description)
 VALUES 
-    ('A', 'Ancient', ''),
-    ('C', 'Constructed', ''),
-    ('E', 'Extinct', ''),
-    ('H', 'Histrical', ''),
-    ('L', 'Living', ''),
-    ('S', 'Special', '');
+    ('A', 'Ancient',        'Known only from historical records'),
+    ('C', 'Constructed',    'Artificially created language'),
+    ('E', 'Extinct',        'No longer spoken'),
+    ('H', 'Histrical',      'Earlier form of a modern language'),
+    ('L', 'Living',         'Currently spoken'),
+    ('S', 'Special',        'Special-use language code');
 
 -- ============================================================================
 -- ISO 639-3 Code Language Names
@@ -70,15 +70,15 @@ CREATE TABLE sil.macrolanguages (
 );
 
 CREATE TABLE sil.macro_status (
-    id          char(1) PRIMARY KEY,
-    name        TEXT NOT NULL,
-    description TEXT
+    id              char(1) PRIMARY KEY,
+    name            TEXT NOT NULL,
+    description     TEXT NOT NULL
 );
 
-INSERT VALUES INTO sil.macro_status (code, name, description)
+INSERT INTO sil.macro_status (code, name, description)
 VALUES 
-    ('A', 'Active', ''),
-    ('R', 'Retired', '');
+    ('A', 'Active',     'Code is currently valid'),
+    ('R', 'Retired',    'Code has been retired');
 
 -- ============================================================================
 -- ISO 639-3 Retirements (/Depracated)
@@ -101,7 +101,7 @@ CREATE TABLE sil.retirements (
 CREATE TABLE lookup.retirement_reasons (
     id              char(1) PRIMARY KEY,
     name            TEXT NOT NULL,
-    description     TEXT
+    description     TEXT NOT NULL
 )
 
 INSERT INTO sil.retirement_reasons (code, name, description)
