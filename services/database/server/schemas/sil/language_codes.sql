@@ -81,7 +81,7 @@ VALUES
     ('R', 'Retired',    'Code has been retired');
 
 -- ============================================================================
--- ISO 639-3 Retirements (/Depracated)
+-- ISO 639-3 Retirements (A.K.A Depracated Codes)
 -- ============================================================================
 
 CREATE TABLE sil.retirements (
@@ -89,12 +89,10 @@ CREATE TABLE sil.retirements (
     iso_code            char(3)      NOT NULL,      -- The three-letter 639-3 identifier
     ref_name            varchar(150) NOT NULL,      -- reference name of language
     retired_reason      char(1)      NOT NULL,
-    changed_to          char(3)      NULL,          -- in the cases of C, D, and M, the identifier to which all instances of this Id should be changed
     retired_remedy      varchar(300) NULL,          -- The instructions for updating an instance of the retired (split) identifier
-    Effective           DATE        NOT NULL,       -- The date the retirement became effective
+    effective           DATE         NOT NULL,       -- The date the retirement became effective
     FOREIGN KEY (iso_code) REFERENCES sil.iso_codes (id),
     FOREIGN KEY (retired_reason) REFERENCES sil.retirement_reasons (id),
-    FOREIGN KEY (changed_to) REFERENCES sil.iso_codes (id)
 );
 
 CREATE TABLE sil.retirement_reasons (
@@ -112,3 +110,10 @@ VALUES
     -- Exists independently
     ('N', 'Non-existent',   'Language determined not to exist'),
     ('S', 'Split',          'Language split into multiple codes');
+
+CREATE TABLE sil.retirement_changes (
+    id                  SERIAL PRIMARY KEY,
+    retirement_id       INTEGER NOT NULL,
+    changed_to          char(3) NOT NULL,          -- in the cases of C, D, and M (Retirement_Reason), the identifier to which all instances of this Id should be changed
+    FOREIGN KEY (changed_to) REFERENCES sil.iso_codes (id)
+)
