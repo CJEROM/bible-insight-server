@@ -262,7 +262,7 @@ class USXIngestor:
         # Initialise logfile
         self.translation_title = f"{self.dbl_id}-{self.agreement_id}"
 
-        self.log = self.manager.create_log_in_folder(["logs", "ingestor"], f"{self.translation_title}")
+        self.log = self.manager.create_log_in_folder(["logs", "ingestor", "usx"], f"{self.translation_title}")
         self.log.set_logging_level(1) # DEBUG logging
 
         licence_code = await self.get_licence_code(page)
