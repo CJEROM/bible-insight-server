@@ -1,7 +1,11 @@
 from manager.managerhandler import ManagerHandler
 
-from ingestor.usx.files.base_file import BaseFile
 from database.boundary.sil_boundary import SILReadBoundary, SILWriteBoundary, SILDeleteBoundary
+
+from ingestor.sil.iso6393_codes import ISO6393Codes
+from ingestor.sil.iso6393_names import ISO6393Names
+from ingestor.sil.iso6393_macrolanguages import ISO6393MacroLanguages
+from ingestor.sil.iso6393_retirements import ISO6393Retirements
 
 import requests
 
@@ -117,10 +121,10 @@ class SILIngestor:
     def read_downloads(self, file_path: Path):
         # Goes through all the child files and loads them into the appropriate class to download accordingly
         files = {
-            0: "iso-639-3_Name_Index.tab",
-            1: "iso-639-3_Retirements.tab",
+            0: "iso-639-3.tab",
+            1: "iso-639-3_Name_Index.tab",
             2: "iso-639-3-macrolanguages.tab",
-            3: "iso-639-3.tab"
+            3: "iso-639-3_Retirements.tab"
         }
 
         # Get latest part of the folder to get date it was recently uploaded, this will be object start
@@ -133,13 +137,33 @@ class SILIngestor:
 
             match id:
                 case 0:
-                    pass
+                    ISO6393Codes(
+                        main_manager    = self.manager,
+                        log             = self.log,
+                        source_id       = self.source_id,
+                        file_path       = data_file_path
+                    )
                 case 1:
-                    pass
+                    ISO6393Names(
+                        main_manager    = self.manager,
+                        log             = self.log,
+                        source_id       = self.source_id,
+                        file_path       = data_file_path
+                    )
                 case 2:
-                    pass
+                    ISO6393MacroLanguages(
+                        main_manager    = self.manager,
+                        log             = self.log,
+                        source_id       = self.source_id,
+                        file_path       = data_file_path
+                    )
                 case 3:
-                    pass
+                    ISO6393Retirements(
+                        main_manager    = self.manager,
+                        log             = self.log,
+                        source_id       = self.source_id,
+                        file_path       = data_file_path
+                    )
         
         # After wards they should be uploaded to object storage, and persisted to DB
 
