@@ -1,3 +1,5 @@
+
+-- TO BE DEPRACATED
 CREATE TABLE IF NOT EXISTS language.languages (
     id                  SERIAL PRIMARY KEY,
     iso                 TEXT UNIQUE, -- Follows ISO 639-3:2007 format? 
