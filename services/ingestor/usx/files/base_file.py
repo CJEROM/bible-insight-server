@@ -28,7 +28,7 @@ class BaseFile:
     # IF IT DOES, USE UPDATE INSTEAD OF INSERT?
 
 
-    def sha256_file(path: str) -> str:
+    def sha256_file(self, path: str) -> str:
         hasher = hashlib.sha256()
         with open(path, "rb") as f:
             for chunk in iter(lambda: f.read(8192), b""):
@@ -46,7 +46,6 @@ class BaseFile:
         file_hash = self.sha256_file(file_path)
 
         # Try find matching hash
-
         matched_file = self.read.get_file_by_hash(
             content_hash    = file_hash,
             data_format     = data_format

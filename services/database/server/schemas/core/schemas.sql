@@ -10,3 +10,5 @@ CREATE SCHEMA entity;       -- people, places, objects, events | asserted real-w
 CREATE SCHEMA geo;          -- spatial data & mappings
 CREATE SCHEMA measure;      -- units, systems, conversions
 CREATE SCHEMA structure;    -- chronology, harmony, outlines
+
+CREATE SCHEMA sil;
