@@ -92,7 +92,7 @@ CREATE TABLE sil.retirements (
     retired_remedy      varchar(300) NULL,          -- The instructions for updating an instance of the retired (split) identifier
     effective           DATE         NOT NULL,       -- The date the retirement became effective
     FOREIGN KEY (iso_code) REFERENCES sil.iso_codes (id),
-    FOREIGN KEY (retired_reason) REFERENCES sil.retirement_reasons (id),
+    FOREIGN KEY (retired_reason) REFERENCES sil.retirement_reasons (id)
 );
 
 CREATE TABLE sil.retirement_reasons (
@@ -115,5 +115,6 @@ CREATE TABLE sil.retirement_changes (
     id                  SERIAL PRIMARY KEY,
     retirement_id       INTEGER NOT NULL,
     changed_to          char(3) NOT NULL,          -- in the cases of C, D, and M (Retirement_Reason), the identifier to which all instances of this Id should be changed
-    FOREIGN KEY (changed_to) REFERENCES sil.iso_codes (id)
+    FOREIGN KEY (changed_to) REFERENCES sil.iso_codes (id),
+    FOREIGN KEY (retirement_id) REFERENCES sil.retirements (id)
 )
