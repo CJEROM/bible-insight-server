@@ -99,7 +99,7 @@ CREATE TABLE sil.retirement_reasons (
     id              char(1) PRIMARY KEY,
     name            TEXT NOT NULL,
     description     TEXT NOT NULL
-)
+);
 
 INSERT INTO sil.retirement_reasons (id, name, description)
 VALUES
