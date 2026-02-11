@@ -23,6 +23,8 @@ class ISO6393MacroLanguages(BaseFile):
         self.read_file()
 
     def read_file(self):
+        added_macro_languages = 0
+
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['M_Id', 'I_Id', 'I_Status']
             header = next(f).rstrip("\n").split("\t")
@@ -31,8 +33,18 @@ class ISO6393MacroLanguages(BaseFile):
 
             for line in f:
                 columns = line.rstrip("\n").split("\t")
-                # print(columns)
-                # columns is now a list of values
+                
+                if (self.read.is_iso_code(columns[1])):
+                    self.write.persist_iso_macrolanguage(
+                        macro_id    = columns[0], # M_Id
+                        iso_id      = columns[1], # I_Id
+                        iso_status  = columns[2]  # I_Status
+                    )
+                    added_macro_languages += 1
+                else:
+                    print(columns)
+
+        print(f"Added [{added_macro_languages}] Macro Languages")
                 
 if __name__ == "__main__":
     from manager.managerhandler import ManagerHandler
