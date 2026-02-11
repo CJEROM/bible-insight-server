@@ -2,6 +2,7 @@ from ingestor.usx.files.base_file import BaseFile
 from database.boundary.sil_boundary import SILReadBoundary, SILWriteBoundary, SILDeleteBoundary
 
 from pathlib import Path
+import re
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -23,16 +24,38 @@ class ISO6393Retirements(BaseFile):
         self.read_file()
 
     def read_file(self):
+        added_retirements = 0
+        added_change_codes = 0
+
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['Id', 'Ref_Name', 'Ret_Reason', 'Change_To', 'Ret_Remedy', 'Effective']
-            header = next(f).rstrip("\n").split("\t")
-            
-            print(header)
+            header = next(f).rstrip("\n").split("\t") # Skip Header line
 
+            # Go through file line by line
             for line in f:
+                # Tab separated values -> Array
                 columns = line.rstrip("\n").split("\t")
-                # print(columns)
-                # columns is now a list of values
+
+                # Persist to database
+                retirement_id = self.write.persist_iso_retirements(
+                    iso_code        = columns[0], # Id
+                    ref_name        = columns[1], # Ref_Name
+                    retired_reason  = columns[2], # Ret_Reason
+                    retired_remedy  = columns[4], # Ret_Remedy
+                    effective       = columns[5]  # Effective
+                )
+                added_retirements += 1
+
+                # Change codes mapped to retirement_id
+                change_codes = re.findall(r"\[([^\]]+)\]", columns[3]) # Change_To
+                for code in change_codes:
+                    self.write.persist_iso_retirement_changes(
+                        retirement_id   = retirement_id,
+                        changed_to      = code
+                    )
+                    added_change_codes += 1
+            
+        print(f"Added [{added_retirements}] Retirements + [{added_change_codes}] Change Codes")
                 
 if __name__ == "__main__":
     from manager.managerhandler import ManagerHandler
