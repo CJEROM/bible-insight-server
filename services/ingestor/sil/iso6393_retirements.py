@@ -26,6 +26,7 @@ class ISO6393Retirements(BaseFile):
     def read_file(self):
         added_retirements = 0
         added_change_codes = 0
+        added_iso_codes = 0
 
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['Id', 'Ref_Name', 'Ret_Reason', 'Change_To', 'Ret_Remedy', 'Effective']
@@ -57,9 +58,29 @@ class ISO6393Retirements(BaseFile):
                     status      = 'R',          # DEFAULT: Retired 
                     comment     = 'DERIVED -> FROM Retirements'  # Comment
                 )
+                added_iso_codes += 1
+        
+        with open(self.this_file_path, "r", encoding="utf-8") as f:
+            # ['Id', 'Ref_Name', 'Ret_Reason', 'Change_To', 'Ret_Remedy', 'Effective']
+            header = next(f).rstrip("\n").split("\t") # Skip Header line
+            
+            # Go through file line by line
+            for line in f:
+                # Tab separated values -> Array
+                columns = line.rstrip("\n").split("\t")
+
+                retirement_id = None
+
+                # Get retirement to link to first
+                if (not self.read.is_iso_code(columns[0])):
+                    retirement_id = self.read.get_retirement(columns[0])
+
+                print(retirement_id)
+                print(columns)
 
                 # Change codes mapped to retirement_id
                 if columns[3] != "":
+                    
                     self.write.persist_iso_retirement_changes(
                         retirement_id   = retirement_id,
                         changed_to      = columns[3] # Change_To
@@ -77,7 +98,7 @@ class ISO6393Retirements(BaseFile):
                         )
                         added_change_codes += 1
             
-        print(f"Added [{added_retirements}] Retirements + [{added_change_codes}] Change Codes")
+        print(f"Added [{added_retirements}] Retirements + [{added_change_codes}] Change Codes + [{added_iso_codes}] Retired ISO Codes")
                 
 if __name__ == "__main__":
     from manager.managerhandler import ManagerHandler
