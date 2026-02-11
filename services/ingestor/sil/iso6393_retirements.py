@@ -46,6 +46,18 @@ class ISO6393Retirements(BaseFile):
                 )
                 added_retirements += 1
 
+                self.write.persist_iso_code(
+                    iso_code    = columns[0],   # Id
+                    part2b      = None,         # Part2b
+                    part2t      = None,         # Part2t
+                    part1       = None,         # Part1
+                    scope       = 'U',          # DEFAULT: Unknown -> Scope
+                    type        = 'U',          # DEFAULT: Unknown -> Language_Type
+                    ref_name    = columns[1],   # Ref_Name
+                    status      = 'R',          # DEFAULT: Retired 
+                    comment     = 'DERIVED -> FROM Retirements'  # Comment
+                )
+
                 # Change codes mapped to retirement_id
                 if columns[3] != "":
                     self.write.persist_iso_retirement_changes(

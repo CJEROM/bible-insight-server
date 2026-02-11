@@ -28,8 +28,6 @@ class ISO6393MacroLanguages(BaseFile):
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['M_Id', 'I_Id', 'I_Status']
             header = next(f).rstrip("\n").split("\t")
-            
-            print(header)
 
             for line in f:
                 columns = line.rstrip("\n").split("\t")
@@ -42,7 +40,18 @@ class ISO6393MacroLanguages(BaseFile):
                     )
                     added_macro_languages += 1
                 else:
-                    print(columns)
+                    # If macro language retired, then insert that into iso_codes
+                    self.write.persist_iso_code(
+                        iso_code    = columns[0],   # Id
+                        part2b      = None,         # Part2b
+                        part2t      = None,         # Part2t
+                        part1       = None,         # Part1
+                        scope       = 'M',          # DEFAULT: Unknown -> Scope
+                        type        = 'U',          # DEFAULT: Unknown -> Language_Type
+                        ref_name    = 'UNKNOWN',    # Ref_Name
+                        status      = 'R',          # DEFAULT: Retired 
+                        comment     = 'DERIVED -> FROM Macrolanguages'  # Comment
+                    )
 
         print(f"Added [{added_macro_languages}] Macro Languages")
                 

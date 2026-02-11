@@ -14,7 +14,8 @@ INSERT INTO sil.iso_scopes (id, name, description)
 VALUES 
     ('I', 'Individual',     'Represents a single, distinct language'),
     ('M', 'Macrolanguage',  'Represents a macrolanguage rather than an individual language'),
-    ('S', 'Special',        'Reserved for special purposes (e.g. undetermined)');
+    ('S', 'Special',        'Reserved for special purposes (e.g. undetermined)'),
+    ('U', 'Unkwon',         'Scope unknown due to Retirement');
 
 CREATE TABLE sil.iso_types (
     id              char(1) PRIMARY KEY,
@@ -29,7 +30,8 @@ VALUES
     ('E', 'Extinct',        'No longer spoken'),
     ('H', 'Histrical',      'Earlier form of a modern language'),
     ('L', 'Living',         'Currently spoken'),
-    ('S', 'Special',        'Special-use language code');
+    ('S', 'Special',        'Special-use language code'),
+    ('U', 'Unknwon',        'Language Type unknown due to Retirement');
 
 -- Originally from 
 CREATE TABLE sil.iso_status (
