@@ -1,4 +1,5 @@
 from ingestor.usx.files.base_file import BaseFile
+from database.boundary.sil_boundary import SILReadBoundary, SILWriteBoundary, SILDeleteBoundary
 
 from pathlib import Path
 
@@ -15,6 +16,9 @@ class ISO6393MacroLanguages(BaseFile):
             file_path   : Path
         ):
         super().__init__(main_manager, log, source_id, file_path)
+
+        self.read           = SILReadBoundary(self.db)
+        self.write          = SILWriteBoundary(self.db)
 
         self.read_file()
 

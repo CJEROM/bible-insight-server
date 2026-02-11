@@ -4,7 +4,68 @@ class SILReadBoundary(ReadBoundary):
     pass
 
 class SILWriteBoundary(WriteBoundary):
-    pass
+    def persist_iso_code(self,
+            iso_code        : str,
+            part2b          : str,
+            part2t          : str,
+            part1           : str,
+            scope           : str,
+            type            : str,
+            ref_name        : str,
+            comment         : str
+        ) -> None:
+        query = """
+            INSERT INTO sil.iso_codes (id, part2b, part2t, part1, scope, type, ref_name, comment)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        self.db.execute(query, (iso_code, part2b, part2t, part1, scope, type, ref_name, comment))
+
+    def persist_iso_names(self,
+            iso_code        : str,
+            print_name      : str,
+            inverted_name   : str
+        ) -> None:
+
+        query = """
+            INSERT INTO sil.iso_names (iso_code, print_name, inverted_name)
+            VALUES (%s, %s, %s)
+        """
+        self.db.execute(query, (iso_code, print_name, inverted_name))
+
+    def persist_iso_macrolanguage(self,
+            macro_id    : str,
+            iso_id      : str,
+            iso_status  : str
+        ) -> None:
+        query = """
+            INSERT INTO sil.macrolanguages (macro_id, iso_id, iso_status)
+            VALUES (%s, %s, %s)
+        """
+        self.db.execute(query, (macro_id, iso_id, iso_status))
+
+    def persist_iso_retirements(self,
+            iso_code        : str,
+            ref_name        : str,
+            retired_reason  : str,
+            retired_remedy  : str,
+            effective       : str
+        ) -> int:
+        query = """
+            INSERT INTO sil.retirements (iso_code, ref_name, retired_reason, retired_remedy, effective)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        retirement_id = self.db.execute(query, (iso_code, ref_name, retired_reason, retired_remedy, effective))
+        return retirement_id
+
+    def persist_iso_retirement_changes(self,
+            retirement_id   : int,
+            changed_to      : str
+        ) -> None:
+        query = """
+            INSERT INTO sil.retirement_changes (retirement_id, changed_to)
+            VALUES (%s, %s)
+        """
+        self.db.execute(query, (retirement_id, changed_to))
 
 class SILDeleteBoundary(DeleteBoundary):
     pass
