@@ -23,16 +23,22 @@ class ISO6393Names(BaseFile):
         self.read_file()
 
     def read_file(self):
+        added_iso_code_names = 0
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['Id', 'Print_Name', 'Inverted_Name']
             header = next(f).rstrip("\n").split("\t")
-            
-            print(header)
 
             for line in f:
                 columns = line.rstrip("\n").split("\t")
-                # print(columns)
-                # columns is now a list of values
+                
+                self.write.persist_iso_names(
+                    iso_code        = columns[0],
+                    print_name      = columns[1],
+                    inverted_name   = columns[2]
+                )
+                added_iso_code_names += 1
+
+        print(f"Added [{added_iso_code_names}] Iso Code Names")
                 
 if __name__ == "__main__":
     from manager.managerhandler import ManagerHandler
