@@ -137,6 +137,7 @@ class SILIngestor:
 
             match id:
                 case 0:
+                    # 7927 Entries
                     ISO6393Codes(
                         main_manager    = self.manager,
                         log             = self.log,
@@ -144,6 +145,7 @@ class SILIngestor:
                         file_path       = data_file_path
                     )
                 case 1:
+                    # 8321 Entries
                     ISO6393Names(
                         main_manager    = self.manager,
                         log             = self.log,
@@ -151,6 +153,7 @@ class SILIngestor:
                         file_path       = data_file_path
                     )
                 case 2:
+                    # 386 Entries
                     ISO6393Retirements(
                         main_manager    = self.manager,
                         log             = self.log,
@@ -158,6 +161,7 @@ class SILIngestor:
                         file_path       = data_file_path
                     )
                 case 3:
+                    # 459 Entries
                     ISO6393MacroLanguages(
                         main_manager    = self.manager,
                         log             = self.log,
