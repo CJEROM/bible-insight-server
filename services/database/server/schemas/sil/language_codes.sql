@@ -107,7 +107,6 @@ CREATE TABLE sil.retirements (
     retired_reason      char(1)      NOT NULL,
     retired_remedy      varchar(300) NULL,          -- The instructions for updating an instance of the retired (split) identifier
     effective           DATE         NOT NULL,       -- The date the retirement became effective
-    FOREIGN KEY (iso_code) REFERENCES sil.iso_codes (id),
     FOREIGN KEY (retired_reason) REFERENCES sil.retirement_reasons (id)
 );
 
