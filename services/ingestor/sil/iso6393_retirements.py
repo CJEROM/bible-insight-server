@@ -47,13 +47,23 @@ class ISO6393Retirements(BaseFile):
                 added_retirements += 1
 
                 # Change codes mapped to retirement_id
-                change_codes = re.findall(r"\[([^\]]+)\]", columns[3]) # Change_To
-                for code in change_codes:
+                if columns[3] != "":
                     self.write.persist_iso_retirement_changes(
                         retirement_id   = retirement_id,
-                        changed_to      = code
+                        changed_to      = columns[3] # Change_To
                     )
                     added_change_codes += 1
+
+                # In the case of Ret_Reason 'S' - 'Split' it has all the new codes that the retired has been chaged to
+                #       within 
+                if columns[2] == 'S':
+                    change_codes = re.findall(r"\[([^\]]+)\]", columns[4]) # Ret_Remedy
+                    for code in change_codes:
+                        self.write.persist_iso_retirement_changes(
+                            retirement_id   = retirement_id,
+                            changed_to      = code
+                        )
+                        added_change_codes += 1
             
         print(f"Added [{added_retirements}] Retirements + [{added_change_codes}] Change Codes")
                 
