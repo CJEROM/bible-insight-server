@@ -10,6 +10,15 @@ class SILReadBoundary(ReadBoundary):
         """
         result = self.db.fetch_one(query, (iso_code, ))
         return True if result else False
+    
+    def get_retirement(self,
+            iso_code    : str            
+        ):
+        query = """
+            SELECT id FROM sil.retirements WHERE iso_code = %s;
+        """
+        retirement_id = self.db.fetch_one(query, (iso_code, ))
+        return retirement_id
 
 class SILWriteBoundary(WriteBoundary):
     def persist_iso_code(self,
