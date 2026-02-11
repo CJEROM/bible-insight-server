@@ -15,3 +15,28 @@ class ISO6393Retirements(BaseFile):
             file_path   : Path
         ):
         super().__init__(main_manager, log, source_id, file_path)
+
+        self.read_file()
+
+    def read_file(self):
+        with open(self.this_file_path, "r", encoding="utf-8") as f:
+            # ['Id', 'Ref_Name', 'Ret_Reason', 'Change_To', 'Ret_Remedy', 'Effective']
+            header = next(f).rstrip("\n").split("\t")
+            
+            print(header)
+
+            for line in f:
+                columns = line.rstrip("\n").split("\t")
+                # print(columns)
+                # columns is now a list of values
+                
+if __name__ == "__main__":
+    from manager.managerhandler import ManagerHandler
+    from manager.logmanager import LogManager
+
+    ISO6393Retirements(
+        ManagerHandler(),
+        LogManager(),
+        0,
+        Path("/Users/cepherom/git/bible-insight-server/services/downloads/iso-639-3_Code_Tables_20260115/iso-639-3_Retirements.tab")
+    )
