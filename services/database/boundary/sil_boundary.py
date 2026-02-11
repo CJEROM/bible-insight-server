@@ -4,7 +4,7 @@ class SILReadBoundary(ReadBoundary):
     # figure out whether iso code is present in the database
     def is_iso_code(self,
             iso_code    : str            
-        ):
+        ) -> bool:
         query = """
             SELECT * FROM sil.iso_codes WHERE id = %s;
         """
@@ -13,7 +13,7 @@ class SILReadBoundary(ReadBoundary):
     
     def get_retirement(self,
             iso_code    : str            
-        ):
+        ) -> int:
         query = """
             SELECT id FROM sil.retirements WHERE iso_code = %s;
         """
