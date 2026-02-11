@@ -53,8 +53,9 @@ class SILWriteBoundary(WriteBoundary):
         query = """
             INSERT INTO sil.retirements (iso_code, ref_name, retired_reason, retired_remedy, effective)
             VALUES (%s, %s, %s, %s, %s)
+            RETURNING id;
         """
-        retirement_id = self.db.execute(query, (iso_code, ref_name, retired_reason, retired_remedy, effective))
+        retirement_id = self.db.fetch_clean_one(query, (iso_code, ref_name, retired_reason, retired_remedy, effective))
         return retirement_id
 
     def persist_iso_retirement_changes(self,
