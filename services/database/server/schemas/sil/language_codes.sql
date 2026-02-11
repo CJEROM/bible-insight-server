@@ -31,6 +31,18 @@ VALUES
     ('L', 'Living',         'Currently spoken'),
     ('S', 'Special',        'Special-use language code');
 
+-- Originally from 
+CREATE TABLE sil.iso_status (
+    id              char(1) PRIMARY KEY,
+    name            TEXT NOT NULL,
+    description     TEXT NOT NULL
+);
+
+INSERT INTO sil.iso_status (id, name, description)
+VALUES 
+    ('A', 'Active',     'Code is currently valid'),
+    ('R', 'Retired',    'Code has been retired');
+
 CREATE TABLE sil.iso_codes (
     id          char(3) PRIMARY KEY,    -- The three-letter 639-3 identifier
     part2b      char(3) NULL,           -- Equivalent 639-2 identifier of the bibliographic applications (if there is one)
@@ -39,9 +51,11 @@ CREATE TABLE sil.iso_codes (
     scope       char(1) NOT NULL, 
     type        char(1) NOT NULL,
     ref_name    varchar(150) NOT NULL,  -- Reference language name 
-    comment     varchar(150) NULL,      -- Comment relating to one or more of the columns
+    status      char(1) NOT NULL,
+    comment     varchar(150),      -- Comment relating to one or more of the columns
     FOREIGN KEY (scope) REFERENCES sil.iso_scopes (id),
-    FOREIGN KEY (type) REFERENCES sil.iso_types (id)
+    FOREIGN KEY (type) REFERENCES sil.iso_types (id),
+    FOREIGN KEY (status) REFERENCES sil.iso_status (id)
 );
 
 -- ============================================================================
@@ -60,24 +74,13 @@ CREATE TABLE sil.iso_names (
 -- ISO 639-3 Macrolanguage Codes
 -- ============================================================================
 
-CREATE TABLE sil.macro_status (
-    id              char(1) PRIMARY KEY,
-    name            TEXT NOT NULL,
-    description     TEXT NOT NULL
-);
-
-INSERT INTO sil.macro_status (id, name, description)
-VALUES 
-    ('A', 'Active',     'Code is currently valid'),
-    ('R', 'Retired',    'Code has been retired');
-
 CREATE TABLE sil.macrolanguages (
     macro_id            char(3) NOT NULL,   -- The identifier for a macrolanguage
     iso_id              char(3) NOT NULL,   -- The identifier for an individual language that is a member of the macrolanguage
     iso_status          char(1) NOT NULL,   -- indicating the status of the individual code element
     PRIMARY KEY (macro_id, iso_id),
     FOREIGN KEY (iso_id) REFERENCES sil.iso_codes (id),
-    FOREIGN KEY (iso_status) REFERENCES sil.macro_status (id)
+    FOREIGN KEY (iso_status) REFERENCES sil.iso_status (id)
 );
 
 -- ============================================================================
