@@ -20,13 +20,14 @@ class SILWriteBoundary(WriteBoundary):
             scope           : str,
             type            : str,
             ref_name        : str,
+            status          : str,
             comment         : str
         ) -> None:
         query = """
-            INSERT INTO sil.iso_codes (id, part2b, part2t, part1, scope, type, ref_name, comment)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO sil.iso_codes (id, part2b, part2t, part1, scope, type, ref_name, comment, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        self.db.execute(query, (iso_code, part2b, part2t, part1, scope, type, ref_name, comment))
+        self.db.execute(query, (iso_code, part2b, part2t, part1, scope, type, ref_name, comment, status))
 
     def persist_iso_names(self,
             iso_code        : str,
