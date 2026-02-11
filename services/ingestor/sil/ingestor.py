@@ -123,8 +123,8 @@ class SILIngestor:
         files = {
             0: "iso-639-3.tab",
             1: "iso-639-3_Name_Index.tab",
-            2: "iso-639-3-macrolanguages.tab",
-            3: "iso-639-3_Retirements.tab"
+            2: "iso-639-3_Retirements.tab",
+            3: "iso-639-3-macrolanguages.tab"
         }
 
         # Get latest part of the folder to get date it was recently uploaded, this will be object start
@@ -151,14 +151,14 @@ class SILIngestor:
                         file_path       = data_file_path
                     )
                 case 2:
-                    ISO6393MacroLanguages(
+                    ISO6393Retirements(
                         main_manager    = self.manager,
                         log             = self.log,
                         source_id       = self.source_id,
                         file_path       = data_file_path
                     )
                 case 3:
-                    ISO6393Retirements(
+                    ISO6393MacroLanguages(
                         main_manager    = self.manager,
                         log             = self.log,
                         source_id       = self.source_id,
