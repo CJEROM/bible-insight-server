@@ -1,7 +1,15 @@
 from database.boundary.base_boundary import ReadBoundary, WriteBoundary, DeleteBoundary
 
 class SILReadBoundary(ReadBoundary):
-    pass
+    # figure out whether iso code is present in the database
+    def is_iso_code(self,
+            iso_code    : str            
+        ):
+        query = """
+            SELECT * FROM sil.iso_codes WHERE id = %s;
+        """
+        result = self.db.fetch_one(query, (iso_code, ))
+        return True if result else False
 
 class SILWriteBoundary(WriteBoundary):
     def persist_iso_code(self,
