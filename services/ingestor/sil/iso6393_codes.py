@@ -27,8 +27,6 @@ class ISO6393Codes(BaseFile):
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['Id', 'Part2b', 'Part2t', 'Part1', 'Scope', 'Language_Type', 'Ref_Name', 'Comment']
             header = next(f).rstrip("\n").split("\t")
-            
-            print(header)
 
             for line in f:
                 columns = line.rstrip("\n").split("\t")
