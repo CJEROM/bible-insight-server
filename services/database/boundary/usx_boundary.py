@@ -118,15 +118,6 @@ class USXReadBoundary(ReadBoundary):
         """
         row = self.db.fetch_one(query, (dbl_id, revision))
         return row
-
-    def find_source(self, 
-            code: str
-        ) -> int:
-        query = """
-            SELECT id FROM audit.sources WHERE code=%s
-        """
-        source_id = self.db.fetch_clean_one(query, (code,))
-        return source_id
     
     def find_agreement(self,
             agreement_id: int
@@ -245,67 +236,6 @@ class USXWriteBoundary(WriteBoundary):
         """
         paragraph_id = self.db.fetch_clean_one(query, (paragraph_node_id, style_id, parent_para_id, is_versetext))
         return paragraph_id
-    
-    def init_source(self,
-            source_type: str,
-            url: str
-        ):
-        query = """
-            INSERT INTO audit.sources(source_type, url)
-            VALUES (%s, %s)
-            RETURNING id;
-        """
-        source_id = self.db.execute(query, (source_type, url))
-        return source_id
-    
-    def update_source(self,
-            code: str,
-            name: str,
-            description: str,
-            version: str, 
-            note: str,
-            parent_source: str,
-            official_citation: str = None,
-            date_published: str = None,
-            metadata: json = None
-        ):
-        query = """
-            UPDATE audit.sources
-            SET code = %s,
-                name = %s,
-                description = %s,
-                version = %s,
-                note = %s,
-                official_citation = %s,
-                date_published = %s,
-                metadata = %s,
-            WHERE id = %s
-        """
-        self.db.fetch_clean_one(query, (code, name, description, version, note, parent_source, official_citation, date_published, metadata))
-    
-    def persist_source(self,
-            source_type: str,
-            code: str,
-            name: str,
-            description: str,
-            version: str,
-            url: str,    
-            note: str,
-            parent_source: str,
-            official_citation: str = None,
-            date_published: str = None,
-            metadata: json = None
-        ) -> int:
-        query = """
-            INSERT INTO audit.sources (source_type, code, name, description, version, url, note, parent_source, official_citation, date_published, metadata) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id;
-        """
-        source_id = self.db.fetch_clean_one(query, (source_type, code, name, description, version, url, note, parent_source, official_citation, date_published, metadata))
-        return source_id
-    
-    def persist_language(self): # To be moved to Language Ingestor
-        pass
 
     def persist_usx_translation(self,
             dbl_id: str,
