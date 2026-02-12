@@ -40,7 +40,8 @@ VALUES
     ('NO_PATENT', 'No Patent Grant', 'No patent rights granted', 'RESTRICTION'),
     ('NO_WARRANTY', 'No Warranty', 'Provided as-is without warranty', 'RESTRICTION'),
     ('NO_DISTRIBUTION', 'No Distribution', 'Do not provide a means to redistribute', 'RESTRICTION'),
-    
+    ('NO_ENDORSEMENT', 'No Endorsement', 'Use of the material must not imply endorsement or approval by the original author or organization.', 'RESTRICTION'),
+
     -- ============================================================================
     -- DBL-SPECIFIC PUBLICATION RIGHTS (from your XML example: see any licence.xml)
     -- ============================================================================

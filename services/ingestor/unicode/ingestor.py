@@ -77,9 +77,19 @@ class UnicodeIngestor:
             )
 
             licence_attributes = [
+                # PERMISSIONS
+                "COMMERCIAL",
+                "DISTRIBUTE",
+                "MODIFY",
+                "PRIVATE_USE",
+                "DIGITAL",
+                "PRINT",
+                # OBLIGATIONS
                 "ATTRIBUTION",
-                "NO_DERIVATIVES",
-                "NO_DISTRIBUTION"
+                "NOTICE",
+                # RESTRICTIONS
+                "NO_WARRANTY",
+                "NO_TRADEMARK"
             ]
             self.write.map_all_licence_attributes(
                 licence_id      = licence_id,
