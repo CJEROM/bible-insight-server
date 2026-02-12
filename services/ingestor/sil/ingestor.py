@@ -46,8 +46,9 @@ class SILIngestor:
 
         self.source_id      = None
 
-        print("Testing")
         self.get_latest_dowload_link()
+
+        self.db.commit()
 
     def create_source(self):
         pass
@@ -85,7 +86,6 @@ class SILIngestor:
                 if chunk:  # filter out keep-alive chunks
                     f.write(chunk)
 
-        print("Download complete")
         self.log.log_to_file(f"Downloaded SIL Language Files to: {new_file_path}!", "INGESTOR", "INFO")
 
         self.create_source()
