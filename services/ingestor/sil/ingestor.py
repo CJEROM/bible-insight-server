@@ -138,35 +138,67 @@ class SILIngestor:
             match id:
                 case 0:
                     # 7927 Entries
-                    ISO6393Codes(
+                    codes = ISO6393Codes(
                         main_manager    = self.manager,
                         log             = self.log,
                         source_id       = self.source_id,
                         file_path       = data_file_path
+                    )
+
+                    codes.upload_file(
+                        object_name     = f"{self.object_start}/{file}",
+                        file_path       = data_file_path,
+                        content_type    = "text/tab-separated-values",
+                        data_format     = "TSV",
+                        version_note    = f"{file_date}"
                     )
                 case 1:
                     # 8321 Entries
-                    ISO6393Names(
+                    names = ISO6393Names(
                         main_manager    = self.manager,
                         log             = self.log,
                         source_id       = self.source_id,
                         file_path       = data_file_path
+                    )
+
+                    names.upload_file(
+                        object_name     = f"{self.object_start}/{file}",
+                        file_path       = data_file_path,
+                        content_type    = "text/tab-separated-values",
+                        data_format     = "TSV",
+                        version_note    = f"{file_date}"
                     )
                 case 2:
                     # 386 Entries
-                    ISO6393Retirements(
+                    retirements = ISO6393Retirements(
                         main_manager    = self.manager,
                         log             = self.log,
                         source_id       = self.source_id,
                         file_path       = data_file_path
                     )
+
+                    retirements.upload_file(
+                        object_name     = f"{self.object_start}/{file}",
+                        file_path       = data_file_path,
+                        content_type    = "text/tab-separated-values",
+                        data_format     = "TSV",
+                        version_note    = f"{file_date}"
+                    )
                 case 3:
                     # 459 Entries
-                    ISO6393MacroLanguages(
+                    macroLanguages = ISO6393MacroLanguages(
                         main_manager    = self.manager,
                         log             = self.log,
                         source_id       = self.source_id,
                         file_path       = data_file_path
+                    )
+
+                    macroLanguages.upload_file(
+                        object_name     = f"{self.object_start}/{file}",
+                        file_path       = data_file_path,
+                        content_type    = "text/tab-separated-values",
+                        data_format     = "TSV",
+                        version_note    = f"{file_date}"
                     )
         
         # After wards they should be uploaded to object storage, and persisted to DB
