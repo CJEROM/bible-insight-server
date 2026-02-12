@@ -53,9 +53,25 @@ class SILIngestor:
         self.db.commit()
         self.log.log_to_file(f"SIL Ingestion COMPLETE!", "INGESTOR", "INFO")
 
-    def create_source(self):
-        pass
+    def create_source(self,
+            source_url : str
+        ) -> int:
+        parent_source = self.read.find_source("SIL")
 
+        source_id = self.write.persist_source(
+            source_type     = "DAT", # Dataset
+            code            = "ISO6393",
+            name            = "ISO 639-3",
+            description     = "ISO 639 gives comprehensive provisions for the identification and assignment of language identifiers to individual languages, and for the creation of new language code elements or for the modification of existing ones",
+            version         = None,
+            url             = source_url,
+            note            = None,
+            parent_source   = parent_source,
+        )
+
+        return source_id
+
+    # TO DO
     def map_license(self):
         # Maps licensing details to the files or at least the source for now
         pass
@@ -93,7 +109,7 @@ class SILIngestor:
 
         self.log.log_to_file(f"Downloaded Latest SIL Language Files to: {new_file_path}!", "INGESTOR", "INFO")
 
-        self.create_source()
+        self.source_id = self.create_source(link)
         self.unzip_folder(new_file_path)
 
     def unzip_folder(self, zip_path):
