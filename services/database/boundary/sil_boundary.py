@@ -6,7 +6,7 @@ class SILReadBoundary(ReadBoundary):
             iso_code    : str            
         ) -> bool:
         query = """
-            SELECT * FROM sil.iso_codes WHERE id = %s;
+            SELECT * FROM standards.iso693_3_codes WHERE id = %s;
         """
         result = self.db.fetch_one(query, (iso_code, ))
         return True if result else False
@@ -15,7 +15,7 @@ class SILReadBoundary(ReadBoundary):
             iso_code    : str            
         ) -> int:
         query = """
-            SELECT id FROM sil.retirements WHERE iso_code = %s;
+            SELECT id FROM standards.iso693_3_retirements WHERE iso_code = %s;
         """
         retirement_id = self.db.fetch_one(query, (iso_code, ))
         return retirement_id
@@ -32,7 +32,7 @@ class SILWriteBoundary(WriteBoundary):
             comment         : str
         ) -> None:
         query = """
-            INSERT INTO sil.iso_codes (id, part2b, part2t, part1, scope, type, ref_name, comment)
+            INSERT INTO standards.iso693_3_codes (id, part2b, part2t, part1, scope, type, ref_name, comment)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """
         self.db.execute(query, (iso_code, part2b, part2t, part1, scope, type, ref_name, comment))
@@ -44,7 +44,7 @@ class SILWriteBoundary(WriteBoundary):
         ) -> None:
 
         query = """
-            INSERT INTO sil.iso_names (iso_code, print_name, inverted_name)
+            INSERT INTO standards.iso693_3_names (iso_code, print_name, inverted_name)
             VALUES (%s, %s, %s)
         """
         self.db.execute(query, (iso_code, print_name, inverted_name))
@@ -56,7 +56,7 @@ class SILWriteBoundary(WriteBoundary):
             iso_status      : str
         ) -> None:
         query = """
-            INSERT INTO sil.macrolanguages (macro_id, iso_id, iso_status, retirement_id)
+            INSERT INTO standards.iso693_3_macrolanguages (macro_id, iso_id, iso_status, retirement_id)
             VALUES (%s, %s, %s, %s)
         """
         self.db.execute(query, (macro_id, iso_id, iso_status, retirement_id))
@@ -69,7 +69,7 @@ class SILWriteBoundary(WriteBoundary):
             effective       : str
         ) -> int:
         query = """
-            INSERT INTO sil.retirements (iso_code, ref_name, retired_reason, retired_remedy, effective)
+            INSERT INTO standards.iso693_3_retirements (iso_code, ref_name, retired_reason, retired_remedy, effective)
             VALUES (%s, %s, %s, %s, %s)
             RETURNING id;
         """
@@ -82,7 +82,7 @@ class SILWriteBoundary(WriteBoundary):
             to_retirement       : int | None
         ) -> None:
         query = """
-            INSERT INTO sil.retirement_changes (from_retirement, to_iso_code, to_retirement)
+            INSERT INTO standards.iso693_3_retirement_changes (from_retirement, to_iso_code, to_retirement)
             VALUES (%s, %s, %s)
         """
         self.db.execute(query, (from_retirement, to_iso_code, to_retirement))

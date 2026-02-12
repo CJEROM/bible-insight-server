@@ -52,7 +52,7 @@ class DBManager:
         migrations = [
             db_server_script_path / schema_folder / "core"      / "schemas.sql",
             db_server_script_path / schema_folder / "core"      / "extensions.sql",
-            db_server_script_path / schema_folder / "sil"       / "language_codes.sql",
+            db_server_script_path / schema_folder / "standards" / "iso693-3.sql",
             db_server_script_path / schema_folder / "reference" / "licences.sql",
             db_server_script_path / schema_folder / "reference" / "sources.sql",
             db_server_script_path / schema_folder / "reference" / "files.sql",
