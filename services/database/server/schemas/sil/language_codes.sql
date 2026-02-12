@@ -14,8 +14,7 @@ INSERT INTO sil.iso_scopes (id, name, description)
 VALUES 
     ('I', 'Individual',     'Represents a single, distinct language'),
     ('M', 'Macrolanguage',  'Represents a macrolanguage rather than an individual language'),
-    ('S', 'Special',        'Reserved for special purposes (e.g. undetermined)'),
-    ('U', 'Unkwon',         'Scope unknown due to Retirement');
+    ('S', 'Special',        'Reserved for special purposes (e.g. undetermined)');
 
 CREATE TABLE sil.iso_types (
     id              char(1) PRIMARY KEY,
@@ -30,20 +29,7 @@ VALUES
     ('E', 'Extinct',        'No longer spoken'),
     ('H', 'Histrical',      'Earlier form of a modern language'),
     ('L', 'Living',         'Currently spoken'),
-    ('S', 'Special',        'Special-use language code'),
-    ('U', 'Unknwon',        'Language Type unknown due to Retirement');
-
--- Originally from 
-CREATE TABLE sil.iso_status (
-    id              char(1) PRIMARY KEY,
-    name            TEXT NOT NULL,
-    description     TEXT NOT NULL
-);
-
-INSERT INTO sil.iso_status (id, name, description)
-VALUES 
-    ('A', 'Active',     'Code is currently valid'),
-    ('R', 'Retired',    'Code has been retired');
+    ('S', 'Special',        'Special-use language code');
 
 CREATE TABLE sil.iso_codes (
     id          char(3) PRIMARY KEY,    -- The three-letter 639-3 identifier
@@ -53,11 +39,9 @@ CREATE TABLE sil.iso_codes (
     scope       char(1) NOT NULL, 
     type        char(1) NOT NULL,
     ref_name    varchar(150) NOT NULL,  -- Reference language name 
-    status      char(1) NOT NULL,
     comment     varchar(150),      -- Comment relating to one or more of the columns
     FOREIGN KEY (scope) REFERENCES sil.iso_scopes (id),
-    FOREIGN KEY (type) REFERENCES sil.iso_types (id),
-    FOREIGN KEY (status) REFERENCES sil.iso_status (id)
+    FOREIGN KEY (type) REFERENCES sil.iso_types (id)
 );
 
 -- ============================================================================
@@ -71,19 +55,6 @@ CREATE TABLE sil.iso_names (
     inverted_name   varchar(75) NOT NULL,   -- The inverted form of this Print_Name form   
     FOREIGN KEY (iso_code) REFERENCES sil.iso_codes (id)
 ); 
-
--- ============================================================================
--- ISO 639-3 Macrolanguage Codes
--- ============================================================================
-
-CREATE TABLE sil.macrolanguages (
-    macro_id            char(3) NOT NULL,   -- The identifier for a macrolanguage
-    iso_id              char(3) NOT NULL,   -- The identifier for an individual language that is a member of the macrolanguage
-    iso_status          char(1) NOT NULL,   -- indicating the status of the individual code element
-    PRIMARY KEY (macro_id, iso_id),
-    FOREIGN KEY (iso_id) REFERENCES sil.iso_codes (id),
-    FOREIGN KEY (iso_status) REFERENCES sil.iso_status (id)
-);
 
 -- ============================================================================
 -- ISO 639-3 Retirements (A.K.A Depracated Codes)
@@ -121,4 +92,31 @@ CREATE TABLE sil.retirement_changes (
     changed_to          char(3) NOT NULL,          -- in the cases of C, D, and M (Retirement_Reason), the identifier to which all instances of this Id should be changed
     FOREIGN KEY (changed_to) REFERENCES sil.iso_codes (id),
     FOREIGN KEY (retirement_id) REFERENCES sil.retirements (id)
-)
+);
+
+-- ============================================================================
+-- ISO 639-3 Macrolanguage Codes
+-- ============================================================================
+
+CREATE TABLE sil.iso_status (
+    id              char(1) PRIMARY KEY,
+    name            TEXT NOT NULL,
+    description     TEXT NOT NULL
+);
+
+INSERT INTO sil.iso_status (id, name, description)
+VALUES 
+    ('A', 'Active',     'Code is currently valid'),
+    ('R', 'Retired',    'Code has been retired');
+
+CREATE TABLE sil.macrolanguages (
+    macro_id            char(3) NOT NULL,   -- The identifier for a macrolanguage
+    iso_id              char(3),   -- The identifier for an individual language that is a member of the macrolanguage
+    retirement_id       INTEGER,
+    iso_status          char(1) NOT NULL,   -- indicating the status of the individual code element
+    PRIMARY KEY (macro_id, iso_id),
+    FOREIGN KEY (macro_id) REFERENCES sil.iso_codes (id),
+    FOREIGN KEY (iso_id) REFERENCES sil.iso_codes (id),
+    FOREIGN KEY (retirement_id) REFERENCES sil.retirements(id),
+    FOREIGN KEY (iso_status) REFERENCES sil.iso_status (id)
+);

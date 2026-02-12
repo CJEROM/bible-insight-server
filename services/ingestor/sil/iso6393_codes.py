@@ -39,7 +39,6 @@ class ISO6393Codes(BaseFile):
                     scope       = columns[4], # Scope
                     type        = columns[5], # Language_Type
                     ref_name    = columns[6], # Ref_Name
-                    status      = 'A',        # DEFAULT - All Iso Codes importer are active ones
                     comment     = columns[7]  # Comment
                 )
                 added_codes += 1

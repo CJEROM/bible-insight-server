@@ -24,7 +24,6 @@ class ISO6393MacroLanguages(BaseFile):
 
     def read_file(self):
         added_macro_languages = 0
-        added_iso_codes = 0
 
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['M_Id', 'I_Id', 'I_Status']
@@ -33,32 +32,26 @@ class ISO6393MacroLanguages(BaseFile):
             for line in f:
                 columns = line.rstrip("\n").split("\t")
                 
-                # 
-                if (self.read.is_iso_code(columns[1])):
+                #
+                retirement_id = self.read.get_retirement(columns[1])
+                if retirement_id == None:
                     self.write.persist_iso_macrolanguage(
-                        macro_id    = columns[0], # M_Id
-                        iso_id      = columns[1], # I_Id
-                        iso_status  = columns[2]  # I_Status
+                        macro_id        = columns[0], # M_Id
+                        iso_id          = columns[1], # I_Id
+                        retirement_id   = None,
+                        iso_status      = columns[2]  # I_Status
                     )
                     added_macro_languages += 1
                 else:
-                    
-                    if self.read.is_iso_code(columns[0]) == False:
-                        # If macro language retired, then insert that into iso_codes
-                        self.write.persist_iso_code(
-                            iso_code    = columns[0],   # Id
-                            part2b      = None,         # Part2b
-                            part2t      = None,         # Part2t
-                            part1       = None,         # Part1
-                            scope       = 'M',          # DEFAULT: Unknown -> Scope
-                            type        = 'U',          # DEFAULT: Unknown -> Language_Type
-                            ref_name    = 'UNKNOWN',    # Ref_Name
-                            status      = 'R',          # DEFAULT: Retired 
-                            comment     = 'DERIVED -> FROM Macrolanguages'  # Comment
-                        )
-                        added_iso_codes += 1
+                    self.write.persist_iso_macrolanguage(
+                        macro_id        = columns[0], # M_Id
+                        iso_id          = None, # I_Id
+                        retirement_id   = retirement_id,
+                        iso_status      = columns[2]  # I_Status
+                    )
+                    added_macro_languages += 1
 
-        print(f"Added [{added_macro_languages}] Macro Languages + [{added_iso_codes}] Retired ISO Codes (Macrolanguages)")
+        print(f"Added [{added_macro_languages}] Macro Languages")
                 
 if __name__ == "__main__":
     from manager.managerhandler import ManagerHandler

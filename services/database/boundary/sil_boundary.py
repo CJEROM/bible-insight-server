@@ -29,14 +29,13 @@ class SILWriteBoundary(WriteBoundary):
             scope           : str,
             type            : str,
             ref_name        : str,
-            status          : str,
             comment         : str
         ) -> None:
         query = """
-            INSERT INTO sil.iso_codes (id, part2b, part2t, part1, scope, type, ref_name, comment, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO sil.iso_codes (id, part2b, part2t, part1, scope, type, ref_name, comment)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """
-        self.db.execute(query, (iso_code, part2b, part2t, part1, scope, type, ref_name, comment, status))
+        self.db.execute(query, (iso_code, part2b, part2t, part1, scope, type, ref_name, comment))
 
     def persist_iso_names(self,
             iso_code        : str,
@@ -51,15 +50,16 @@ class SILWriteBoundary(WriteBoundary):
         self.db.execute(query, (iso_code, print_name, inverted_name))
 
     def persist_iso_macrolanguage(self,
-            macro_id    : str,
-            iso_id      : str,
-            iso_status  : str
+            macro_id        : str,
+            iso_id          : str,
+            retirement_id   : int,
+            iso_status      : str
         ) -> None:
         query = """
-            INSERT INTO sil.macrolanguages (macro_id, iso_id, iso_status)
-            VALUES (%s, %s, %s)
+            INSERT INTO sil.macrolanguages (macro_id, iso_id, iso_status, retirement_id)
+            VALUES (%s, %s, %s, %s)
         """
-        self.db.execute(query, (macro_id, iso_id, iso_status))
+        self.db.execute(query, (macro_id, iso_id, iso_status, retirement_id))
 
     def persist_iso_retirements(self,
             iso_code        : str,

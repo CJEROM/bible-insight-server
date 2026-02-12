@@ -37,28 +37,6 @@ class ISO6393Retirements(BaseFile):
                 # Tab separated values -> Array
                 columns = line.rstrip("\n").split("\t")
 
-                self.write.persist_iso_code(
-                    iso_code    = columns[0],   # Id
-                    part2b      = None,         # Part2b
-                    part2t      = None,         # Part2t
-                    part1       = None,         # Part1
-                    scope       = 'U',          # DEFAULT: Unknown -> Scope
-                    type        = 'U',          # DEFAULT: Unknown -> Language_Type
-                    ref_name    = columns[1],   # Ref_Name
-                    status      = 'R',          # DEFAULT: Retired 
-                    comment     = 'DERIVED -> FROM Retirements'  # Comment
-                )
-                added_iso_codes += 1
-
-        with open(self.this_file_path, "r", encoding="utf-8") as f:
-            # ['Id', 'Ref_Name', 'Ret_Reason', 'Change_To', 'Ret_Remedy', 'Effective']
-            header = next(f).rstrip("\n").split("\t") # Skip Header line
-
-            # Go through file line by line
-            for line in f:
-                # Tab separated values -> Array
-                columns = line.rstrip("\n").split("\t")
-
                 # Persist to database
                 retirement_id = self.write.persist_iso_retirements(
                     iso_code        = columns[0], # Id
@@ -86,7 +64,7 @@ class ISO6393Retirements(BaseFile):
                     retirement_id = self.read.get_retirement(columns[0])
                 
                     if retirement_id != None:
-                        print(retirement_id)
+                        # print(retirement_id)
 
                         self.write.persist_iso_retirement_changes(
                             retirement_id   = retirement_id,
