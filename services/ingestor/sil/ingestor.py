@@ -60,22 +60,44 @@ class SILIngestor:
         parent_source = self.read.find_source("SIL")
 
         source_id = self.write.persist_source(
-            source_type     = "DAT", # Dataset
-            code            = "ISO6393",
-            name            = "ISO 639-3",
-            description     = "ISO 639 gives comprehensive provisions for the identification and assignment of language identifiers to individual languages, and for the creation of new language code elements or for the modification of existing ones",
-            version         = None,
-            url             = source_url,
-            note            = None,
-            parent_source   = parent_source,
+            source_type         = "DAT", # Dataset
+            code                = "ISO6393",
+            name                = "ISO 639-3",
+            description         = "ISO 639 gives comprehensive provisions for the identification and assignment of language identifiers to individual languages, and for the creation of new language code elements or for the modification of existing ones",
+            version             = None,
+            url                 = source_url,
+            note                = None,
+            parent_source       = parent_source,
+            official_citation   = """
+                ISO 639-3:2019. Codes for the Representation of Names of Languages — Part 3: Alpha-3 Code for Comprehensive Coverage of Languages.
+                Registration Authority: SIL International.
+                Available at: https://iso639-3.sil.org
+                © SIL International.
+            """
         )
 
         return source_id
 
-    # TO DO
     def map_license(self):
         # Maps licensing details to the files or at least the source for now
-        pass
+        licence_id = self.write.persist_licence(
+            source_id   = self.source_id,
+            code        = "SIL-ISO",
+            name        = "ISO 639-3 Terms of Use",
+            version     = None,
+            link        = "https://iso639-3.sil.org/code_tables/download_tables#termsofuse",
+            notes       = "CUSTOM TERMS OF USE"
+        )
+
+        licence_attributes = [
+            "ATTRIBUTION",
+            "NO_DERIVATIVES",
+            "NO_DISTRIBUTION"
+        ]
+        self.write.map_all_licence_attributes(
+            licence_id      = licence_id,
+            attributes      = licence_attributes
+        )
 
     def get_latest_dowload_link(self):
         DOWNLOAD_PAGE = "https://iso639-3.sil.org/code_tables/download_tables"
