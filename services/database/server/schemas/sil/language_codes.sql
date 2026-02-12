@@ -88,10 +88,12 @@ CREATE TABLE sil.retirements (
 
 CREATE TABLE sil.retirement_changes (
     id                  SERIAL PRIMARY KEY,
-    retirement_id       INTEGER NOT NULL,
-    changed_to          char(3) NOT NULL,          -- in the cases of C, D, and M (Retirement_Reason), the identifier to which all instances of this Id should be changed
-    FOREIGN KEY (changed_to) REFERENCES sil.iso_codes (id),
-    FOREIGN KEY (retirement_id) REFERENCES sil.retirements (id)
+    from_retirement     INTEGER NOT NULL,
+    to_iso_code         char(3),          -- in the cases of C, D, and M (Retirement_Reason), the identifier to which all instances of this Id should be changed
+    to_retirement       INTEGER,
+    FOREIGN KEY (to_iso_code) REFERENCES sil.iso_codes (id),
+    FOREIGN KEY (from_retirement) REFERENCES sil.retirements (id),
+    FOREIGN KEY (to_retirement) REFERENCES sil.retirements (id)
 );
 
 -- ============================================================================

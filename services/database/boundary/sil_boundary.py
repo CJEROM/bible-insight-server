@@ -51,8 +51,8 @@ class SILWriteBoundary(WriteBoundary):
 
     def persist_iso_macrolanguage(self,
             macro_id        : str,
-            iso_id          : str,
-            retirement_id   : int,
+            iso_id          : str | None,
+            retirement_id   : int | None,
             iso_status      : str
         ) -> None:
         query = """
@@ -77,14 +77,15 @@ class SILWriteBoundary(WriteBoundary):
         return retirement_id
 
     def persist_iso_retirement_changes(self,
-            retirement_id   : int,
-            changed_to      : str
+            from_retirement     : int,
+            to_iso_code         : str | None,
+            to_retirement       : int | None
         ) -> None:
         query = """
-            INSERT INTO sil.retirement_changes (retirement_id, changed_to)
-            VALUES (%s, %s)
+            INSERT INTO sil.retirement_changes (from_retirement, to_iso_code, to_retirement)
+            VALUES (%s, %s, %s)
         """
-        self.db.execute(query, (retirement_id, changed_to))
+        self.db.execute(query, (from_retirement, to_iso_code, to_retirement))
 
 class SILDeleteBoundary(DeleteBoundary):
     pass

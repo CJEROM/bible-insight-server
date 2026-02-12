@@ -26,7 +26,6 @@ class ISO6393Retirements(BaseFile):
     def read_file(self):
         added_retirements = 0
         added_change_codes = 0
-        added_iso_codes = 0
 
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['Id', 'Ref_Name', 'Ret_Reason', 'Change_To', 'Ret_Remedy', 'Effective']
@@ -56,24 +55,13 @@ class ISO6393Retirements(BaseFile):
                 # Tab separated values -> Array
                 columns = line.rstrip("\n").split("\t")
 
-                retirement_id = None
-
                 # Change codes mapped to retirement_id
                 if columns[3] != "":
                     # Get retirement to link to first
-                    retirement_id = self.read.get_retirement(columns[0])
-                
-                    if retirement_id != None:
-                        # print(retirement_id)
-
-                        self.write.persist_iso_retirement_changes(
-                            retirement_id   = retirement_id,
-                            changed_to      = columns[3] # Change_To
-                        )
-                        added_change_codes += 1
-                    else:
-                        print(columns)
-                        pass
+                    added_change_codes += self.create_retirement_changes(
+                        from_iso    = columns[0],
+                        to_iso      = columns[3] # Change_To
+                    )
 
                 # In the case of Ret_Reason 'S' - 'Split' it has all the new codes that the retired has been chaged to
                 #       within 
@@ -81,19 +69,44 @@ class ISO6393Retirements(BaseFile):
                     change_codes = re.findall(r"\[([^\]]+)\]", columns[4]) # Ret_Remedy
                     for code in change_codes:
                         # Get retirement to link to first
-                        retirement_id = self.read.get_retirement(code)
-
-                        if retirement_id != None:
-                            print(retirement_id)
-                            self.write.persist_iso_retirement_changes(
-                                retirement_id   = retirement_id,
-                                changed_to      = code
-                            )
-                            added_change_codes += 1
-                        else:
-                            print(columns)
+                        added_change_codes += self.create_retirement_changes(
+                            from_iso    = columns[0],
+                            to_iso      = code
+                        )
             
-        print(f"Added [{added_retirements}] Retirements + [{added_change_codes}] Change Codes + [{added_iso_codes}] Retired ISO Codes")
+        print(f"Added [{added_retirements}] Retirements + [{added_change_codes}] Change Codes")
+
+    def create_retirement_changes(self, 
+            from_iso : str, 
+            to_iso: str
+        ):
+        added_change_codes = 0
+
+        from_retirement = self.read.get_retirement(from_iso)
+        
+        if from_retirement != None:
+            to_retirement = self.read.get_retirement(to_iso)
+
+            if to_retirement == None:
+                self.write.persist_iso_retirement_changes(
+                    from_retirement     = from_retirement,
+                    to_iso_code         = to_iso,
+                    to_retirement       = None
+                )
+                
+            else:
+                self.write.persist_iso_retirement_changes(
+                    from_retirement     = from_retirement,
+                    to_iso_code         = None,
+                    to_retirement       = to_retirement
+                )
+
+            added_change_codes += 1
+        else:
+            print(to_iso)
+            pass
+
+        return added_change_codes
                 
 if __name__ == "__main__":
     from manager.managerhandler import ManagerHandler
