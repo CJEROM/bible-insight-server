@@ -10,6 +10,7 @@ CREATE TABLE sil.iso_scopes (
     description     TEXT NOT NULL
 );
 
+-- https://iso639-3.sil.org/about/scope
 INSERT INTO sil.iso_scopes (id, name, description)
 VALUES 
     ('I', 'Individual',     'Represents a single, distinct language'),
@@ -22,13 +23,14 @@ CREATE TABLE sil.iso_types (
     description     TEXT NOT NULL
 );
 
+-- https://iso639-3.sil.org/about/types
 INSERT INTO sil.iso_types (id, name, description)
 VALUES 
     ('A', 'Ancient',        'Known only from historical records'),
-    ('C', 'Constructed',    'Artificially created language'),
-    ('E', 'Extinct',        'No longer spoken'),
-    ('H', 'Histrical',      'Earlier form of a modern language'),
-    ('L', 'Living',         'Currently spoken'),
+    ('C', 'Constructed',    'This part of ISO 639 also includes identifiers that denote constructed (or artificial) languages. In order to qualify for inclusion the language must have a literature and it must be designed for the purpose of human communication. It must be a complete language, and be in use for human communication by some community long enough to be passed to a second generation of users. Specifically excluded are reconstructed languages and computer programming languages.'),
+    ('E', 'Extinct',        'A language is listed as extinct if it has gone extinct in recent times. (e.g. in the last few centuries). The criteria for identifying distinct languages in these cases are based on intelligibility (as defined for individual languages).'),
+    ('H', 'Histrical',      'A language is listed as historic when it is considered to be distinct from any modern languages that are descended from it: for instance, Old English and Middle English. In these cases, the language did not become extinct; rather, it changed into a different language over time. Here, too, the criterion is that the language have a literature that is treated distinctly by the scholarly community.'),
+    ('L', 'Living',         'A language is listed as living when there are people still living who learned it as a first language. This part of ISO 639 also includes identifiers for languages that are no longer living.'),
     ('S', 'Special',        'Special-use language code');
 
 CREATE TABLE sil.iso_codes (
