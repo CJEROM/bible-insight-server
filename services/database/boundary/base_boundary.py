@@ -308,6 +308,17 @@ class WriteBoundary(QueryBoundary):
         """
         self.db.execute(query, (licence_id, attribute_code, custom_note))
 
+    def map_all_licence_attributes(self,
+            licence_id  : int,
+            attributes  : list
+        ): 
+
+        for attribute in attributes:
+            self.persist_licence_attribute_mapping(
+                licence_id      = licence_id,
+                attribute_code  = attribute
+            )
+
 class DeleteBoundary(QueryBoundary):
     pass
 
