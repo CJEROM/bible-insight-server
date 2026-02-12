@@ -94,6 +94,25 @@ class WriteBoundary(QueryBoundary):
         ))
         return mapping_id
     
+    def persist_file(self,
+            etag            : str,
+            type            : str,
+            object_path     : str,
+            bucket          : str,
+            source_id       : int,
+            version_id      : str, 
+            data_format     : str,
+            content_hash    : str,
+            version_note    : str = None,
+        ) -> int:
+        query = """
+            INSERT INTO audit.files (etag, type, object_path, bucket, source_id, version_id, version_note, data_format, content_hash) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id;
+        """
+        file_id = self.db.fetch_clean_one(query, (etag, type, object_path, bucket, source_id, version_id, version_note, data_format, content_hash))
+        return file_id
+    
 class DeleteBoundary(QueryBoundary):
     pass
 
