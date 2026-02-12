@@ -275,7 +275,7 @@ class WriteBoundary(QueryBoundary):
             notes           : str = None
         ) -> int:
         query = """
-            INSERT INTO audit.licences (source_id, code, name, version, valid_from, valid_until, notes) 
+            INSERT INTO audit.licences (source_id, code, name, version, link, valid_from, valid_until, notes) 
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
