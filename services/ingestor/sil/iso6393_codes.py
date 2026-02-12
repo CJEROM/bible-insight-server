@@ -20,10 +20,15 @@ class ISO6393Codes(BaseFile):
         self.read           = SILReadBoundary(self.db)
         self.write          = SILWriteBoundary(self.db)
 
+        self.log.log_to_file(f"SIL Ingestion of Active ISO 639-3 Language Codes ...", "INGESTOR", "INFO")
+
         self.read_file()
 
     def read_file(self):
         added_codes = 0
+
+        self.log.log_to_file(f"Reading File ...", "INGESTOR", "INFO")
+
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['Id', 'Part2b', 'Part2t', 'Part1', 'Scope', 'Language_Type', 'Ref_Name', 'Comment']
             header = next(f).rstrip("\n").split("\t")
@@ -42,9 +47,10 @@ class ISO6393Codes(BaseFile):
                     comment     = columns[7]  # Comment
                 )
                 added_codes += 1
+                self.log.log_to_file(f"New ISO 639-3 Code: {columns}", "INGESTOR", "TRACE")
         
         print(f"Added [{added_codes}] New ISO 639-3 Codes")
-
+        self.log.log_to_file(f"Added [{added_codes}] New ISO 639-3 Codes", "INGESTOR", "INFO")
                 
 if __name__ == "__main__":
     from manager.managerhandler import ManagerHandler

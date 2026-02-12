@@ -20,10 +20,14 @@ class ISO6393MacroLanguages(BaseFile):
         self.read           = SILReadBoundary(self.db)
         self.write          = SILWriteBoundary(self.db)
 
+        self.log.log_to_file(f"SIL Ingestion of ISO 639-3 Macro Language Codes ...", "INGESTOR", "INFO")
+
         self.read_file()
 
     def read_file(self):
         added_macro_languages = 0
+
+        self.log.log_to_file(f"Reading File ...", "INGESTOR", "INFO")
 
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['M_Id', 'I_Id', 'I_Status']
@@ -42,6 +46,8 @@ class ISO6393MacroLanguages(BaseFile):
                         iso_status      = columns[2]  # I_Status
                     )
                     added_macro_languages += 1
+                    self.log.log_to_file(f"New Macro Language Code: {columns}", "INGESTOR", "TRACE")
+
                 else:
                     self.write.persist_iso_macrolanguage(
                         macro_id        = columns[0], # M_Id
@@ -50,8 +56,10 @@ class ISO6393MacroLanguages(BaseFile):
                         iso_status      = columns[2]  # I_Status
                     )
                     added_macro_languages += 1
+                    self.log.log_to_file(f"New Macro Language Code: {columns} -> Retirement ID [{retirement_id}]", "INGESTOR", "TRACE")
 
         print(f"Added [{added_macro_languages}] Macro Languages")
+        self.log.log_to_file(f"Added [{added_macro_languages}] New ISO 639-3 Macro Languages Codes", "INGESTOR", "INFO")
                 
 if __name__ == "__main__":
     from manager.managerhandler import ManagerHandler

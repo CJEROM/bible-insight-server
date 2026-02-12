@@ -33,6 +33,8 @@ class SILIngestor:
             is_default      = True
         )
 
+        self.log.log_to_file(f"Created Bucket for SILL Data: [{self.obj.bucket}]", "INGESTOR", "INFO")
+
         self.read           = SILReadBoundary(self.db)
         self.write          = SILWriteBoundary(self.db)
 
@@ -49,6 +51,7 @@ class SILIngestor:
         self.get_latest_dowload_link()
 
         self.db.commit()
+        self.log.log_to_file(f"SIL Ingestion COMPLETE!", "INGESTOR", "INFO")
 
     def create_source(self):
         pass
@@ -70,6 +73,8 @@ class SILIngestor:
         
         final_link = link["href"]
 
+        self.log.log_to_file(f"Found Latest download at: [{final_link}]", "INGESTOR", "INFO")
+
         self.download(final_link)
 
     def download(self, link: str):
@@ -86,7 +91,7 @@ class SILIngestor:
                 if chunk:  # filter out keep-alive chunks
                     f.write(chunk)
 
-        self.log.log_to_file(f"Downloaded SIL Language Files to: {new_file_path}!", "INGESTOR", "INFO")
+        self.log.log_to_file(f"Downloaded Latest SIL Language Files to: {new_file_path}!", "INGESTOR", "INFO")
 
         self.create_source()
         self.unzip_folder(new_file_path)
@@ -94,6 +99,8 @@ class SILIngestor:
     def unzip_folder(self, zip_path):
         # This will unzip the zip folder, and then delete the original and replace process location with new path name
         downloads_location = Path(zip_path).parent
+
+        self.log.log_to_file(f"Unzipping File Contents ...", "INGESTOR", "INFO")
 
         with ZipFile(zip_path, 'r') as zip:
             # list all file paths in the ZIP
@@ -111,6 +118,7 @@ class SILIngestor:
             self.log.log_to_file(f"Unzipping [{len(all_files)}] files from {zip_path} in {new_location}", "TRANSLATION", "INFO")
 
             self.read_downloads(new_location)
+            self.log.log_to_file(f"Completed Ingestion of all files!", "INGESTOR", "INFO")
 
             self.delete_files(new_location)
 
@@ -202,6 +210,7 @@ class SILIngestor:
                     )
 
     def delete_files(self, file_location: Path):
+        self.log.log_to_file(f"Cleaning Up File Downloads ...", "INGESTOR", "INFO")
         if file_location.is_dir():
             shutil.rmtree(file_location, ignore_errors=True)  # delete folder + contents
         elif file_location.is_file():

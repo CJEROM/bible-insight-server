@@ -21,11 +21,15 @@ class ISO6393Retirements(BaseFile):
         self.read           = SILReadBoundary(self.db)
         self.write          = SILWriteBoundary(self.db)
 
+        self.log.log_to_file(f"SIL Ingestion of Active ISO 639-3 Language Code Retirements ...", "INGESTOR", "INFO")
+
         self.read_file()
 
     def read_file(self):
         added_retirements = 0
         added_change_codes = 0
+
+        self.log.log_to_file(f"Reading File ...", "INGESTOR", "INFO")
 
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['Id', 'Ref_Name', 'Ret_Reason', 'Change_To', 'Ret_Remedy', 'Effective']
@@ -45,6 +49,7 @@ class ISO6393Retirements(BaseFile):
                     effective       = columns[5]  # Effective
                 )
                 added_retirements += 1
+                self.log.log_to_file(f"New ISO 639-3 Code Retirement: ID [{retirement_id}] -> {columns}", "INGESTOR", "TRACE")
         
         with open(self.this_file_path, "r", encoding="utf-8") as f:
             # ['Id', 'Ref_Name', 'Ret_Reason', 'Change_To', 'Ret_Remedy', 'Effective']
@@ -57,24 +62,28 @@ class ISO6393Retirements(BaseFile):
 
                 # Change codes mapped to retirement_id
                 if columns[3] != "":
+                    self.log.log_to_file(f"New ISO 639-3 Standard Code Change: {columns[0]} -> {columns[3]}", "INGESTOR", "TRACE")
                     # Get retirement to link to first
                     added_change_codes += self.create_retirement_changes(
                         from_iso    = columns[0],
                         to_iso      = columns[3] # Change_To
                     )
-
+                
                 # In the case of Ret_Reason 'S' - 'Split' it has all the new codes that the retired has been chaged to
                 #       within 
                 if columns[2] == 'S':
                     change_codes = re.findall(r"\[([^\]]+)\]", columns[4]) # Ret_Remedy
                     for code in change_codes:
+                        self.log.log_to_file(f"New ISO 639-3 Split Code Change: {columns[0]} -> {code}", "INGESTOR", "TRACE")
                         # Get retirement to link to first
                         added_change_codes += self.create_retirement_changes(
                             from_iso    = columns[0],
                             to_iso      = code
                         )
-            
+                        
         print(f"Added [{added_retirements}] Retirements + [{added_change_codes}] Change Codes")
+        self.log.log_to_file(f"Added [{added_retirements}] New ISO 639-3 Retirements + [{added_change_codes}] ISO 639-3 Code Changes", "INGESTOR", "INFO")
+        
 
     def create_retirement_changes(self, 
             from_iso : str, 
@@ -100,11 +109,11 @@ class ISO6393Retirements(BaseFile):
                     to_iso_code         = None,
                     to_retirement       = to_retirement
                 )
+                self.log.log_to_file(f"New ISO 639-3 Split Code Retired: {from_iso} -> {to_iso} -> Retirement [{to_retirement}]", "INGESTOR", "TRACE")
 
             added_change_codes += 1
         else:
-            print(to_iso)
-            pass
+            self.log.log_to_file(f"New ISO 639-3 Code Change SKIPPED: {from_iso} -> {to_iso}", "INGESTOR", "DEBUG")
 
         return added_change_codes
                 
