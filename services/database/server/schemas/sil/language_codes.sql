@@ -112,11 +112,11 @@ VALUES
     ('R', 'Retired',    'Code has been retired');
 
 CREATE TABLE sil.macrolanguages (
+    id                  SERIAL PRIMARY KEY,
     macro_id            char(3) NOT NULL,   -- The identifier for a macrolanguage
     iso_id              char(3),   -- The identifier for an individual language that is a member of the macrolanguage
     retirement_id       INTEGER,
     iso_status          char(1) NOT NULL,   -- indicating the status of the individual code element
-    PRIMARY KEY (macro_id, iso_id),
     FOREIGN KEY (macro_id) REFERENCES sil.iso_codes (id),
     FOREIGN KEY (iso_id) REFERENCES sil.iso_codes (id),
     FOREIGN KEY (retirement_id) REFERENCES sil.retirements(id),
