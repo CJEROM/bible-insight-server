@@ -20,7 +20,7 @@ class SILIngestor:
             manager: ManagerHandler | None = None
         ):
         self.manager        = manager or ManagerHandler()
-        self.log            = self.manager.create_log_in_folder(["logs", "ingestor", "sil"], f"")
+        self.log            = self.manager.create_log_in_folder(["logs", "ingestor", "sil"])
         self.db             = self.manager.get_db()
 
         self.log.set_logging_level(1)
