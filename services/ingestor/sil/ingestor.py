@@ -27,7 +27,8 @@ class SILIngestor:
 
         self.log.log_to_file(f"SIL Ingestion starting ...", "INGESTOR", "INFO")
 
-        self.obj            = self.manager.get_obj().create_bucket(
+        self.obj            = self.manager.get_obj()
+        self.obj.create_bucket(
             bucket_name     = "reference-data",
             is_versioned    = True,
             is_default      = True
