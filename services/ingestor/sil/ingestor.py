@@ -200,19 +200,12 @@ class SILIngestor:
                         data_format     = "TSV",
                         version_note    = f"{file_date}"
                     )
-        
-        # After wards they should be uploaded to object storage, and persisted to DB
-
-        # Then everything should be good
-        pass
 
     def delete_files(self, file_location: Path):
-        return
         if file_location.is_dir():
             shutil.rmtree(file_location, ignore_errors=True)  # delete folder + contents
         elif file_location.is_file():
             Path(file_location).unlink(missing_ok=True)
-
 
 if __name__ == "__main__":
     SILIngestor()
