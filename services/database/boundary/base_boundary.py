@@ -78,7 +78,7 @@ class ReadBoundary(QueryBoundary):
     # ============================================================================
 
     def find_source(self, 
-            code: str
+            code    : str
         ) -> int:
         query = """
             SELECT id FROM audit.sources WHERE code=%s
@@ -91,7 +91,7 @@ class ReadBoundary(QueryBoundary):
     # ============================================================================
 
     def find_language(self, 
-            iso_code: str
+            iso_code    : str
         ) -> int:
         query = """
             SELECT id FROM language.languages WHERE iso = %s;
@@ -104,7 +104,7 @@ class ReadBoundary(QueryBoundary):
     # ============================================================================
 
     def find_license(self,
-            license_code: str
+            license_code    : str
         ) -> int:
         query = """
             SELECT id FROM audit.licences WHERE code=%s
@@ -174,8 +174,8 @@ class WriteBoundary(QueryBoundary):
     # ============================================================================
 
     def init_source(self,
-            source_type: str,
-            url: str
+            source_type     : str,
+            url             : str
         ):
         query = """
             INSERT INTO audit.sources(source_type, url)
@@ -186,15 +186,15 @@ class WriteBoundary(QueryBoundary):
         return source_id
     
     def update_source(self,
-            code: str,
-            name: str,
-            description: str,
-            version: str, 
-            note: str,
-            parent_source: str,
-            official_citation: str = None,
-            date_published: str = None,
-            metadata: json = None
+            code                : str,
+            name                : str,
+            description         : str,
+            version             : str, 
+            note                : str,
+            parent_source       : str,
+            official_citation   : str = None,
+            date_published      : str = None,
+            metadata            : json = None
         ):
         query = """
             UPDATE audit.sources
@@ -211,17 +211,17 @@ class WriteBoundary(QueryBoundary):
         self.db.fetch_clean_one(query, (code, name, description, version, note, parent_source, official_citation, date_published, metadata))
 
     def persist_source(self,
-            source_type: str,
-            code: str,
-            name: str,
-            description: str,
-            version: str,
-            url: str,    
-            note: str,
-            parent_source: str,
-            official_citation: str = None,
-            date_published: str = None,
-            metadata: json = None
+            source_type         : str,
+            code                : str,
+            name                : str,
+            description         : str,
+            version             : str,
+            url                 : str,    
+            note                : str,
+            parent_source       : str,
+            official_citation   : str = None,
+            date_published      : str = None,
+            metadata            : json = None
         ) -> int:
         query = """
             INSERT INTO audit.sources (source_type, code, name, description, version, url, note, parent_source, official_citation, date_published, metadata) 
@@ -236,8 +236,8 @@ class WriteBoundary(QueryBoundary):
     # ============================================================================
 
     def start_ingestion(self,
-            source_id: int,
-            start_time: str
+            source_id   : int,
+            start_time  : str
         ) -> int: 
         query = """
             INSERT INTO audit.ingestion_stats (source_id, start_time)
@@ -248,9 +248,9 @@ class WriteBoundary(QueryBoundary):
         return ingestion_id
 
     def end_ingestion(self,
-            ingestion_id: int,
-            end_time: str,
-            error_message: str = None
+            ingestion_id    : int,
+            end_time        : str,
+            error_message   : str = None
         ) -> None:
         query = """
             UPDATE audit.ingestion_stats
@@ -265,14 +265,14 @@ class WriteBoundary(QueryBoundary):
     # ============================================================================
     
     def persist_licence(self, 
-            source_id: int,
-            code: str,
-            name: str,
-            version: str,
-            link: str,
-            valid_from: str = None,
-            valid_until: str = None,
-            notes: str = None
+            source_id       : int,
+            code            : str,
+            name            : str,
+            version         : str,
+            link            : str,
+            valid_from      : str = None,
+            valid_until     : str = None,
+            notes           : str = None
         ) -> int:
         query = """
             INSERT INTO audit.licences (source_id, code, name, version, valid_from, valid_until, notes) 
@@ -283,10 +283,10 @@ class WriteBoundary(QueryBoundary):
         return licence_id
 
     def persist_licence_attribute(self,
-            attribute_code: str,
-            name: str,
-            description: str,
-            attribute_type: int         
+            attribute_code  : str,
+            name            : str,
+            description     : str,
+            attribute_type  : int         
         ) -> str:
         query = """
             INSERT INTO audit.licence_attributes (attribute_code, name, description, attribute_type)
@@ -298,9 +298,9 @@ class WriteBoundary(QueryBoundary):
         return
 
     def persist_licence_attribute_mapping(self,
-            licence_id: int,
-            attribute_code: str,
-            custom_note: str = None                  
+            licence_id      : int,
+            attribute_code  : str,
+            custom_note     : str = None                  
         ) -> None:
         query = """
             INSERT INTO audit.licence_attribute_mapping (licence_id, attribute_code, custom_note)
