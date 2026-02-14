@@ -4,6 +4,7 @@ if TYPE_CHECKING:
 
 from database.boundary.base_boundary import ReadBoundary, WriteBoundary
 
+import json
 
 SOURCE_REGISTRY = {
     # ============================================================================
@@ -332,6 +333,8 @@ class SourceRegistry:
             if data.get("source_code") != None:
                 parent_source_id = self.read.find_source(data.get("parent_code"))
 
+            dict_metadata = data.get("metadata")
+
             self.write.persist_source(
                 source_type         = data.get("source_type"),
                 code                = code,
@@ -343,5 +346,5 @@ class SourceRegistry:
                 parent_source       = parent_source_id,
                 official_citation   = data.get("official_citation"),
                 date_published      = data.get("date_published"),
-                metadata            = data.get("metadata")
+                metadata            = json.dumps(dict_metadata) if dict_metadata is not None else None
             )
