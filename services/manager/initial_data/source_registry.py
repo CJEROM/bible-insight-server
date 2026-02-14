@@ -20,11 +20,11 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "Tyndale House, Cambridge. https://www.tyndalehouse.com/",
         "date_published": "1944-01-01",
-        "metadata": {
-            "type": "research_institute",
-            "focus": ["biblical_scholarship", "textual_criticism", "biblical_languages"],
-            "notable_projects": ["Tyndale House Greek New Testament", "STEPBible"]
-        }
+        # "metadata": {
+        #     "type": "research_institute",
+        #     "focus": ["biblical_scholarship", "textual_criticism", "biblical_languages"],
+        #     "notable_projects": ["Tyndale House Greek New Testament", "STEPBible"]
+        # }
     },
     
     "GITHUB": {
@@ -37,11 +37,11 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "GitHub, Inc. https://github.com/",
         "date_published": None,
-        "metadata": {
-            "type": "platform",
-            "purpose": "code_hosting",
-            "features": ["version_control", "collaboration", "distribution"]
-        }
+        # "metadata": {
+        #     "type": "platform",
+        #     "purpose": "code_hosting",
+        #     "features": ["version_control", "collaboration", "distribution"]
+        # }
     },
     
     "STEPBIBLE": {
@@ -54,12 +54,12 @@ SOURCE_REGISTRY = {
         "parent_code": "TYNDALE",
         "official_citation": "STEPBible Data Repository. Tyndale House, Cambridge. https://www.stepbible.org/",
         "date_published": "2010-01-01",
-        "metadata": {
-            "license": "CC BY 4.0",
-            "languages": ["Hebrew", "Greek", "English"],
-            "features": ["morphology", "lexical_tagging"],
-            "distributed_via": "GitHub"
-        }
+        # "metadata": {
+        #     "license": "CC BY 4.0",
+        #     "languages": ["Hebrew", "Greek", "English"],
+        #     "features": ["morphology", "lexical_tagging"],
+        #     "distributed_via": "GitHub"
+        # }
     },
     
     "OPENSCRIPTURES": {
@@ -72,12 +72,12 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "OpenScriptures Project. https://github.com/openscriptures.",
         "date_published": "2009-01-01",
-        "metadata": {
-            "approach": "collaborative",
-            "license": "various open licenses",
-            "focus": ["morphology", "Hebrew_Bible", "Greek_NT"],
-            "distributed_via": "GitHub"
-        }
+        # "metadata": {
+        #     "approach": "collaborative",
+        #     "license": "various open licenses",
+        #     "focus": ["morphology", "Hebrew_Bible", "Greek_NT"],
+        #     "distributed_via": "GitHub"
+        # }
     },
     
     "DBL": {
@@ -90,11 +90,11 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "Digital Bible Library. United Bible Societies. https://library.bible/",
         "date_published": "2012-01-01",
-        "metadata": {
-            "organization": "United Bible Societies",
-            "resource_types": ["text", "audio", "video"],
-            "language_count": "1800+"
-        }
+        # "metadata": {
+        #     "organization": "United Bible Societies",
+        #     "resource_types": ["text", "audio", "video"],
+        #     "language_count": "1800+"
+        # }
     },
     
     "SIL": {
@@ -107,11 +107,11 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "SIL International. https://www.sil.org/",
         "date_published": "1934-01-01",
-        "metadata": {
-            "formerly_known_as": "Summer Institute of Linguistics",
-            "founded": 1934,
-            "focus": ["linguistics", "language_development", "literacy"]
-        }
+        # "metadata": {
+        #     "formerly_known_as": "Summer Institute of Linguistics",
+        #     "founded": 1934,
+        #     "focus": ["linguistics", "language_development", "literacy"]
+        # }
     },
     
     "UNICODE": {
@@ -124,10 +124,10 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "The Unicode Consortium. Unicode Standard. https://unicode.org/",
         "date_published": "1991-01-01",
-        "metadata": {
-            "standards": ["Unicode", "CLDR", "UCA"],
-            "focus": ["character_encoding", "internationalization"]
-        }
+        # "metadata": {
+        #     "standards": ["Unicode", "CLDR", "UCA"],
+        #     "focus": ["character_encoding", "internationalization"]
+        # }
     },
     
     "PARATEXT": {
@@ -140,11 +140,11 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "Paratext. United Bible Societies and SIL International. https://paratext.org/",
         "date_published": "1993-01-01",
-        "metadata": {
-            "developers": ["United Bible Societies", "SIL International"],
-            "type": "software",
-            "purpose": "Bible translation and checking"
-        }
+        # "metadata": {
+        #     "developers": ["United Bible Societies", "SIL International"],
+        #     "type": "software",
+        #     "purpose": "Bible translation and checking"
+        # }
     },
     
     # ============================================================================
@@ -161,12 +161,12 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "Brown, Francis, S.R. Driver, and Charles A. Briggs. 1906. The Brown-Driver-Briggs Hebrew and English Lexicon. Boston: Houghton, Mifflin and Company.",
         "date_published": "1906-01-01",
-        "metadata": {
-            "authors": ["Francis Brown", "S.R. Driver", "Charles A. Briggs"],
-            "language": "Hebrew",
-            "testament": "Old Testament",
-            "status": "public domain"
-        }
+        # "metadata": {
+        #     "authors": ["Francis Brown", "S.R. Driver", "Charles A. Briggs"],
+        #     "language": "Hebrew",
+        #     "testament": "Old Testament",
+        #     "status": "public domain"
+        # }
     },
     
     "LSJ": {
@@ -179,12 +179,12 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "Liddell, Henry George, Robert Scott, and Henry Stuart Jones. 1940. A Greek-English Lexicon. 9th ed. Oxford: Clarendon Press.",
         "date_published": "1940-01-01",
-        "metadata": {
-            "authors": ["Henry George Liddell", "Robert Scott", "Henry Stuart Jones"],
-            "edition": "9th",
-            "language": "Greek",
-            "scope": "Classical and Koine Greek"
-        }
+        # "metadata": {
+        #     "authors": ["Henry George Liddell", "Robert Scott", "Henry Stuart Jones"],
+        #     "edition": "9th",
+        #     "language": "Greek",
+        #     "scope": "Classical and Koine Greek"
+        # }
     },
     
     # ============================================================================
@@ -201,11 +201,11 @@ SOURCE_REGISTRY = {
         "parent_code": "STEP",
         "official_citation": "STEPBible Open Scriptures Hebrew Bible. 2024. Tyndale House, Cambridge. https://github.com/STEPBible/STEPBible-Data.",
         "date_published": "2024-01-01",
-        "metadata": {
-            "base_text": "Westminster Leningrad Codex",
-            "features": ["morphology", "cantillation", "vowel_points"],
-            "format": "OSIS XML"
-        }
+        # "metadata": {
+        #     "base_text": "Westminster Leningrad Codex",
+        #     "features": ["morphology", "cantillation", "vowel_points"],
+        #     "format": "OSIS XML"
+        # }
     },
     
     "DBL-USX": {
@@ -218,12 +218,12 @@ SOURCE_REGISTRY = {
         "parent_code": "DBL",
         "official_citation": "Unified Scripture XML (USX) Format. United Bible Societies. https://github.com/ubsicap/usx.",
         "date_published": "2020-01-01",
-        "metadata": {
-            "type": "format_specification",
-            "format": "XML",
-            "schema_version": "3.0",
-            "purpose": "Scripture markup"
-        }
+        # "metadata": {
+        #     "type": "format_specification",
+        #     "format": "XML",
+        #     "schema_version": "3.0",
+        #     "purpose": "Scripture markup"
+        # }
     },
 
     # ============================================================================
@@ -240,12 +240,12 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "Creative Commons. https://creativecommons.org/",
         "date_published": "2001-01-01",
-        "metadata": {
-            "type": "license_provider",
-            "founded": 2001,
-            "license_types": ["CC0", "CC BY", "CC BY-SA", "CC BY-NC", "CC BY-NC-SA", "CC BY-ND", "CC BY-NC-ND"],
-            "focus": ["copyright_licensing", "open_access", "creative_commons"]
-        }
+        # "metadata": {
+        #     "type": "license_provider",
+        #     "founded": 2001,
+        #     "license_types": ["CC0", "CC BY", "CC BY-SA", "CC BY-NC", "CC BY-NC-SA", "CC BY-ND", "CC BY-NC-ND"],
+        #     "focus": ["copyright_licensing", "open_access", "creative_commons"]
+        # }
     },
 
     "GNU": {
@@ -258,13 +258,13 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "GNU Project. Free Software Foundation. https://www.gnu.org/",
         "date_published": "1983-09-27",
-        "metadata": {
-            "type": "license_provider",
-            "founded": 1983,
-            "organization": "Free Software Foundation",
-            "license_types": ["GPL-2.0", "GPL-3.0", "AGPL-3.0", "LGPL-2.1", "LGPL-3.0"],
-            "focus": ["free_software", "copyleft", "software_freedom"]
-        }
+        # "metadata": {
+        #     "type": "license_provider",
+        #     "founded": 1983,
+        #     "organization": "Free Software Foundation",
+        #     "license_types": ["GPL-2.0", "GPL-3.0", "AGPL-3.0", "LGPL-2.1", "LGPL-3.0"],
+        #     "focus": ["free_software", "copyleft", "software_freedom"]
+        # }
     },
 
     "MIT": {
@@ -277,11 +277,11 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "Massachusetts Institute of Technology. MIT License. https://opensource.org/licenses/MIT",
         "date_published": "1988-01-01",
-        "metadata": {
-            "type": "license_provider",
-            "license_types": ["MIT"],
-            "focus": ["permissive_licensing", "open_source"]
-        }
+        # "metadata": {
+        #     "type": "license_provider",
+        #     "license_types": ["MIT"],
+        #     "focus": ["permissive_licensing", "open_source"]
+        # }
     },
 
     "APACHE": {
@@ -294,12 +294,12 @@ SOURCE_REGISTRY = {
         "parent_code": None,
         "official_citation": "Apache Software Foundation. https://www.apache.org/",
         "date_published": "1999-03-01",
-        "metadata": {
-            "type": "license_provider",
-            "founded": 1999,
-            "license_types": ["Apache-1.0", "Apache-1.1", "Apache-2.0"],
-            "focus": ["open_source", "permissive_licensing", "patent_protection"]
-        }
+        # "metadata": {
+        #     "type": "license_provider",
+        #     "founded": 1999,
+        #     "license_types": ["Apache-1.0", "Apache-1.1", "Apache-2.0"],
+        #     "focus": ["open_source", "permissive_licensing", "patent_protection"]
+        # }
     },
 
     # "CODE": {
@@ -328,6 +328,10 @@ class SourceRegistry:
     def seed_sources(self):
 
         for code, data in SOURCE_REGISTRY.items():
+            parent_source_id = None
+            if data.get("source_code") != None:
+                parent_source_id = self.read.find_source(data.get("parent_code"))
+
             self.write.persist_source(
                 source_type         = data.get("source_type"),
                 code                = code,
@@ -336,7 +340,7 @@ class SourceRegistry:
                 version             = data.get("version"),
                 url                 = data.get("url"),
                 note                = data.get("note"),
-                parent_source       = data.get("parent_code"),
+                parent_source       = parent_source_id,
                 official_citation   = data.get("official_citation"),
                 date_published      = data.get("date_published"),
                 metadata            = data.get("metadata")
