@@ -8,6 +8,9 @@ if TYPE_CHECKING:
     from manager.managerhandler import ManagerHandler
     from manager.envmanager import EnvManager
 
+from manager.initial_data.license_registry import LicenceRegistry
+from manager.initial_data.source_registry import SourceRegistry
+
 class DBManager:
     def __init__(self, role: str, this_manager: "ManagerHandler" = None):
         self.this_manager = this_manager
@@ -91,8 +94,7 @@ class DBManager:
             db_server_script_path / seed_folder / "lookup_data.sql",
             db_server_script_path / seed_folder / "user_data.sql",
             db_server_script_path / seed_folder / "ref_lookup_data.sql",
-            db_server_script_path / seed_folder / "licensing_data.sql",
-            db_server_script_path / seed_folder / "source_data.sql"
+            db_server_script_path / seed_folder / "licensing_data.sql"
         ]
 
         for init_script_path in migrations:
@@ -101,6 +103,9 @@ class DBManager:
                 sql_script = file.read()
                 self.execute(sql_script)
                 print(f"Executed: {init_script_path.parent.name}.{init_script_path.name}")
+
+        SourceRegistry(self)
+        LicenceRegistry(self)
 
         self.conn.commit()
 
