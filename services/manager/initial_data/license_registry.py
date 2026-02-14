@@ -82,7 +82,7 @@ LICENCE_REGISTRY = {
             "PRINT",
             "DIGITAL",
             "SUBLICENSE",
-            "PRIVATE_USE"
+            "PRIVATE_USE",
             # OBLIGATIONS
             "ATTRIBUTION",
             "NOTICE"
@@ -105,7 +105,7 @@ LICENCE_REGISTRY = {
             "PRINT",
             "DIGITAL",
             "SUBLICENSE",
-            "PRIVATE_USE"
+            "PRIVATE_USE",
             # OBLIGATIONS
             "ATTRIBUTION",
             "NOTICE",
@@ -128,7 +128,7 @@ LICENCE_REGISTRY = {
             "PRINT",
             "DIGITAL",
             "SUBLICENSE",
-            "PRIVATE_USE"
+            "PRIVATE_USE",
             # OBLIGATIONS
             "ATTRIBUTION",
             "NOTICE",
@@ -151,7 +151,7 @@ LICENCE_REGISTRY = {
             "TRANSLATE",
             "PRINT",
             "DIGITAL",
-            "PRIVATE_USE"
+            "PRIVATE_USE",
             # OBLIGATIONS
             "ATTRIBUTION",
             "NOTICE",
@@ -219,7 +219,7 @@ LICENCE_REGISTRY = {
             "COMMERCIAL",
             "DISTRIBUTE",
             "MODIFY",
-            "PRIVATE_USE"
+            "PRIVATE_USE",
             # OBLIGATIONS
             "COPYLEFT",
             "SOURCE_CODE",
