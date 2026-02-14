@@ -71,6 +71,7 @@ class UnicodeIngestor:
                 name        = "ISO 15924 Terms of Use",
                 version     = None,
                 link        = "https://www.unicode.org/copyright.html",
+                summary     = "",
                 valid_from  = None,
                 valid_until = None,
                 notes       = "CUSTOM TERMS OF USE"

@@ -86,6 +86,7 @@ class SILIngestor:
             name        = "ISO 639-3 Terms of Use",
             version     = None,
             link        = "https://iso639-3.sil.org/code_tables/download_tables#termsofuse",
+            summary     = None,
             notes       = "CUSTOM TERMS OF USE"
         )
 
