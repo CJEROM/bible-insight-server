@@ -270,16 +270,17 @@ class WriteBoundary(QueryBoundary):
             name            : str,
             version         : str,
             link            : str,
+            summary         : str,
             valid_from      : str = None,
             valid_until     : str = None,
             notes           : str = None
         ) -> int:
         query = """
-            INSERT INTO audit.licences (source_id, code, name, version, valid_from, valid_until, notes) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO audit.licences (source_id, code, name, version, link, summary, valid_from, valid_until, notes) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
-        licence_id = self.db.fetch_clean_one(query, (source_id, code, name, version, link, valid_from, valid_until, notes))
+        licence_id = self.db.fetch_clean_one(query, (source_id, code, name, version, link, summary, valid_from, valid_until, notes))
         return licence_id
 
     def persist_licence_attribute(self,

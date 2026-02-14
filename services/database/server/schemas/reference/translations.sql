@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS audit.dbl_info (
 );
 
 -- TO BE AMENDED: 
---      Add language ID from sil.iso_codes instead
+--      Add language ID from standards.iso693_3_codes instead
 --      Add Script ID from unicode.
 --      (Optional) Add CLRD (Numeric system used in translation)
 CREATE TABLE IF NOT EXISTS bible.translations (

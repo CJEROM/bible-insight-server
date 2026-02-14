@@ -20,7 +20,7 @@ class SILIngestor:
             manager: ManagerHandler | None = None
         ):
         self.manager        = manager or ManagerHandler()
-        self.log            = self.manager.create_log_in_folder(["logs", "ingestor", "sil"], f"")
+        self.log            = self.manager.create_log_in_folder(["logs", "ingestor", "sil"])
         self.db             = self.manager.get_db()
 
         self.log.set_logging_level(1)
@@ -86,13 +86,24 @@ class SILIngestor:
             name        = "ISO 639-3 Terms of Use",
             version     = None,
             link        = "https://iso639-3.sil.org/code_tables/download_tables#termsofuse",
+            summary     = None,
             notes       = "CUSTOM TERMS OF USE"
         )
 
         licence_attributes = [
+            # PERMISSIONS
+            "COMMERCIAL",
+            "DISTRIBUTE",
+            "MODIFY",
+            "PRIVATE_USE",
+            "DIGITAL",
+            "PRINT",
+            # OBLIGATIONS
             "ATTRIBUTION",
-            "NO_DERIVATIVES",
-            "NO_DISTRIBUTION"
+            "NOTICE",
+            # RESTRICTIONS
+            "NO_WARRANTY",
+            "NO_ENDORSEMENT"
         ]
         self.write.map_all_licence_attributes(
             licence_id      = licence_id,
