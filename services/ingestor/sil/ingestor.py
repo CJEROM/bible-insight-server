@@ -78,7 +78,7 @@ class SILIngestor:
 
         return source_id
 
-    def map_license(self):
+    def map_license(self, source_id: int):
         # Maps licensing details to the files or at least the source for now
         licence_id = self.write.persist_licence(
             source_id   = self.source_id,
@@ -108,6 +108,10 @@ class SILIngestor:
         self.write.map_all_licence_attributes(
             licence_id      = licence_id,
             attributes      = licence_attributes
+        )
+        self.write.map_source_license(
+            source_id       = source_id,
+            licence_id      = licence_id
         )
 
     def get_latest_dowload_link(self):
@@ -144,6 +148,7 @@ class SILIngestor:
         self.log.log_to_file(f"Downloaded Latest SIL Language Files to: {new_file_path}!", "INGESTOR", "INFO")
 
         self.source_id = self.create_source(link)
+        self.map_license(self.source_id)
         self.unzip_folder(new_file_path)
 
     def unzip_folder(self, zip_path):
