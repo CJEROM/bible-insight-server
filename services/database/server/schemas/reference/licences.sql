@@ -35,3 +35,12 @@ CREATE TABLE audit.licence_attribute_mapping (
     FOREIGN KEY (licence_id) REFERENCES audit.licences(id) ON DELETE CASCADE,
     FOREIGN KEY (attribute_code) REFERENCES audit.licence_attributes(attribute_code)
 );
+
+CREATE TABLE audit.source_licences (
+    source_id       INTEGER NOT NULL,
+    licence_id      INTEGER NOT NULL,
+    
+    PRIMARY KEY (source_id, licence_id),
+    FOREIGN KEY (source_id) REFERENCES audit.sources(id) ON DELETE CASCADE,
+    FOREIGN KEY (licence_id) REFERENCES audit.licences(id) ON DELETE CASCADE
+);

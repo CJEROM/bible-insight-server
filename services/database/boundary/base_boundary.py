@@ -231,6 +231,16 @@ class WriteBoundary(QueryBoundary):
         source_id = self.db.fetch_clean_one(query, (source_type, code, name, description, version, url, note, parent_source, official_citation, date_published, metadata))
         return source_id
     
+    def map_source_license(self,
+            source_id   : int,
+            licence_id  : int
+        ) -> None:  
+        query = """
+            INSERT INTO audit.source_licences (source_id, licence_id)
+            VALUES (%s, %s)
+        """
+        self.db.execute(query, (source_id, licence_id))
+    
     # ============================================================================
     #                                   INGESTION
     # ============================================================================
