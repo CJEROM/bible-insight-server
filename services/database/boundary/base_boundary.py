@@ -238,6 +238,7 @@ class WriteBoundary(QueryBoundary):
         query = """
             INSERT INTO audit.source_licences (source_id, licence_id)
             VALUES (%s, %s)
+            ON CONFLICT DO NOTHING;
         """
         self.db.execute(query, (source_id, licence_id))
     
