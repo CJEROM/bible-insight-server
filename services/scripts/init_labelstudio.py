@@ -104,8 +104,8 @@ def find_api_token():
             page.click("button:has-text('Log in')")
 
         page.click(f"span:has-text('{LABEL_STUDIO_USERNAME[0:2]}')")
-        page.click("span:has-text('Account & Settings')")
-        page.click("span:has-text('Personal Access Token')")
+        page.get_by_role("link", name="Account & Settings", exact=True).click()
+        page.get_by_role("link", name="Personal Access Token", exact=True).click()
 
         time.sleep(1)
 
