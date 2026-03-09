@@ -1,4 +1,4 @@
-from usx.files.base_file import BaseFile
+from ingestor.usx.files.base_file import BaseFile
 from manager.managerhandler import ManagerHandler
 from manager.logmanager import LogManager
 
@@ -64,9 +64,6 @@ class DownloadFile(BaseFile):
                     f.write(chunk)
 
         self.log.log_to_file(f"Downloaded Files to: {new_file_path}!", "DOWNLOAD", "INFO")
-
-        self.create_source(self.source_url)
-        self.map_license(self.source_id)
 
         return new_file_path
 
