@@ -37,3 +37,12 @@ CREATE TABLE IF NOT EXISTS audit.source_mappings (
     -- FOREIGN KEY (relationship_type) REFERENCES lookup.relationship_types(code),
     UNIQUE(source_id, related_source_id, relationship_type)
 );
+
+CREATE TABLE audit.source_licences (
+    source_id       INTEGER NOT NULL,
+    licence_id      INTEGER NOT NULL,
+    
+    PRIMARY KEY (source_id, licence_id),
+    FOREIGN KEY (source_id) REFERENCES audit.sources(id) ON DELETE CASCADE,
+    FOREIGN KEY (licence_id) REFERENCES audit.licences(id) ON DELETE CASCADE
+);
