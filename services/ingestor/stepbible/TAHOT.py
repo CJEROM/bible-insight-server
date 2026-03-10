@@ -23,47 +23,87 @@ class TAHOT():
 
     def download_files(self):
 
-        MAT_JHN = DownloadFile(
+        GEN_DEU = DownloadFile(
             main_manager        = self.manager,
             log                 = self.log,
-            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Translators%20Amalgamated%20OT%2BNT/TAGNT%20Mat-Jhn%20-%20Translators%20Amalgamated%20Greek%20NT%20-%20STEPBible.org%20CC-BY.txt",
-            file_name           = "TAGNT MAT-JHN.txt",
-            description         = "Translators Amalgamated Greek NT",
+            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Translators%20Amalgamated%20OT%2BNT/TAHOT%20Gen-Deu%20-%20Translators%20Amalgamated%20Hebrew%20OT%20-%20STEPBible.org%20CC%20BY.txt",
+            file_name           = "TAHOT GEN_DEU.txt",
+            description         = "TAHOT Gen-Deu - Translators Amalgamated Hebrew OT",
             citation            = None
         )
-        MAT_JHN.create_source(
+        GEN_DEU.create_source(
             parent_source_code  = "STEPBIBLE",
-            source_code         = "TAGNT",
-            source_name         = "TAGNT",
+            source_code         = "TAHOT",
+            source_name         = "TAHOT",
             version             = None,
-            note                = "Translators Amalgamated Greek NT"
+            note                = "TAHOT - Translators Amalgamated Hebrew OT"
         )
-        MAT_JHN.map_license(
+        GEN_DEU.map_license(
             license_code    = "CC BY 4.0",
             is_new_license  = False
         )
 
-        ACT_REV = DownloadFile(
+        JOS_EST = DownloadFile(
             main_manager        = self.manager,
             log                 = self.log,
-            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Translators%20Amalgamated%20OT%2BNT/TAGNT%20Act-Rev%20-%20Translators%20Amalgamated%20Greek%20NT%20-%20STEPBible.org%20CC-BY.txt",
-            file_name           = "TAGNT ACT-REV.txt",
-            description         = "Translators Amalgamated Greek NT",
+            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Translators%20Amalgamated%20OT%2BNT/TAHOT%20Jos-Est%20-%20Translators%20Amalgamated%20Hebrew%20OT%20-%20STEPBible.org%20CC%20BY.txt",
+            file_name           = "TAHOT JOS_EST.txt",
+            description         = "TAHOT Jos-Est - Translators Amalgamated Hebrew OT",
             citation            = None
         )
-        ACT_REV.create_source(
+        JOS_EST.create_source(
             parent_source_code  = "STEPBIBLE",
-            source_code         = "TAGNT",
-            source_name         = "TAGNT",
+            source_code         = "TAHOT",
+            source_name         = "TAHOT",
             version             = None,
-            note                = "Translators Amalgamated Greek NT"
+            note                = "TAHOT - Translators Amalgamated Hebrew OT"
         )
-        ACT_REV.map_license(
+        JOS_EST.map_license(
             license_code    = "CC BY 4.0",
             is_new_license  = False
         )
 
-        return [MAT_JHN, ACT_REV]
+        JOB_SNG = DownloadFile(
+            main_manager        = self.manager,
+            log                 = self.log,
+            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Translators%20Amalgamated%20OT%2BNT/TAHOT%20Job-Sng%20-%20Translators%20Amalgamated%20Hebrew%20OT%20-%20STEPBible.org%20CC%20BY.txt",
+            file_name           = "TAHOT JOB_SNG.txt",
+            description         = "TAHOT Job-Sng - Translators Amalgamated Hebrew OT",
+            citation            = None
+        )
+        JOB_SNG.create_source(
+            parent_source_code  = "STEPBIBLE",
+            source_code         = "TAHOT",
+            source_name         = "TAHOT",
+            version             = None,
+            note                = "TAHOT - Translators Amalgamated Hebrew OT"
+        )
+        JOB_SNG.map_license(
+            license_code    = "CC BY 4.0",
+            is_new_license  = False
+        )
+
+        ISA_MAL = DownloadFile(
+            main_manager        = self.manager,
+            log                 = self.log,
+            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Translators%20Amalgamated%20OT%2BNT/TAHOT%20Isa-Mal%20-%20Translators%20Amalgamated%20Hebrew%20OT%20-%20STEPBible.org%20CC%20BY.txt",
+            file_name           = "TAHOT ISA_MAL.txt",
+            description         = "TAHOT Isa-Mal - Translators Amalgamated Hebrew OT",
+            citation            = None
+        )
+        ISA_MAL.create_source(
+            parent_source_code  = "STEPBIBLE",
+            source_code         = "TAHOT",
+            source_name         = "TAHOT",
+            version             = None,
+            note                = "TAHOT - Translators Amalgamated Hebrew OT"
+        )
+        ISA_MAL.map_license(
+            license_code    = "CC BY 4.0",
+            is_new_license  = False
+        )
+
+        return [GEN_DEU, JOS_EST, JOB_SNG, ISA_MAL]
 
     def process_file(self):
         downloaded_files = self.download_files()

@@ -1,5 +1,6 @@
 # Lexicons/TFLSJ  0-5624 - Translators Formatted full LSJ Bible lexicon - STEPBible.org CC BY.txt
-# github.com/STEPBible/STEPBible-Data/raw/refs/heads/master/Lexicons/TFLSJ%20%200-5624%20-%20Translators%20Formatted%20full%20LSJ%20Bible%20lexicon%20-%20STEPBible.org%20CC%20BY.txt
+# https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Lexicons/TFLSJ%20%200-5624%20-%20Translators%20Formatted%20full%20LSJ%20Bible%20lexicon%20-%20STEPBible.org%20CC%20BY.txt
+
 # Lexicons/TFLSJ extra - Translators Formatted full LSJ Bible lexicon - STEPBible.org CC BY.txt
 # https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Lexicons/TFLSJ%20extra%20-%20Translators%20Formatted%20full%20LSJ%20Bible%20lexicon%20-%20STEPBible.org%20CC%20BY.txt
 
@@ -21,47 +22,47 @@ class TFLSJ():
 
     def download_files(self):
 
-        MAT_JHN = DownloadFile(
+        NORMAL = DownloadFile(
             main_manager        = self.manager,
             log                 = self.log,
-            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Translators%20Amalgamated%20OT%2BNT/TAGNT%20Mat-Jhn%20-%20Translators%20Amalgamated%20Greek%20NT%20-%20STEPBible.org%20CC-BY.txt",
-            file_name           = "TAGNT MAT-JHN.txt",
-            description         = "Translators Amalgamated Greek NT",
+            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Lexicons/TFLSJ%20%200-5624%20-%20Translators%20Formatted%20full%20LSJ%20Bible%20lexicon%20-%20STEPBible.org%20CC%20BY.txt",
+            file_name           = "TFLSJ.txt",
+            description         = "TFLSJ 0-5624 - Translators Formatted full LSJ Bible lexicon",
             citation            = None
         )
-        MAT_JHN.create_source(
+        NORMAL.create_source(
             parent_source_code  = "STEPBIBLE",
-            source_code         = "TAGNT",
-            source_name         = "TAGNT",
+            source_code         = "TFLSJ",
+            source_name         = "TFLSJ",
             version             = None,
-            note                = "Translators Amalgamated Greek NT"
+            note                = "TFLSJ 0-5624 - Translators Formatted full LSJ Bible lexicon"
         )
-        MAT_JHN.map_license(
+        NORMAL.map_license(
             license_code    = "CC BY 4.0",
             is_new_license  = False
         )
 
-        ACT_REV = DownloadFile(
+        EXTRA = DownloadFile(
             main_manager        = self.manager,
             log                 = self.log,
-            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Translators%20Amalgamated%20OT%2BNT/TAGNT%20Act-Rev%20-%20Translators%20Amalgamated%20Greek%20NT%20-%20STEPBible.org%20CC-BY.txt",
-            file_name           = "TAGNT ACT-REV.txt",
-            description         = "Translators Amalgamated Greek NT",
+            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Lexicons/TFLSJ%20extra%20-%20Translators%20Formatted%20full%20LSJ%20Bible%20lexicon%20-%20STEPBible.org%20CC%20BY.txt",
+            file_name           = "TFLSJ EXTRA.txt",
+            description         = "TFLSJ extra - Translators Formatted full LSJ Bible lexicon",
             citation            = None
         )
-        ACT_REV.create_source(
+        EXTRA.create_source(
             parent_source_code  = "STEPBIBLE",
-            source_code         = "TAGNT",
-            source_name         = "TAGNT",
+            source_code         = "TFLSJ",
+            source_name         = "TFLSJ",
             version             = None,
-            note                = "Translators Amalgamated Greek NT"
+            note                = "TFLSJ extra - Translators Formatted full LSJ Bible lexicon"
         )
-        ACT_REV.map_license(
+        EXTRA.map_license(
             license_code    = "CC BY 4.0",
             is_new_license  = False
         )
 
-        return [MAT_JHN, ACT_REV]
+        return [NORMAL, EXTRA]
 
     def process_file(self):
         downloaded_files = self.download_files()

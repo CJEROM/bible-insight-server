@@ -20,54 +20,33 @@ class TEBSH():
 
     def download_files(self):
 
-        MAT_JHN = DownloadFile(
+        FILE = DownloadFile(
             main_manager        = self.manager,
             log                 = self.log,
-            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Translators%20Amalgamated%20OT%2BNT/TAGNT%20Mat-Jhn%20-%20Translators%20Amalgamated%20Greek%20NT%20-%20STEPBible.org%20CC-BY.txt",
-            file_name           = "TAGNT MAT-JHN.txt",
-            description         = "Translators Amalgamated Greek NT",
+            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Lexicons/TBESH%20-%20Translators%20Brief%20lexicon%20of%20Extended%20Strongs%20for%20Hebrew%20-%20STEPBible.org%20CC%20BY.txt",
+            file_name           = "TEBSH.txt",
+            description         = "TEBSH - Translators Brief lexicon of Extended Strongs for Hebrew",
             citation            = None
         )
-        MAT_JHN.create_source(
+        FILE.create_source(
             parent_source_code  = "STEPBIBLE",
-            source_code         = "TAGNT",
-            source_name         = "TAGNT",
+            source_code         = "TEBSH",
+            source_name         = "TEBSH",
             version             = None,
-            note                = "Translators Amalgamated Greek NT"
+            note                = "TEBSH - Translators Brief lexicon of Extended Strongs for Hebrew"
         )
-        MAT_JHN.map_license(
+        FILE.map_license(
             license_code    = "CC BY 4.0",
             is_new_license  = False
         )
 
-        ACT_REV = DownloadFile(
-            main_manager        = self.manager,
-            log                 = self.log,
-            link                = "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Translators%20Amalgamated%20OT%2BNT/TAGNT%20Act-Rev%20-%20Translators%20Amalgamated%20Greek%20NT%20-%20STEPBible.org%20CC-BY.txt",
-            file_name           = "TAGNT ACT-REV.txt",
-            description         = "Translators Amalgamated Greek NT",
-            citation            = None
-        )
-        ACT_REV.create_source(
-            parent_source_code  = "STEPBIBLE",
-            source_code         = "TAGNT",
-            source_name         = "TAGNT",
-            version             = None,
-            note                = "Translators Amalgamated Greek NT"
-        )
-        ACT_REV.map_license(
-            license_code    = "CC BY 4.0",
-            is_new_license  = False
-        )
-
-        return [MAT_JHN, ACT_REV]
+        return FILE
 
     def process_file(self):
-        downloaded_files = self.download_files()
+        downloaded_file = self.download_files()
 
-        for file in downloaded_files:
-            file_content = file.read_file()
-            print(file_content[0:20])
+        file_content = downloaded_file.read_file()
+        print(file_content[0:20])
 
 if __name__ == "__main__":
     manager = ManagerHandler()

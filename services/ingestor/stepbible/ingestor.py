@@ -1,16 +1,16 @@
 
 
 
-from stepbible.TAHOT import TAHOT
-from stepbible.TAGNT import TAGNT
-from stepbible.TEBSG import TEBSG
-from stepbible.TEBSH import TEBSH
-from stepbible.TEGMC import TEGMC
-from stepbible.TEHMC import TEHMC
-from stepbible.TFLSJ import TFLSJ
-from stepbible.TIPNR import TIPNR
-from stepbible.TTESV import TTESV
-from stepbible.TVTMS import TVTMS
+from ingestor.stepbible.TAHOT import TAHOT
+from ingestor.stepbible.TAGNT import TAGNT
+from ingestor.stepbible.TEBSG import TEBSG
+from ingestor.stepbible.TEBSH import TEBSH
+from ingestor.stepbible.TEGMC import TEGMC
+from ingestor.stepbible.TEHMC import TEHMC
+from ingestor.stepbible.TFLSJ import TFLSJ
+from ingestor.stepbible.TIPNR import TIPNR
+from ingestor.stepbible.TTESV import TTESV
+from ingestor.stepbible.TVTMS import TVTMS
 
 from manager.managerhandler import ManagerHandler
 from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
@@ -23,6 +23,8 @@ class STEPBibleIngestor:
 
         self.write = StepBibleWriteBoundary(self.db)
         self.read  = StepBibleReadBoundary(self.db)
+
+        self.ingest()
 
     def ingest(self):
         # Translators Amalgamated Hebrew OT
@@ -76,3 +78,8 @@ class STEPBibleIngestor:
             manager     = self.manager,
             log         = self.log
         )
+
+if __name__ == "__main__":
+    manager = ManagerHandler()
+
+    ingestor = STEPBibleIngestor(manager)
