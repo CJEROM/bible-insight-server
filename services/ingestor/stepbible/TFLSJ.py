@@ -35,7 +35,7 @@ class TFLSJ():
             source_code         = "TFLSJ",
             source_name         = "TFLSJ",
             version             = None,
-            note                = "TFLSJ 0-5624 - Translators Formatted full LSJ Bible lexicon"
+            note                = "TFLSJ - Translators Formatted full LSJ Bible lexicon"
         )
         NORMAL.map_license(
             license_code    = "CC BY 4.0",
@@ -55,7 +55,7 @@ class TFLSJ():
             source_code         = "TFLSJ",
             source_name         = "TFLSJ",
             version             = None,
-            note                = "TFLSJ extra - Translators Formatted full LSJ Bible lexicon"
+            note                = "TFLSJ - Translators Formatted full LSJ Bible lexicon"
         )
         EXTRA.map_license(
             license_code    = "CC BY 4.0",
