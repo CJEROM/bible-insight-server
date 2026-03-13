@@ -6,6 +6,8 @@ from ingestor.stepbible.download_file import DownloadFile
 from manager.managerhandler import ManagerHandler
 from manager.logmanager import LogManager
 
+SEGMENTS = set()
+
 class TEGMC():
     def __init__(self, 
             manager: ManagerHandler, 
@@ -40,12 +42,107 @@ class TEGMC():
         )
 
         return FILE
-
+    
     def process_file(self):
         downloaded_file = self.download_files()
 
-        file_content = downloaded_file.read_file()
-        print(file_content[0:20])
+        # Read the downloaded file
+        with open(downloaded_file.this_file_path, "r", encoding="utf-8") as f:
+            # Loop through file line by line
+            count = 0
+            valid = False
+            intro = False
+
+            for line in f:
+
+                if line.startswith("Code\tExample in English\tMeaning"):
+                    next(f) # Skip divider line 
+                    intro = True
+
+                if intro:
+                    if line.startswith("FULL MORPHOLOGY CODES:"):
+                        intro = False
+
+                    self.process_brief_code(line)
+
+                if line.startswith("$"):
+                    if count == 0:
+                        valid = True
+
+                    count += 1
+
+                    if valid:
+                        block = [
+                            next(f).rstrip("\n"),
+                            next(f).rstrip("\n"),
+                            next(f).rstrip("\n"),
+                            next(f).rstrip("\n"),
+                        ]
+
+                        self.process_block(block)
+        
+        print()
+        for segment in SEGMENTS:
+            print(f"'{segment}'")
+
+    def process_brief_code(self, 
+            line: str
+        ):
+        # 
+        if len(line.split("\t")) != 3 or line == "":
+            return
+        
+        code, example, meaning = line.split("\t")
+
+
+    def process_block(self, 
+            block: list[str]
+        ):
+        pass
+        # print(block)
+        # line 1: full list of morphological elements with values
+        self.process_line_one(block[0])
+        # line 2: a phrase summarising these elements
+        self.process_line_two(block[1])
+        # line 3: a description of the function of this morphology
+        self.process_line_three(block[2])
+        # line 4: an example sentence that includes an underlined word having this same function.
+        self.process_line_four(block[3])
+
+    def process_line_one(self, line: str):
+        section_mapping = {
+            "Case"                      : 0,
+            "Adj.Numb."                 : 1,
+            "Indeclinable"              : 2,
+            "Name in Original language" : 3,
+            "Form"                      : 4,
+            "Voice"                     : 5,
+            "Person"                    : 6,
+            "Mood"                      : 7,
+            "Name type"                 : 8,
+            "Tense"                     : 9,
+            "Gender"                    : 10,
+            "Function"                  : 11,
+            "Extra"                     : 12,
+            "Original language"         : 13,
+            "Number"                    : 14
+        }
+        sections = [None] * 15
+
+        code, rest = line.split("\t", 1)
+        segments = rest.split(";")
+        for segment in segments:
+            name, data = segment.split("=")
+            sections[section_mapping[name.strip()]] = data.strip()
+        
+        print(sections)
+
+    def verify_line_one(self, block: str):
+        code, rest = block[0].split("\t", 1)
+        segments = rest.split(";")
+        for segment in segments:
+            segment_name = segment.split("=")[0].strip()
+            SEGMENTS.add(segment_name)
 
 if __name__ == "__main__":
     manager = ManagerHandler()
