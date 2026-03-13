@@ -103,11 +103,11 @@ class TEGMC():
         # line 1: full list of morphological elements with values
         self.process_line_one(block[0])
         # line 2: a phrase summarising these elements
-        self.process_line_two(block[1])
-        # line 3: a description of the function of this morphology
-        self.process_line_three(block[2])
-        # line 4: an example sentence that includes an underlined word having this same function.
-        self.process_line_four(block[3])
+        # self.process_line_two(block[1])
+        # # line 3: a description of the function of this morphology
+        # self.process_line_three(block[2])
+        # # line 4: an example sentence that includes an underlined word having this same function.
+        # self.process_line_four(block[3])
 
     def process_line_one(self, line: str):
         section_mapping = {
@@ -135,7 +135,7 @@ class TEGMC():
             name, data = segment.split("=")
             sections[section_mapping[name.strip()]] = data.strip()
         
-        print(sections)
+        # print(sections)
 
     def verify_line_one(self, block: str):
         code, rest = block[0].split("\t", 1)
