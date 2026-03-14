@@ -54,5 +54,51 @@ class StepBibleWriteBoundary(WriteBoundary):
         ))
         return code_id 
     
+    def write_morphology_features(self,
+            name        : str,
+            description : str = None
+        ) -> int: 
+        query = """
+            INSERT INTO morphology.features (
+                name, description
+            ) VALUES (%s, %s)
+            RETURNING id;
+        """
+        feature_id = self.db.fetch_clean_one(query, (
+            name, description
+        ))
+        return feature_id 
+    
+    def write_morphology_feature_value(self,
+            feature_id  : int,
+            name        : str,
+            description : str = None
+        ) -> int: 
+        query = """
+            INSERT INTO morphology.feature_values (
+                feature_id, name, description
+            ) VALUES (%s, %s, %s)
+            RETURNING id;
+        """
+        feature_id = self.db.fetch_clean_one(query, (
+            feature_id, name, description
+        ))
+        return feature_id 
+    
+    def write_morphology_feature_value(self,
+            from_value      : int,
+            derived_value   : int
+        ) -> int: 
+        query = """
+            INSERT INTO morphology.derived_feature_values (
+                from_value_id, derived_value
+            ) VALUES (%s, %s)
+            RETURNING id;
+        """
+        feature_id = self.db.fetch_clean_one(query, (
+            from_value, derived_value
+        ))
+        return feature_id 
+
 class StepBibleDeleteBoundary(DeleteBoundary):
     pass
