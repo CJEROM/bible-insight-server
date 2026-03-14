@@ -55,17 +55,27 @@ class DBManager:
         migrations = [
             db_server_script_path / schema_folder / "core"      / "schemas.sql",
             db_server_script_path / schema_folder / "core"      / "extensions.sql",
+
             db_server_script_path / schema_folder / "standards" / "iso693-3.sql",
             db_server_script_path / schema_folder / "standards" / "iso15924.sql",
+
             db_server_script_path / schema_folder / "reference" / "licences.sql",
             db_server_script_path / schema_folder / "reference" / "sources.sql",
+
+            db_server_script_path / schema_folder / "stepbible" / "morphology.sql",
+            # db_server_script_path / schema_folder / "stepbible" / "lexicon.sql",
+            # db_server_script_path / schema_folder / "stepbible" / "tagged.sql",
+            # db_server_script_path / schema_folder / "stepbible" / "other.sql",
+
             db_server_script_path / schema_folder / "reference" / "files.sql",
             db_server_script_path / schema_folder / "reference" / "languages.sql",
             db_server_script_path / schema_folder / "reference" / "translations.sql",
             db_server_script_path / schema_folder / "usx"       / "agreements.sql",
             db_server_script_path / schema_folder / "bible"     / "books.sql",
+
             db_server_script_path / schema_folder / "reference" / "lexemes (legacy).sql",
             db_server_script_path / schema_folder / "reference" / "lexemes.sql",
+
             db_server_script_path / schema_folder / "usx"       / "nodes.sql",
             db_server_script_path / schema_folder / "bible"     / "chapters.sql",
             db_server_script_path / schema_folder / "bible"     / "verses.sql",
@@ -73,6 +83,7 @@ class DBManager:
             db_server_script_path / schema_folder / "usx"       / "paragraphs.sql",
             db_server_script_path / schema_folder / "usx"       / "footnotes.sql",
             db_server_script_path / schema_folder / "usx"       / "cross_references.sql",
+
             db_server_script_path / schema_folder / "user"      / "users.sql",
             db_server_script_path / schema_folder / "user"      / "user_data.sql",
             db_server_script_path / schema_folder / "metadata"  / "label_studio.sql",
@@ -82,7 +93,7 @@ class DBManager:
             db_server_script_path / schema_folder / "entities"  / "quotes.sql",
             db_server_script_path / schema_folder / "reference" / "morphology.sql",
             db_server_script_path / schema_folder / "metadata"  / "ingestion.sql",
-            db_server_script_path / schema_folder / "metadata" / "feature_mapping.sql",
+            db_server_script_path / schema_folder / "metadata"  / "feature_mapping.sql",
             # db_server_script_path / "metadata"  / "chronology.sql",   # Not in Use
             # db_server_script_path / "metadata"  / "harmony.sql",      # Not in Use
             # db_server_script_path / "entities"  / "geo (legacy).sql", # Not Complete (For Bible.Info data)
