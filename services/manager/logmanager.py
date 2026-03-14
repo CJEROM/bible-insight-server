@@ -198,7 +198,7 @@ class LogManager():
 
         with open(self.log_file, 'a', encoding="utf-8") as f:
             f.write(
-                f"{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]:<23}\t"
+                f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]:<23}\t"
                 f"[{log_level:<5}]\t"
                 f"[Elapsed: {self.elapsed_time():<8}]\t"
                 f"[{source_class:<15}]\t"

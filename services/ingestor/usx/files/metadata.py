@@ -94,7 +94,9 @@ class Metadata(BaseFile):
         self.metadata["dbl_id"]             = metadata_xml.find("DBLMetadata").get("id")
         self.metadata["file_version"]       = metadata_xml.find("DBLMetadata").get("version")
 
-        self.translation_name               = f"{self.metadata["abbreviation"]}: {self.metadata["name"]}"
+        abbreviation    = self.metadata["abbreviation"]
+        name            = self.metadata["name"]
+        self.translation_name               = f"{abbreviation}: {name}"
 
         self.log.log_to_file(f"Extracted Metedata!", "METADATA", "DEBUG")
 
@@ -132,11 +134,12 @@ class Metadata(BaseFile):
 
         # Method may change as Language Ingestion is completed
         #   Currently relies on language already existing in DB to be succesful
+        language_iso    = self.get_metadata("language_iso")
         language_id = self.read.find_language(
-            iso_code    = self.get_metadata("language_iso")
+            iso_code    = language_iso
         )
 
-        self.log.log_to_file(f"Matched language for translation to ID: {language_id} with ISO: {self.get_metadata("language_iso")}!", "METADATA", "DEBUG")
+        self.log.log_to_file(f"Matched language for translation to ID: {language_id} with ISO: {language_iso}!", "METADATA", "DEBUG")
     
         self.language_id = language_id
 
@@ -208,7 +211,8 @@ class Metadata(BaseFile):
         # Find if url is already stored source in database
         self.log.log_to_file(f"Creating Translation Source!", "METADATA", "DEBUG")
 
-        source_unique_code  = f"DBL-{self.get_metadata("abbreviation")}"
+        abbreviation = self.get_metadata("abbreviation")
+        source_unique_code  = f"DBL-{abbreviation}"
         source_id           = self.read.find_source(code=source_unique_code)
 
         if source_id != None:
@@ -260,7 +264,8 @@ class Metadata(BaseFile):
         self.extract_metadata(metadata_xml)
 
         # We don't rely on agreement to store files, we build from dbl_id and revision
-        self.object_start = f"{self.get_metadata("dbl_id")}" # /{self.get_metadata("revision")}
+        dbl_id  = self.get_metadata("dbl_id")
+        self.object_start = f"{dbl_id}" # /{self.get_metadata("revision")}
 
         self.source_id = self.create_source(self.source_url)
 
@@ -307,7 +312,7 @@ class Metadata(BaseFile):
                 self.labelproject = self.label.create_new_translation_project(
                     translation_id      = self.translation_id, 
                     project_name        = self.get_metadata("name"), 
-                    project_description = f"{self.get_metadata("dbl_id")}-{self.dbl_agreement.get_id()}"
+                    project_description = f"{dbl_id}-{self.dbl_agreement.get_id()}"
                 )
             else:
                 self.write.end_ingestion(
