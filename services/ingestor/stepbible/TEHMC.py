@@ -1,11 +1,12 @@
 # TEHMC - Translators Expansion of Hebrew Morphology Codes - STEPBible.org CC BY.txt
 # https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/TEHMC%20-%20Translators%20Expansion%20of%20Hebrew%20Morphology%20Codes%20-%20STEPBible.org%20CC%20BY.txt
 
-
 from ingestor.stepbible.download_file import DownloadFile
 
 from manager.managerhandler import ManagerHandler
 from manager.logmanager import LogManager
+
+from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
 
 import re
 
@@ -19,6 +20,11 @@ class TEHMC():
 
         self.manager        = manager
         self.log            = log
+        self.db             = manager.get_db()
+
+        self.read           = StepBibleReadBoundary(self.db)
+        self.write          = StepBibleWriteBoundary(self.db)
+
 
         self.process_file()
 
