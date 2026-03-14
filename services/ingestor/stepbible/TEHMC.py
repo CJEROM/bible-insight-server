@@ -114,19 +114,18 @@ class TEHMC():
     def process_line_one(self, line: str):
         code, elements = line.split("\t", 1)
 
-        normal_elements = elements
-        derived_elements = None
-        derived_parent = None
-
+        normal_elements = re.sub(r"\(hence\s*[^)]*\)", "", elements)
         all_values = []
 
-        match = re.search(r"\(hence\s*([^)]*)\)", elements)
-        if match:
-            derived_elements = match.group(1).strip() # Exclude (hence )
-            derived_parent = elements.split("(hence")[0].split(";")[-1].strip()
-            normal_elements = re.sub(r"\(hence\s*[^)]*\)", "", elements)
-            # print()
-            # print(f"{elements}\n{normal_elements}\n{derived_elements}\n{derived_parent}")
+        matches = re.findall(r"\(hence\s*([^)]*)\)", elements)
+        derived_elements = [None] * len(matches)
+        derived_parents = [None] * len(matches)
+
+        for i, match in enumerate(matches):
+            matched_split = elements.split("(hence")
+
+            derived_elements[0] = match.strip() # Grab first derived hence
+            derived_parents[0] = matched_split[i].split(";")[-1].strip()
             
         for segment in normal_elements.split(";"):
             if segment.strip() == "":
@@ -145,28 +144,26 @@ class TEHMC():
             )
             all_values.append(parent_value_id)
 
-            # if derived_parent != None:
-            #     print(segment)
+            for i, parent in enumerate(derived_parents):
+                if segment.strip() == parent and parent != None:
+                    for segment in derived_elements[i].split(";"):
+                        derived_name, derived_data = segment.split("=")
 
-            if segment.strip() == derived_parent and derived_parent != None:
-                for segment in derived_elements.split(";"):
-                    derived_name, derived_data = segment.split("=")
+                        derived_feature_id = self.write.write_morphology_features(
+                            name    = derived_name.strip()
+                        )
 
-                    derived_feature_id = self.write.write_morphology_features(
-                        name    = derived_name.strip()
-                    )
+                        derived_value_id = self.write.write_morphology_feature_value(
+                            feature_id  = derived_feature_id,
+                            feature     = derived_name.strip(),
+                            value       = derived_data.strip()
+                        )
+                        all_values.append(derived_value_id)
 
-                    derived_value_id = self.write.write_morphology_feature_value(
-                        feature_id  = derived_feature_id,
-                        feature     = derived_name.strip(),
-                        value       = derived_data.strip()
-                    )
-                    all_values.append(derived_value_id)
-
-                    self.write.write_morphology_derived_feature_value(
-                        from_value      = parent_value_id,
-                        derived_value   = derived_value_id
-                    )
+                        self.write.write_morphology_derived_feature_value(
+                            from_value      = parent_value_id,
+                            derived_value   = derived_value_id
+                        )
         
         return code, all_values
     
