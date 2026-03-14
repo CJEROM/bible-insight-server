@@ -94,7 +94,7 @@ class TEGMC():
         # line 3: explanation: a description of the function of this morphology
         explanation     = block[2][1:].strip('\"') # Skip tab
         # line 4: example: an example sentence that includes an underlined word having this same function.
-        example         = block[3][1:].strip('\"') # Skip tab + 'Example: '
+        example         = block[3][1:].strip('\"') # Skip tab
         
         code_id = self.write.write_morphological_code(
             iso         = None,
@@ -115,19 +115,9 @@ class TEGMC():
     def process_line_one(self, line: str):
         code, elements = line.split("\t", 1)
 
-        normal_elements = elements
-        derived_elements = None
-        derived_parent = None
-
         all_values = []
 
-        match = re.search(r"\(hence\s*([^)]*)\)", elements)
-        if match:
-            derived_elements = match.group(1)[7: -2] # Exclude (hence )
-            derived_parent = elements.split("(hence")[0].split(";")[-1].strip()
-            normal_elements = re.sub(r"\(hence\s*[^)]*\)", "", elements)
-
-        for segment in normal_elements.split(";"):
+        for segment in elements.split(";"):
             name, data = segment.split("=")
 
             feature_id = self.write.write_morphology_features(
@@ -140,26 +130,6 @@ class TEGMC():
                 value       = data
             )
             all_values.append(parent_value_id)
-
-            if segment == derived_parent and derived_parent != None:
-                for segment in derived_elements.split(";"):
-                    name, data = segment.split("=")
-
-                    derived_feature_id = self.write.write_morphology_features(
-                        name    = name
-                    )
-
-                    derived_value_id = self.write.write_morphology_feature_value(
-                        feature_id  = derived_feature_id,
-                        feature     = name,
-                        value       = data
-                    )
-                    all_values.append(derived_value_id)
-
-                    self.write.write_morphology_derived_feature_value(
-                        from_value      = parent_value_id,
-                        derived_value   = derived_value_id
-                    )
         
         return code, all_values
 
