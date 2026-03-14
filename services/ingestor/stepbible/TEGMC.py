@@ -61,15 +61,6 @@ class TEGMC():
 
             for line in f:
 
-                if line.startswith("Code\tExample in English\tMeaning"):
-                    intro = True
-
-                if intro:
-                    if line.startswith("FULL MORPHOLOGY CODES:"):
-                        intro = False
-
-                    self.process_brief_code(line)
-
                 if line.startswith("$"):
                     if count == 0:
                         valid = True
@@ -89,31 +80,6 @@ class TEGMC():
         print()
         for segment in SEGMENTS:
             print(f"'{segment}'")
-
-    def process_brief_code(self, 
-            line: str
-        ):
-        # 
-        if len(line.split("\t")) < 3 or line == "" or line.startswith("===="):
-            return
-        
-        code        = line.split("\t")[0]
-        example     = line.split("\t")[1]
-        meaning     = line.split("\t")[2]
-
-        split_codes = code.split("/")
-        if len(split_codes) > 1:
-            self.write.write_lexical_code()
-            self.write.write_composite_lexical_code()
-            pass
-
-        if len(sub_codes) > 1:
-            self.write.write_composite_lexical_code()
-            pass
-        sub_codes = code.split(" + ")
-
-        print(code, example, meaning)
-
 
     def process_block(self, 
             block: list[str]
