@@ -9,6 +9,8 @@ from ingestor.stepbible.download_file import DownloadFile
 from manager.managerhandler import ManagerHandler
 from manager.logmanager import LogManager
 
+from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
+
 class TFLSJ():
     def __init__(self, 
             manager: ManagerHandler, 
@@ -17,6 +19,10 @@ class TFLSJ():
 
         self.manager        = manager
         self.log            = log
+        self.db             = manager.get_db()
+
+        self.read           = StepBibleReadBoundary(self.db)
+        self.write          = StepBibleWriteBoundary(self.db)
 
         self.process_file()
 

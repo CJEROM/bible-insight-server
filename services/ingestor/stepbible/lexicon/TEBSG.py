@@ -6,6 +6,8 @@ from ingestor.stepbible.download_file import DownloadFile
 from manager.managerhandler import ManagerHandler
 from manager.logmanager import LogManager
 
+from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
+
 class TEBSG():
     def __init__(self, 
             manager: ManagerHandler, 
@@ -14,6 +16,10 @@ class TEBSG():
 
         self.manager        = manager
         self.log            = log
+        self.db             = manager.get_db()
+
+        self.read           = StepBibleReadBoundary(self.db)
+        self.write          = StepBibleWriteBoundary(self.db)
 
         self.process_file()
 
@@ -44,8 +50,16 @@ class TEBSG():
     def process_file(self):
         downloaded_file = self.download_files()
 
-        file_content = downloaded_file.read_file()
-        print(file_content[0:20])
+        # Read the downloaded file
+        with open(downloaded_file.this_file_path, "r", encoding="utf-8") as f:
+            # Loop through file line by line
+            count = 0
+            valid = False
+
+            for line in f:
+                pass
+        
+        self.db.commit()
 
 if __name__ == "__main__":
     manager = ManagerHandler()

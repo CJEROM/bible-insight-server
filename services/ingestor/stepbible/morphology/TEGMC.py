@@ -8,8 +8,6 @@ from manager.logmanager import LogManager
 
 from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
 
-import re
-
 SEGMENTS = set()
 
 class TEGMC():
