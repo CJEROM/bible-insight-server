@@ -105,5 +105,19 @@ class StepBibleWriteBoundary(WriteBoundary):
             from_value, derived_value
         ))
 
+    def write_morphology_code_values(self,
+            code_id     : int,
+            value_id    : int
+        ) -> None: 
+        query = """
+            INSERT INTO morphology.code_values (
+                code_id, value_id
+            ) VALUES (%s, %s)
+            ON CONFLICT DO NOTHING
+        """
+        self.db.execute(query, (
+            code_id, value_id
+        ))
+
 class StepBibleDeleteBoundary(DeleteBoundary):
     pass

@@ -174,4 +174,12 @@ CREATE TABLE IF NOT EXISTS morphology.derived_feature_values(
         FOREIGN KEY (derived_value) REFERENCES morphology.feature_values (id)
 );
 
+CREATE TABLE IF NOT EXISTS morphology.code_values(
+        id              SERIAL PRIMARY KEY,
+        code_id         INTEGER,
+        value_id        INTEGER,    
+        FOREIGN KEY (code_id) REFERENCES morphology.codes (id),
+        FOREIGN KEY (value_id) REFERENCES morphology.feature_values (id)
+);
+
 -- ==================================================================================================================================================================

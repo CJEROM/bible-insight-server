@@ -10,6 +10,8 @@ from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBib
 
 import re
 
+SEGMENTS = set()
+
 class TEGMC():
     def __init__(self, 
             manager: ManagerHandler, 
@@ -74,26 +76,27 @@ class TEGMC():
                             next(f).rstrip("\n"),
                         ]
 
-                        if count < 4:
-                            self.process_block(
-                                block       = block, 
-                                source_id   = downloaded_file.source_id
-                            )
+                        self.process_block(
+                            block       = block, 
+                            source_id   = downloaded_file.source_id
+                        )
+        
+        self.db.commit()
 
     def process_block(self, 
             block       : list[str],
             source_id   : int
         ):
         # line 1: full list of morphological elements with values
-        code = self.process_line_one(block[0])
+        code, elements  = self.process_line_one(block[0])
         # line 2: morphology: a phrase summarising these elements
-        morphology = block[1][1:].strip('\"') # Skip tab
+        morphology      = block[1][1:].strip('\"') # Skip tab
         # line 3: explanation: a description of the function of this morphology
-        explanation = block[2][1:].strip('\"') # Skip tab
+        explanation     = block[2][1:].strip('\"') # Skip tab
         # line 4: example: an example sentence that includes an underlined word having this same function.
-        example = block[3][1:].strip('\"') # Skip tab + 'Example: '
+        example         = block[3][1:].strip('\"') # Skip tab + 'Example: '
         
-        self.write.write_morphological_code(
+        code_id = self.write.write_morphological_code(
             iso         = None,
             code        = code,
             morphology  = morphology,
@@ -103,12 +106,20 @@ class TEGMC():
             raw_data    = "\n".join(block)
         )
 
+        for value_id in elements:
+            self.write.write_morphology_code_values(
+                code_id     = code_id,
+                value_id    = value_id
+            )
+
     def process_line_one(self, line: str):
         code, elements = line.split("\t", 1)
 
         normal_elements = elements
         derived_elements = None
         derived_parent = None
+
+        all_values = []
 
         match = re.search(r"\(hence\s*([^)]*)\)", elements)
         if match:
@@ -128,6 +139,7 @@ class TEGMC():
                 feature     = name,
                 value       = data
             )
+            all_values.append(parent_value_id)
 
             if segment == derived_parent and derived_parent != None:
                 for segment in derived_elements.split(";"):
@@ -142,13 +154,14 @@ class TEGMC():
                         feature     = name,
                         value       = data
                     )
+                    all_values.append(derived_value_id)
 
                     self.write.write_morphology_derived_feature_value(
                         from_value      = parent_value_id,
                         derived_value   = derived_value_id
                     )
         
-        return code
+        return code, all_values
 
 if __name__ == "__main__":
     manager = ManagerHandler()
