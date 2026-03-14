@@ -183,3 +183,10 @@ CREATE TABLE IF NOT EXISTS morphology.code_values(
 );
 
 -- ==================================================================================================================================================================
+
+-- NOTE: Currently blank entries on the following for 'Name type' & 'Indeclinable' (chosen to preserve during ingestion for now)
+
+-- SELECT * FROM morphology.codes c
+-- JOIN morphology.code_values cv ON c.id = cv.code_id
+-- JOIN morphology.feature_values fv ON fv.id = cv.value_id
+-- WHERE fv.id IN (1588, 2133);
