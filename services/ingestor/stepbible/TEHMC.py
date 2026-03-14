@@ -122,9 +122,11 @@ class TEHMC():
 
         match = re.search(r"\(hence\s*([^)]*)\)", elements)
         if match:
-            derived_elements = match.group(1)[7: -2] # Exclude (hence )
+            derived_elements = match.group(1).strip() # Exclude (hence )
             derived_parent = elements.split("(hence")[0].split(";")[-1].strip()
             normal_elements = re.sub(r"\(hence\s*[^)]*\)", "", elements)
+            # print()
+            # print(f"{elements}\n{normal_elements}\n{derived_elements}\n{derived_parent}")
             
         for segment in normal_elements.split(";"):
             if segment.strip() == "":
@@ -133,28 +135,31 @@ class TEHMC():
             name, data = segment.split("=")
 
             feature_id = self.write.write_morphology_features(
-                name    = name
+                name    = name.strip()
             )
 
             parent_value_id = self.write.write_morphology_feature_value(
                 feature_id  = feature_id,
-                feature     = name,
-                value       = data
+                feature     = name.strip(),
+                value       = data.strip()
             )
             all_values.append(parent_value_id)
 
-            if segment == derived_parent and derived_parent != None:
+            # if derived_parent != None:
+            #     print(segment)
+
+            if segment.strip() == derived_parent and derived_parent != None:
                 for segment in derived_elements.split(";"):
-                    name, data = segment.split("=")
+                    derived_name, derived_data = segment.split("=")
 
                     derived_feature_id = self.write.write_morphology_features(
-                        name    = name
+                        name    = derived_name.strip()
                     )
 
                     derived_value_id = self.write.write_morphology_feature_value(
                         feature_id  = derived_feature_id,
-                        feature     = name,
-                        value       = data
+                        feature     = derived_name.strip(),
+                        value       = derived_data.strip()
                     )
                     all_values.append(derived_value_id)
 
