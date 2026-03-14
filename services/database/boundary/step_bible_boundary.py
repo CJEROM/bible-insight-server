@@ -40,17 +40,18 @@ class StepBibleWriteBoundary(WriteBoundary):
             code        : str,
             morphology  : str,
             explanation : str,
+            example     : str,
             source_id   : int,
             raw_data    : str
         ):
         query = """
-            INSERT INTO morphology.lexical_codes (
-                iso, code, morphology, explanation, source_id, raw_data
-            ) VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO morphology.codes (
+                iso, code, morphology, explanation, example, source_id, raw_data
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
         code_id = self.db.fetch_clean_one(query, (
-            iso, code, morphology, explanation, source_id, raw_data
+            iso, code, morphology, explanation, example, source_id, raw_data
         ))
         return code_id 
     
@@ -59,9 +60,10 @@ class StepBibleWriteBoundary(WriteBoundary):
             description : str = None
         ) -> int: 
         query = """
-            INSERT INTO morphology.features (
-                name, description
-            ) VALUES (%s, %s)
+            INSERT INTO morphology.features (name, description)
+            VALUES (%s, %s)
+            ON CONFLICT (name)
+            DO UPDATE SET description = morphology.features.description
             RETURNING id;
         """
         feature_id = self.db.fetch_clean_one(query, (
@@ -71,34 +73,37 @@ class StepBibleWriteBoundary(WriteBoundary):
     
     def write_morphology_feature_value(self,
             feature_id  : int,
-            name        : str,
+            feature     : str,
+            value       : str,
             description : str = None
         ) -> int: 
         query = """
             INSERT INTO morphology.feature_values (
-                feature_id, name, description
-            ) VALUES (%s, %s, %s)
+                feature_id, feature, value, description
+            )
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (feature_id, value)
+            DO UPDATE SET description = morphology.feature_values.description
             RETURNING id;
         """
         feature_id = self.db.fetch_clean_one(query, (
-            feature_id, name, description
+            feature_id, feature, value, description
         ))
         return feature_id 
     
-    def write_morphology_feature_value(self,
+    def write_morphology_derived_feature_value(self,
             from_value      : int,
             derived_value   : int
-        ) -> int: 
+        ) -> None: 
         query = """
             INSERT INTO morphology.derived_feature_values (
                 from_value_id, derived_value
             ) VALUES (%s, %s)
-            RETURNING id;
+            ON CONFLICT DO NOTHING
         """
-        feature_id = self.db.fetch_clean_one(query, (
+        self.db.execute(query, (
             from_value, derived_value
         ))
-        return feature_id 
 
 class StepBibleDeleteBoundary(DeleteBoundary):
     pass
