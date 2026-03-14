@@ -10,8 +10,6 @@ from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBib
 
 import re
 
-SEGMENTS = {}
-
 class TEHMC():
     def __init__(self, 
             manager: ManagerHandler, 
@@ -77,81 +75,96 @@ class TEHMC():
                             next(f).rstrip("\n"),
                         ]
 
-                        self.verify_line_one(block, count)
-                        self.process_block(block)
+                        self.process_block(
+                            block       = block, 
+                            source_id   = downloaded_file.source_id
+                        )
         
-        for key, items in SEGMENTS.items():
-            print("------------------------------------------------------------------")
-            print(f"'{key}':")
-            for item in items:
-                print(f"    '{item}'")
+        self.db.commit()
 
     def process_block(self, 
-            block: list[str]
+            block       : list[str],
+            source_id   : int
         ):
-        pass
-        # print(block)
         # line 1: full list of morphological elements with values
-        # self.process_line_one(block[0])
-        # line 2: a phrase summarising these elements
-        # self.process_line_two(block[1])
-        # # line 3: a description of the function of this morphology
-        # self.process_line_three(block[2])
-        # # line 4: an example sentence that includes an underlined word having this same function.
-        # self.process_line_four(block[3])
+        code, elements  = self.process_line_one(block[0])
+        # line 2: morphology: a phrase summarising these elements
+        morphology      = block[1][1:].strip('\"') # Skip tab
+        # line 3: explanation: a description of the function of this morphology
+        explanation     = block[2][1:].strip('\"') # Skip tab
+        # line 4: example: an example sentence that includes an underlined word having this same function.
+        example         = block[3][10:].strip('\"') # Skip tab + 'Example: '
+        
+        code_id = self.write.write_morphological_code(
+            iso         = None,
+            code        = code,
+            morphology  = morphology,
+            explanation = explanation,
+            example     = example,
+            source_id   = source_id,
+            raw_data    = "\n".join(block)
+        )
+
+        for value_id in elements:
+            self.write.write_morphology_code_values(
+                code_id     = code_id,
+                value_id    = value_id
+            )
 
     def process_line_one(self, line: str):
-        section_mapping = {
-            "Case"                      : 0,
-            "Adj.Numb."                 : 1,
-            "Indeclinable"              : 2,
-            "Name in Original language" : 3,
-            "Form"                      : 4,
-            "Voice"                     : 5,
-            "Person"                    : 6,
-            "Mood"                      : 7,
-            "Name type"                 : 8,
-            "Tense"                     : 9,
-            "Gender"                    : 10,
-            "Function"                  : 11,
-            "Extra"                     : 12,
-            "Original language"         : 13,
-            "Number"                    : 14
-        }
-        sections = [None] * 15
+        code, elements = line.split("\t", 1)
 
-        code, rest = line.split("\t", 1)
-        segments = rest.split(";")
-        for segment in segments:
+        normal_elements = elements
+        derived_elements = None
+        derived_parent = None
+
+        all_values = []
+
+        match = re.search(r"\(hence\s*([^)]*)\)", elements)
+        if match:
+            derived_elements = match.group(1)[7: -2] # Exclude (hence )
+            derived_parent = elements.split("(hence")[0].split(";")[-1].strip()
+            normal_elements = re.sub(r"\(hence\s*[^)]*\)", "", elements)
+            
+        for segment in normal_elements.split(";"):
+            if segment.strip() == "":
+                continue
+            
             name, data = segment.split("=")
-            sections[section_mapping[name.strip()]] = data.strip()
+
+            feature_id = self.write.write_morphology_features(
+                name    = name
+            )
+
+            parent_value_id = self.write.write_morphology_feature_value(
+                feature_id  = feature_id,
+                feature     = name,
+                value       = data
+            )
+            all_values.append(parent_value_id)
+
+            if segment == derived_parent and derived_parent != None:
+                for segment in derived_elements.split(";"):
+                    name, data = segment.split("=")
+
+                    derived_feature_id = self.write.write_morphology_features(
+                        name    = name
+                    )
+
+                    derived_value_id = self.write.write_morphology_feature_value(
+                        feature_id  = derived_feature_id,
+                        feature     = name,
+                        value       = data
+                    )
+                    all_values.append(derived_value_id)
+
+                    self.write.write_morphology_derived_feature_value(
+                        from_value      = parent_value_id,
+                        derived_value   = derived_value_id
+                    )
         
-        print(sections)
-
-    def verify_line_one(self, block: str, count: int):
-        code, rest = block[0].split("\t", 1)
-        segments = rest.split(";")
-        for segment in segments:
-            # For Hebrew it might have derived morphological characteristics
-            normal = segment
-            derived = None
-
-            match = re.search(r"\(hence\s*([^)]*)\)", segment)
-            if match:
-                derived = match.group(1)
-                normal = re.sub(r"\(hence\s*[^)]*\)", "", segment)
-
-            if len(normal.split("=")) > 1:
-                segment_name = normal.split("=")[0].strip()
-                segment_data = normal.split("=")[1].strip().split(")")
-
-                if SEGMENTS.get(segment_name) == None:
-                    SEGMENTS[segment_name] = set()
-                
-                SEGMENTS.get(segment_name).add(segment_data)
-                if segment_name == '':
-                    print(block, count)
-
+        return code, all_values
+    
 if __name__ == "__main__":
     manager = ManagerHandler()
     log     = manager.create_log_in_folder(["logs", "ingestor", "stepbible"])
