@@ -6,6 +6,8 @@ from ingestor.stepbible.download_file import DownloadFile
 from manager.managerhandler import ManagerHandler
 from manager.logmanager import LogManager
 
+from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
+
 SEGMENTS = set()
 
 class TEGMC():
@@ -16,6 +18,10 @@ class TEGMC():
 
         self.manager        = manager
         self.log            = log
+        self.db             = manager.get_db()
+
+        self.read           = StepBibleReadBoundary(self.db)
+        self.write          = StepBibleWriteBoundary(self.db)
 
         self.process_file()
 
@@ -56,7 +62,6 @@ class TEGMC():
             for line in f:
 
                 if line.startswith("Code\tExample in English\tMeaning"):
-                    next(f) # Skip divider line 
                     intro = True
 
                 if intro:
@@ -89,10 +94,25 @@ class TEGMC():
             line: str
         ):
         # 
-        if len(line.split("\t")) != 3 or line == "":
+        if len(line.split("\t")) < 3 or line == "" or line.startswith("===="):
             return
         
-        code, example, meaning = line.split("\t")
+        code        = line.split("\t")[0]
+        example     = line.split("\t")[1]
+        meaning     = line.split("\t")[2]
+
+        split_codes = code.split("/")
+        if len(split_codes) > 1:
+            self.write.write_lexical_code()
+            self.write.write_composite_lexical_code()
+            pass
+
+        if len(sub_codes) > 1:
+            self.write.write_composite_lexical_code()
+            pass
+        sub_codes = code.split(" + ")
+
+        print(code, example, meaning)
 
 
     def process_block(self, 
