@@ -35,36 +35,24 @@ class StepBibleWriteBoundary(WriteBoundary):
             verse, word_position, word_type, greek, transliteration, english, dStrong, grammar, dictionary_form, gloss, editions, meaning_variants, spelling_variants, spanish, sub_meanings, conjoined_data, sStrong, instance, alt_strongs, variant_notes
         ))
 
-    def write_lexical_code(self, 
+    def write_morphological_code(self, 
             iso         : str,
-            group_id    : int,
             code        : str,
-            example     : str,
-            meaning     : str,
-            source_id   : int
+            morphology  : str,
+            explanation : str,
+            source_id   : int,
+            raw_data    : str
         ):
         query = """
             INSERT INTO morphology.lexical_codes (
-                iso, group_id, code, example, meaning, source_id
-            ) VALUES (%s)
+                iso, code, morphology, explanation, source_id, raw_data
+            ) VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING id;
         """
         code_id = self.db.fetch_clean_one(query, (
-            iso, group_id, code, example, meaning, source_id
+            iso, code, morphology, explanation, source_id, raw_data
         ))
-        return code_id
-
-    def write_composite_lexical_code(self, 
-            full_code: str
-        ) -> int:
-        query = """
-            INSERT INTO morphology.lexical_composite_codes (
-                full_code
-            ) VALUES (%s)
-            RETURNING id;
-        """
-        group_id = self.db.fetch_clean_one(query, (full_code))
-        return group_id
+        return code_id 
     
 class StepBibleDeleteBoundary(DeleteBoundary):
     pass

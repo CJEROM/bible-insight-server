@@ -1,10 +1,10 @@
 -- step_tokens
 -- break down into actual tokens ()
 
-DROP SCHEMA stepbible;
+DROP SCHEMA stepbible CASCADE;
 CREATE SCHEMA stepbible;
 
-DROP SCHEMA morphology;
+DROP SCHEMA morphology CASCADE;
 CREATE SCHEMA morphology;
 
 CREATE TABLE stepbible.tagnt (
@@ -128,25 +128,6 @@ CREATE TABLE stepbible.tagnt (
 --         -- ("", "", "", , "heb")        -- Modern Hebrew
         -- ("", "", "", , "arc")        -- 
 
--- ==================================================================================================================================================================
-
-CREATE TABLE IF NOT EXISTS morphology.lexical_composite_codes(
-        id              SERIAL PRIMARY KEY,
-        full_code       TEXT UNIQUE
-);
-
-CREATE TABLE IF NOT EXISTS morphology.lexical_codes(
-        id              SERIAL PRIMARY KEY,
-        iso             TEXT,           -- Language code
-        group_id        INTEGER,        -- For codes that have been split
-        code            TEXT UNIQUE,
-        example         TEXT,           -- In English
-        meaning         TEXT,
-        source_id       INTEGER
-        FOREIGN KEY (iso) REFERENCES standards.iso693_3_codes (id),
-        FOREIGN KEY (group_id) REFERENCES morphology.lexical_composite_codes (id),
-        FOREIGN KEY (source_id) REFERENCES audit.sources (id)
-);
 
 -- ==================================================================================================================================================================
 
@@ -157,7 +138,10 @@ CREATE TABLE IF NOT EXISTS morphology.codes(
         explanation     TEXT,
         example         TEXT,
         source_id       INTEGER,
-        FOREIGN KEY (source_id) REFERENCES audit.sources (id)
+        iso             TEXT,           -- Language code
+        raw_data        TEXT,
+        FOREIGN KEY (source_id) REFERENCES audit.sources (id),
+        FOREIGN KEY (iso) REFERENCES standards.iso693_3_codes (id)
 );
 
 -- ==================================================================================================================================================================
