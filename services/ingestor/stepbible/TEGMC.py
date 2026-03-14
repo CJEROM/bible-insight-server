@@ -8,7 +8,7 @@ from manager.logmanager import LogManager
 
 from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
 
-SEGMENTS = set()
+import re
 
 class TEGMC():
     def __init__(self, 
@@ -57,7 +57,6 @@ class TEGMC():
             # Loop through file line by line
             count = 0
             valid = False
-            intro = False
 
             for line in f:
 
@@ -75,60 +74,81 @@ class TEGMC():
                             next(f).rstrip("\n"),
                         ]
 
-                        self.process_block(block)
-        
-        print()
-        for segment in SEGMENTS:
-            print(f"'{segment}'")
+                        if count < 4:
+                            self.process_block(
+                                block       = block, 
+                                source_id   = downloaded_file.source_id
+                            )
 
     def process_block(self, 
-            block: list[str]
+            block       : list[str],
+            source_id   : int
         ):
-        pass
-        # print(block)
         # line 1: full list of morphological elements with values
-        self.process_line_one(block[0])
-        # line 2: a phrase summarising these elements
-        # self.process_line_two(block[1])
-        # # line 3: a description of the function of this morphology
-        # self.process_line_three(block[2])
-        # # line 4: an example sentence that includes an underlined word having this same function.
-        # self.process_line_four(block[3])
+        code = self.process_line_one(block[0])
+        # line 2: morphology: a phrase summarising these elements
+        morphology = block[1][1:].strip('\"') # Skip tab
+        # line 3: explanation: a description of the function of this morphology
+        explanation = block[2][1:].strip('\"') # Skip tab
+        # line 4: example: an example sentence that includes an underlined word having this same function.
+        example = block[3][1:].strip('\"') # Skip tab + 'Example: '
+        
+        self.write.write_morphological_code(
+            iso         = None,
+            code        = code,
+            morphology  = morphology,
+            explanation = explanation,
+            example     = example,
+            source_id   = source_id,
+            raw_data    = "\n".join(block)
+        )
 
     def process_line_one(self, line: str):
-        section_mapping = {
-            "Case"                      : 0,
-            "Adj.Numb."                 : 1,
-            "Indeclinable"              : 2,
-            "Name in Original language" : 3,
-            "Form"                      : 4,
-            "Voice"                     : 5,
-            "Person"                    : 6,
-            "Mood"                      : 7,
-            "Name type"                 : 8,
-            "Tense"                     : 9,
-            "Gender"                    : 10,
-            "Function"                  : 11,
-            "Extra"                     : 12,
-            "Original language"         : 13,
-            "Number"                    : 14
-        }
-        sections = [None] * 15
+        code, elements = line.split("\t", 1)
 
-        code, rest = line.split("\t", 1)
-        segments = rest.split(";")
-        for segment in segments:
+        normal_elements = elements
+        derived_elements = None
+        derived_parent = None
+
+        match = re.search(r"\(hence\s*([^)]*)\)", elements)
+        if match:
+            derived_elements = match.group(1)[7: -2] # Exclude (hence )
+            derived_parent = elements.split("(hence")[0].split(";")[-1].strip()
+            normal_elements = re.sub(r"\(hence\s*[^)]*\)", "", elements)
+
+        for segment in normal_elements.split(";"):
             name, data = segment.split("=")
-            sections[section_mapping[name.strip()]] = data.strip()
-        
-        # print(sections)
 
-    def verify_line_one(self, block: str):
-        code, rest = block[0].split("\t", 1)
-        segments = rest.split(";")
-        for segment in segments:
-            segment_name = segment.split("=")[0].strip()
-            SEGMENTS.add(segment_name)
+            feature_id = self.write.write_morphology_features(
+                name    = name
+            )
+
+            parent_value_id = self.write.write_morphology_feature_value(
+                feature_id  = feature_id,
+                feature     = name,
+                value       = data
+            )
+
+            if segment == derived_parent and derived_parent != None:
+                for segment in derived_elements.split(";"):
+                    name, data = segment.split("=")
+
+                    derived_feature_id = self.write.write_morphology_features(
+                        name    = name
+                    )
+
+                    derived_value_id = self.write.write_morphology_feature_value(
+                        feature_id  = derived_feature_id,
+                        feature     = name,
+                        value       = data
+                    )
+
+                    self.write.write_morphology_derived_feature_value(
+                        from_value      = parent_value_id,
+                        derived_value   = derived_value_id
+                    )
+        
+        return code
 
 if __name__ == "__main__":
     manager = ManagerHandler()
