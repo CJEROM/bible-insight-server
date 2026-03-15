@@ -150,7 +150,7 @@ VALUES
 
 CREATE TABLE IF NOT EXISTS lexicon.morph_codes (
     id          TEXT PRIMARY KEY,
-    language    CHAR(1),
+    language    TEXT,
     type        TEXT,
     gender      CHAR(1),
     number      CHAR(1),

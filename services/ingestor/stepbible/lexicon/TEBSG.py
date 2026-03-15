@@ -58,6 +58,7 @@ class TEBSG():
             for line in f:
                 if line.startswith("eStrong	dStrong	uStrong	Greek	Transliteration	Morph	Gloss	Abbott-Smith lexicon (AS), with gaps occationally filled from edited versions of  Middle LSJ "):
                     valid = True
+                    continue
                 
                 # Skip the empty lines so we can start ingesting the data
                 if line.strip() == "" or line.startswith("==="):
@@ -65,6 +66,10 @@ class TEBSG():
 
                 if valid:
                     columns = line.split("\t")
+
+                    self.process_morph_code(
+                        code    = columns[5]
+                    )
 
                     self.write.write_lexicon_data(
                         e_strong            = columns[0],
@@ -87,19 +92,35 @@ class TEBSG():
         
         self.db.commit()
 
+    def process_morph_code(self,
+            code    : str
+        ):
+        language        = None #code.split(":")[0]
+        type            = None
+        gender          = None
+        number          = None
+        extra           = None
+
+        self.write.write_lexicon_morph_codes(
+            code        = code,
+            language    = language,
+            type        = type,
+            gender      = gender,
+            number      = number,
+            extra       = extra
+        )
+
     def get_strong_relationship(self,
             raw_d_strong    : str,
             result          : int # 0 (d_strong) | 1 (relationship)
         ):
         d_strong = raw_d_strong.split("=")[0].strip()
 
-        relationship_component = raw_d_strong.split("=")[1].strip()
-
         relationship = None
-        if relationship_component == "":
+        if len(raw_d_strong.split("=")) < 2:
             relationship = "="
         else:
-            relationship = relationship_component
+            relationship = raw_d_strong.split("=")[1].strip()
 
         if result == 0:
             return d_strong

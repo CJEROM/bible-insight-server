@@ -141,7 +141,7 @@ class StepBibleWriteBoundary(WriteBoundary):
         ) -> None: 
         query = """
             INSERT INTO lexicon.morph_codes (
-                code, language, type, gender, number, extra
+                id, language, type, gender, number, extra
             ) VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
