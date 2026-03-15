@@ -119,13 +119,13 @@ class TEGMC():
             name, data = segment.split("=")
 
             feature_id = self.write.write_morphology_features(
-                name    = name
+                name    = name.strip()
             )
 
             parent_value_id = self.write.write_morphology_feature_value(
                 feature_id  = feature_id,
-                feature     = name,
-                value       = data
+                feature     = name.strip(),
+                value       = data.strip()
             )
             all_values.append(parent_value_id)
         
