@@ -178,6 +178,6 @@ CREATE TABLE IF NOT EXISTS lexicon.data(
     gloss               TEXT,
     meaning             TEXT,
     source_id           INTEGER,
-    FOREIGN KEY (source_id) REFERENCES audit.sources (id),
-    FOREIGN KEY (morph) REFERENCES lexicon.morph_codes (id)
+    FOREIGN KEY (source_id) REFERENCES audit.sources (id)
+    -- FOREIGN KEY (morph) REFERENCES lexicon.morph_codes (id)
 );
