@@ -172,7 +172,6 @@ CREATE TABLE IF NOT EXISTS lexicon.data(
     d_strong            TEXT UNIQUE,
     d_u_relationship    TEXT,
     u_strong            TEXT,
-    iso                 TEXT,
     text                TEXT,   -- Original Language -> Hebrew or Greek
     transliteration     TEXT,
     morph               TEXT,
