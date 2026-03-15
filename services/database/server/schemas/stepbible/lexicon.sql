@@ -67,7 +67,20 @@ VALUES
     ('F', 'Female'),
     ('M', 'Male'),
     ('N', 'Neuter'),
-    ('C', 'Common'),
+    ('C', 'Common');
+
+-- ==============================================================================================================================
+-- NUMBER
+-- ==============================================================================================================================
+
+CREATE TABLE IF NOT EXISTS lexicon.number(
+    id      TEXT PRIMARY KEY,
+    name    TEXT
+);
+
+-- Gender is F=Female, M=Male, N=Neuter, C=Common, P=Plural, S=Singular
+INSERT INTO lexicon.number (id, name)
+VALUES
     ('P', 'Plural'),
     ('S', 'Singular');
 
@@ -132,56 +145,41 @@ VALUES
         'Edited to conform with OpenScripture''s extended Strong''s by Tyndale House Cambridge.');
 
 -- ==============================================================================================================================
+-- MORPH CODES MAPPED
+-- ==============================================================================================================================
+
+CREATE TABLE IF NOT EXISTS lexicon.morph_codes (
+    id          TEXT PRIMARY KEY,
+    language    CHAR(1),
+    type        TEXT,
+    gender      CHAR(1),
+    number      CHAR(1),
+    extra       CHAR(1),
+    FOREIGN KEY (language)  REFERENCES lexicon.language (id),
+    FOREIGN KEY (type)      REFERENCES lexicon.type (id),
+    FOREIGN KEY (gender)    REFERENCES lexicon.gender (id),
+    FOREIGN KEY (number)    REFERENCES lexicon.number (id),
+    FOREIGN KEY (extra)     REFERENCES lexicon.extra (id)
+)
+
+-- ==============================================================================================================================
 -- TRANSLATORS BRIEF LEXICON (HEBREW)
 -- ==============================================================================================================================
 
-CREATE TABLE IF NOT EXISTS lexicon.tbesh(
+CREATE TABLE IF NOT EXISTS lexicon.data(
     id                  SERIAL PRIMARY KEY,
     e_strong            TEXT,
-    d_strong            TEXT,
+    d_strong            UNIQUE,
     d_u_relationship    TEXT,
     u_strong            TEXT,
     iso                 TEXT,
-    text                TEXT,   -- Original Language -> Hebrew
-    transliteration     TEXT,
-    morph               TEXT,
-    gloss               TEXT,
-    meaning             TEXT
-);
-
--- ==============================================================================================================================
--- TRANSLATORS BRIEF LEXICON (GREEK)
--- ==============================================================================================================================
-
-CREATE TABLE IF NOT EXISTS lexicon.tbesg(
-    id                  SERIAL PRIMARY KEY,
-    e_strong            TEXT,
-    d_strong            TEXT,
-    d_u_relationship    TEXT,
-    u_strong            TEXT,
-    iso                 TEXT,
-    text                TEXT,   -- Original Language -> Greek
+    text                TEXT,   -- Original Language -> Hebrew or Greek
     transliteration     TEXT,
     morph               TEXT,
     gloss               TEXT,
     meaning             TEXT,
-    other_lexicon       TEXT    -- Abbot-Smith lexicon (AS), with gaps occassionally filled from edited versions of Middle LSJ
-);
-
--- ==============================================================================================================================
--- TRANSLATORS FORMATTED LSJ
--- ==============================================================================================================================
-
-CREATE TABLE IF NOT EXISTS lexicon.tflsj(
-    id                  SERIAL PRIMARY KEY,
-    e_strong            TEXT,
-    d_strong            TEXT,
-    d_u_relationship    TEXT,
-    u_strong            TEXT,
-    iso                 TEXT,
-    text                TEXT,   -- Original Language -> Greek
-    transliteration     TEXT,
-    morph               TEXT,
-    gloss               TEXT,
-    meaning             TEXT    -- LSJ Meaning
+    other_lexicon       TEXT,
+    source_id           INTEGER,
+    FOREIGN KEY (source_id) REFERENCES audit.sources (id),
+    FOREIGN KEY (morph) REFERENCES lexicon.morph_codes (id)
 );
