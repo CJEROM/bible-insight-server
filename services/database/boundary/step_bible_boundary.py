@@ -4,6 +4,10 @@ class StepBibleReadBoundary(ReadBoundary):
     pass    
 
 class StepBibleWriteBoundary(WriteBoundary):
+    # ============================================================================
+    #                                   TAGGED BIBLE
+    # ============================================================================
+
     def write_tagnt(self, 
         verse                   : str,
         word_position           : str,
@@ -34,6 +38,10 @@ class StepBibleWriteBoundary(WriteBoundary):
         self.db.execute(query, (
             verse, word_position, word_type, greek, transliteration, english, dStrong, grammar, dictionary_form, gloss, editions, meaning_variants, spelling_variants, spanish, sub_meanings, conjoined_data, sStrong, instance, alt_strongs, variant_notes
         ))
+
+    # ============================================================================
+    #                                   MORPHOLOGY
+    # ============================================================================
 
     def write_morphological_code(self, 
             iso         : str,
@@ -117,6 +125,51 @@ class StepBibleWriteBoundary(WriteBoundary):
         """
         self.db.execute(query, (
             code_id, value_id
+        ))
+    
+    # ============================================================================
+    #                                   LEXICON
+    # ============================================================================
+
+    def write_lexicon_morph_codes(self,
+            code        : str,
+            language    : str,
+            type        : str,
+            gender      : str,
+            number      : str,
+            extra       : str
+        ) -> None: 
+        query = """
+            INSERT INTO lexicon.morph_codes (
+                code, language, type, gender, number, extra
+            ) VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT DO NOTHING
+        """
+        self.db.execute(query, (
+            code, language, type, gender, number, extra
+        ))
+
+    def write_lexicon_data(self,
+            e_strong            : str,
+            d_strong            : str,
+            d_u_relationship    : str,
+            u_strong            : str,
+            text                : str,
+            transliteration     : str,
+            morph               : str,
+            gloss               : str,
+            meaning             : str,
+            source_id           : int,
+            other_lexicon       : str = None,
+        ) -> None: 
+        query = """
+            INSERT INTO lexicon.data (
+                e_strong, d_strong, d_u_relationship, u_strong, text, transliteration, morph, gloss, meaning, source_id, other_lexicon
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT DO NOTHING
+        """
+        self.db.execute(query, (
+            e_strong, d_strong, d_u_relationship, u_strong, text, transliteration, morph, gloss, meaning, source_id, other_lexicon
         ))
 
 class StepBibleDeleteBoundary(DeleteBoundary):
