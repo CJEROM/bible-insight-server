@@ -160,16 +160,15 @@ class StepBibleWriteBoundary(WriteBoundary):
             gloss               : str,
             meaning             : str,
             source_id           : int,
-            other_lexicon       : str = None,
         ) -> None: 
         query = """
             INSERT INTO lexicon.data (
-                e_strong, d_strong, d_u_relationship, u_strong, text, transliteration, morph, gloss, meaning, source_id, other_lexicon
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                e_strong, d_strong, d_u_relationship, u_strong, text, transliteration, morph, gloss, meaning, source_id
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
         self.db.execute(query, (
-            e_strong, d_strong, d_u_relationship, u_strong, text, transliteration, morph, gloss, meaning, source_id, other_lexicon
+            e_strong, d_strong, d_u_relationship, u_strong, text, transliteration, morph, gloss, meaning, source_id
         ))
 
 class StepBibleDeleteBoundary(DeleteBoundary):
