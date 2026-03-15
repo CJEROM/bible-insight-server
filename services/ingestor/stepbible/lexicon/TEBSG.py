@@ -67,9 +67,11 @@ class TEBSG():
                 if valid:
                     columns = line.split("\t")
 
-                    self.process_morph_code(
-                        code    = columns[5]
-                    )
+                    morph_code = columns[5] if columns[5].strip() != "" else None
+                    if morph_code:
+                        self.process_morph_code(
+                            code    = morph_code
+                        )
 
                     self.write.write_lexicon_data(
                         e_strong            = columns[0],
@@ -84,7 +86,7 @@ class TEBSG():
                         u_strong            = columns[2],
                         text                = columns[3],
                         transliteration     = columns[4],
-                        morph               = columns[5],
+                        morph               = morph_code,
                         gloss               = columns[6],
                         meaning             = columns[7],
                         source_id           = downloaded_file.source_id
@@ -95,7 +97,7 @@ class TEBSG():
     def process_morph_code(self,
             code    : str
         ):
-        language        = None #code.split(":")[0]
+        language        = code.split(":")[0]
         type            = None
         gender          = None
         number          = None
