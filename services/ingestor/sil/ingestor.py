@@ -134,7 +134,12 @@ class SILIngestor:
     def download(self, link: str):
         self.source_url = link
 
-        response = requests.get(link, stream=True)
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://iso639-3.sil.org/code_tables/download_tables"
+        }
+
+        response = requests.get(link, stream=True, headers=headers)
         response.raise_for_status()  # fail loudly if something goes wrong
 
         filename = "sil_iso_data.zip"
