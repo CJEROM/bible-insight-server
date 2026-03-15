@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS lexicon.morph_codes (
     FOREIGN KEY (gender)    REFERENCES lexicon.gender (id),
     FOREIGN KEY (number)    REFERENCES lexicon.number (id),
     FOREIGN KEY (extra)     REFERENCES lexicon.extra (id)
-)
+);
 
 -- ==============================================================================================================================
 -- TRANSLATORS BRIEF LEXICON (HEBREW)
@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS lexicon.morph_codes (
 CREATE TABLE IF NOT EXISTS lexicon.data(
     id                  SERIAL PRIMARY KEY,
     e_strong            TEXT,
-    d_strong            UNIQUE,
+    d_strong            TEXT UNIQUE,
     d_u_relationship    TEXT,
     u_strong            TEXT,
     iso                 TEXT,
