@@ -53,13 +53,60 @@ class TEBSG():
         # Read the downloaded file
         with open(downloaded_file.this_file_path, "r", encoding="utf-8") as f:
             # Loop through file line by line
-            count = 0
             valid = False
 
             for line in f:
-                pass
+                if line.startswith("eStrong	dStrong	uStrong	Greek	Transliteration	Morph	Gloss	Abbott-Smith lexicon (AS), with gaps occationally filled from edited versions of  Middle LSJ "):
+                    valid = True
+                
+                # Skip the empty lines so we can start ingesting the data
+                if line.strip() == "" or line.startswith("==="):
+                    continue
+
+                if valid:
+                    columns = line.split("\t")
+
+                    self.write.write_lexicon_data(
+                        e_strong            = columns[0],
+                        d_strong            = self. get_strong_relationship(
+                                                raw_d_strong    = columns[1],
+                                                result          = 0
+                                            ),
+                        d_u_relationship    = self. get_strong_relationship(
+                                                raw_d_strong    = columns[1],
+                                                result          = 1
+                                            ),
+                        u_strong            = columns[2],
+                        text                = columns[3],
+                        transliteration     = columns[4],
+                        morph               = columns[5],
+                        gloss               = columns[6],
+                        meaning             = columns[7],
+                        source_id           = downloaded_file.source_id
+                    )
         
         self.db.commit()
+
+    def get_strong_relationship(self,
+            raw_d_strong    : str,
+            result          : int # 0 (d_strong) | 1 (relationship)
+        ):
+        d_strong = raw_d_strong.split("=")[0].strip()
+
+        relationship_component = raw_d_strong.split("=")[1].strip()
+
+        relationship = None
+        if relationship_component == "":
+            relationship = "="
+        else:
+            relationship = relationship_component
+
+        if result == 0:
+            return d_strong
+        elif result == 1:
+            return relationship
+        else: 
+            return None
 
 if __name__ == "__main__":
     manager = ManagerHandler()
