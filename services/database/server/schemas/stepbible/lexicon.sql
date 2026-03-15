@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS lexicon.language(
     id      TEXT PRIMARY KEY,
     name    TEXT,
     iso     CHAR(3),
-    FOREIGN KEY (iso) REFERENCES standards.iso639_3_codes (id)
+    FOREIGN KEY (iso) REFERENCES standards.iso693_3_codes (id)
 );
 
 -- Language is A=Aramaic, H=Hebrew, G=Greek and N=Name (not language specific)
