@@ -11,11 +11,6 @@ from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBib
 
 import re
 
-EXCEPTIONS = set()
-CODES = {
-
-}
-
 class LexiconBase():
     def __init__(self, 
             manager         : ManagerHandler, 
@@ -30,7 +25,10 @@ class LexiconBase():
         self.read           = StepBibleReadBoundary(self.db)
         self.write          = StepBibleWriteBoundary(self.db)
 
-        self.start_marker = start_marker
+        self.start_marker   = start_marker
+
+        self.exceptions     = set()
+        self.codes          = {}
 
         self.process_file()
 
@@ -88,7 +86,7 @@ class LexiconBase():
         
         self.db.commit()
 
-        for exception in EXCEPTIONS:
+        for exception in self.exceptions:
             print(exception)
 
     def process_morph_code(self, data_id: int, code: str):
@@ -164,9 +162,9 @@ class LexiconBase():
                 sub_code = None
 
             if self.read.find_morph_code(sub_code) == None:
-                # EXCEPTIONS.add(f"\t{code}\t->\t{sub_code}\t[{relation_type}]")
-                # EXCEPTIONS.add(f"\"{sub_code}\"\t: "+"{},")
-                EXCEPTIONS.add(sub_code)
+                # self.exceptions.add(f"\t{code}\t->\t{sub_code}\t[{relation_type}]")
+                # self.exceptions.add(f"\"{sub_code}\"\t: "+"{},")
+                self.exceptions.add(sub_code)
             else:
                 self.write.map_lexicon_morph_codes(
                     data_id         = data_id,
@@ -198,7 +196,7 @@ class LexiconBase():
             return None
         
     def add_extra_morph_codes(self, source_id):
-        for code, elements in CODES.items():
+        for code, elements in self.codes.items():
             code_id = self.write.write_morphological_code(
                 iso         = None,
                 code        = code,
