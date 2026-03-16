@@ -6,10 +6,12 @@ CREATE SCHEMA lexicon;
 -- ==============================================================================================================================
 
 CREATE TABLE IF NOT EXISTS lexicon.language(
-    id      TEXT PRIMARY KEY,
-    name    TEXT,
-    iso     CHAR(3),
-    FOREIGN KEY (iso) REFERENCES standards.iso693_3_codes (id)
+    id              TEXT PRIMARY KEY,
+    name            TEXT,
+    iso             CHAR(3),
+    feature_value   INTEGER,
+    FOREIGN KEY (iso) REFERENCES standards.iso693_3_codes (id),
+    FOREIGN KEY (feature_value) REFERENCES morphology.feature_values (id)
 );
 
 -- Language is A=Aramaic, H=Hebrew, G=Greek and N=Name (not language specific)
@@ -18,15 +20,17 @@ VALUES
     ('A', 'Aramaic' , 'arc'),
     ('H', 'Hebrew'  , 'hbo'), -- Ancient Hebrew
     ('G', 'Greek'   , 'grc'),
-    ('N', 'Name'    , NULL);
+    ('N', 'Noun'    , NULL);
 
 -- ==============================================================================================================================
 -- TYPE (PART OF SPEECH)
 -- ==============================================================================================================================
 
 CREATE TABLE IF NOT EXISTS lexicon.type(
-    id      TEXT PRIMARY KEY,
-    name    TEXT
+    id              TEXT PRIMARY KEY,
+    name            TEXT,
+    feature_value   INTEGER,
+    FOREIGN KEY (feature_value) REFERENCES morphology.feature_values (id)
 );
 
 -- Type is A=Adjective, Adv=Adverb, Art=Article, etc.
@@ -57,8 +61,10 @@ VALUES
 -- ==============================================================================================================================
 
 CREATE TABLE IF NOT EXISTS lexicon.gender(
-    id      TEXT PRIMARY KEY,
-    name    TEXT
+    id              TEXT PRIMARY KEY,
+    name            TEXT,
+    feature_value   INTEGER,
+    FOREIGN KEY (feature_value) REFERENCES morphology.feature_values (id)
 );
 
 -- Gender is F=Female, M=Male, N=Neuter, C=Common, P=Plural, S=Singular
@@ -74,8 +80,10 @@ VALUES
 -- ==============================================================================================================================
 
 CREATE TABLE IF NOT EXISTS lexicon.number(
-    id      TEXT PRIMARY KEY,
-    name    TEXT
+    id              TEXT PRIMARY KEY,
+    name            TEXT,
+    feature_value   INTEGER,
+    FOREIGN KEY (feature_value) REFERENCES morphology.feature_values (id)
 );
 
 -- Gender is F=Female, M=Male, N=Neuter, C=Common, P=Plural, S=Singular
@@ -89,8 +97,10 @@ VALUES
 -- ==============================================================================================================================
 
 CREATE TABLE IF NOT EXISTS lexicon.extra(
-    id      TEXT PRIMARY KEY,
-    name    TEXT
+    id              TEXT PRIMARY KEY,
+    name            TEXT,
+    feature_value   INTEGER,
+    FOREIGN KEY (feature_value) REFERENCES morphology.feature_values (id)
 );
 
 -- Extra for Names: L=Location, P=Person, LG/PG=Gentilic, T=Title  (i.e. any other capitalised nouns such as titles, months, gods, planets etc)
@@ -98,8 +108,7 @@ INSERT INTO lexicon.extra (id, name)
 VALUES
     ('L'    , 'Location'),
     ('P'    , 'Person'),
-    ('LG'   , 'Gentilic'),
-    ('PG'   , 'Gentilic'),
+    ('G'    , 'Gentilic'),
     ('T'    , 'Title');
 
 -- ==============================================================================================================================
@@ -145,25 +154,7 @@ VALUES
         'Edited to conform with OpenScripture''s extended Strong''s by Tyndale House Cambridge.');
 
 -- ==============================================================================================================================
--- MORPH CODES MAPPED
--- ==============================================================================================================================
-
-CREATE TABLE IF NOT EXISTS lexicon.morph_codes (
-    id          TEXT PRIMARY KEY,
-    language    TEXT,
-    type        TEXT,
-    gender      CHAR(1),
-    number      CHAR(1),
-    extra       CHAR(1),
-    FOREIGN KEY (language)  REFERENCES lexicon.language (id),
-    FOREIGN KEY (type)      REFERENCES lexicon.type (id),
-    FOREIGN KEY (gender)    REFERENCES lexicon.gender (id),
-    FOREIGN KEY (number)    REFERENCES lexicon.number (id),
-    FOREIGN KEY (extra)     REFERENCES lexicon.extra (id)
-);
-
--- ==============================================================================================================================
--- TRANSLATORS BRIEF LEXICON (HEBREW)
+-- TRANSLATORS BRIEF LEXICONS
 -- ==============================================================================================================================
 
 CREATE TABLE IF NOT EXISTS lexicon.data(
@@ -181,3 +172,20 @@ CREATE TABLE IF NOT EXISTS lexicon.data(
     FOREIGN KEY (source_id) REFERENCES audit.sources (id)
     -- FOREIGN KEY (morph) REFERENCES lexicon.morph_codes (id)
 );
+
+-- ==============================================================================================================================
+-- LEXICONS -> MORPH CODE MAPPING
+-- ==============================================================================================================================
+
+CREATE TABLE IF NOT EXISTS lexicon.morph_mapping (
+    id              SERIAL PRIMARY KEY,
+    data_id         INTEGER,
+    position        INTEGER,
+    relation_type   TEXT,
+    language        CHAR(1),
+    sub_code        TEXT,
+
+    FOREIGN KEY (language)  REFERENCES lexicon.language (id),
+    FOREIGN KEY (data_id) REFERENCES lexicon.data (id)
+    -- FOREIGN KEY (sub_code)  REFERENCES morphology.code (id),
+)
