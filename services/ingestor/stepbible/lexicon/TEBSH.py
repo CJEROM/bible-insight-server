@@ -1,28 +1,24 @@
 # Lexicons/TBESH - Translators Brief lexicon of Extended Strongs for Hebrew - STEPBible.org CC BY.txt
 # https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Lexicons/TBESH%20-%20Translators%20Brief%20lexicon%20of%20Extended%20Strongs%20for%20Hebrew%20-%20STEPBible.org%20CC%20BY.txt
 
-
 from ingestor.stepbible.download_file import DownloadFile
 
 from manager.managerhandler import ManagerHandler
-from manager.logmanager import LogManager
 
-from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
+from ingestor.stepbible.lexicon.lexicon_base import LexiconBase
 
-class TEBSH():
-    def __init__(self, 
-            manager: ManagerHandler, 
-            log: LogManager
-        ):
+CODES = {
+    
+}
 
-        self.manager        = manager
-        self.log            = log
-        self.db             = manager.get_db()
-
-        self.read           = StepBibleReadBoundary(self.db)
-        self.write          = StepBibleWriteBoundary(self.db)
-
-        self.process_file()
+class TEBSH(LexiconBase):
+    def __init__(self, manager, log):
+        super().__init__(
+            manager         = manager, 
+            log             = log, 
+            start_marker    = "eStrong#	dStrong	uStrong	Hebrew	Transliteration	Morph	Gloss	Meaning",
+            codes           = CODES
+        )
 
     def download_files(self):
 
@@ -45,14 +41,7 @@ class TEBSH():
             license_code    = "CC BY 4.0",
             is_new_license  = False
         )
-
-        return FILE
-
-    def process_file(self):
-        downloaded_file = self.download_files()
-
-        file_content = downloaded_file.read_file()
-        print(file_content[0:20])
+        self.process_file(FILE)
 
 if __name__ == "__main__":
     manager = ManagerHandler()

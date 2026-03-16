@@ -4,27 +4,25 @@
 # Lexicons/TFLSJ extra - Translators Formatted full LSJ Bible lexicon - STEPBible.org CC BY.txt
 # https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/Lexicons/TFLSJ%20extra%20-%20Translators%20Formatted%20full%20LSJ%20Bible%20lexicon%20-%20STEPBible.org%20CC%20BY.txt
 
+
 from ingestor.stepbible.download_file import DownloadFile
 
 from manager.managerhandler import ManagerHandler
-from manager.logmanager import LogManager
 
-from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
+from ingestor.stepbible.lexicon.lexicon_base import LexiconBase
 
-class TFLSJ():
-    def __init__(self, 
-            manager: ManagerHandler, 
-            log: LogManager
-        ):
+CODES = {
+    
+}
 
-        self.manager        = manager
-        self.log            = log
-        self.db             = manager.get_db()
-
-        self.read           = StepBibleReadBoundary(self.db)
-        self.write          = StepBibleWriteBoundary(self.db)
-
-        self.process_file()
+class TFLSJ(LexiconBase):
+    def __init__(self, manager, log):
+        super().__init__(
+            manager         = manager, 
+            log             = log, 
+            start_marker    = "eStrong#	dStrong	uStrong	Hebrew	Transliteration	Morph	Gloss	Meaning",
+            codes           = CODES
+        )
 
     def download_files(self):
 
@@ -47,6 +45,7 @@ class TFLSJ():
             license_code    = "CC BY 4.0",
             is_new_license  = False
         )
+        self.process_file(NORMAL)
 
         EXTRA = DownloadFile(
             main_manager        = self.manager,
@@ -67,15 +66,7 @@ class TFLSJ():
             license_code    = "CC BY 4.0",
             is_new_license  = False
         )
-
-        return [NORMAL, EXTRA]
-
-    def process_file(self):
-        downloaded_files = self.download_files()
-
-        for file in downloaded_files:
-            file_content = file.read_file()
-            print(file_content[0:20])
+        self.process_file(EXTRA)
 
 if __name__ == "__main__":
     manager = ManagerHandler()
