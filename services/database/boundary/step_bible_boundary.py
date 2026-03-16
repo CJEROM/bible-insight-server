@@ -5,7 +5,7 @@ class StepBibleReadBoundary(ReadBoundary):
             code: str    
         ):
         query = """
-            SELECT morph_code FROM morphology.codes WHERE code = %s
+            SELECT code FROM morphology.codes WHERE code = %s
         """
         found_code = self.db.fetch_clean_one(query, (code,))
         return found_code
@@ -148,7 +148,7 @@ class StepBibleWriteBoundary(WriteBoundary):
         query = """
             INSERT INTO lexicon.morph_mapping (
                 data_id, position, relation_type, language, sub_code
-            ) VALUES (%s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
         self.db.execute(query, (
