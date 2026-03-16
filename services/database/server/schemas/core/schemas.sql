@@ -14,3 +14,4 @@ CREATE SCHEMA structure;    -- chronology, harmony, outlines
 CREATE SCHEMA standards;
 CREATE SCHEMA stepbible;    -- source texts, metadata, from STEPBible, etc.
 CREATE SCHEMA morphology;
+CREATE SCHEMA lexicon;
