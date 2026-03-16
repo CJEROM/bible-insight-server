@@ -30,13 +30,15 @@ class LexiconBase():
         self.exceptions     = set()
         self.codes          = {}
 
-        self.process_file()
+        self.download_files()
 
-    def download_files(self) -> DownloadFile:
+    def download_files(self):
         pass
+        # Can run this more than once here as well
+        # Get FILE -> DownloadFile
+        # self.process_file(FILE)
 
-    def process_file(self):
-        downloaded_file = self.download_files()
+    def process_file(self, downloaded_file: DownloadFile):
 
         self.add_extra_morph_codes(downloaded_file.source_id)
 
@@ -228,6 +230,7 @@ if __name__ == "__main__":
     log     = manager.create_log_in_folder(["logs", "ingestor", "stepbible"])
 
     LexiconBase(
-        manager     = manager,
-        log         = log,
+        manager         = manager,
+        log             = log,
+        start_marker    = None
     )
