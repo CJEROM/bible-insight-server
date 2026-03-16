@@ -8,6 +8,8 @@ from manager.logmanager import LogManager
 
 from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
 
+import re
+
 class TEBSG():
     def __init__(self, 
             manager: ManagerHandler, 
@@ -68,12 +70,8 @@ class TEBSG():
                     columns = line.split("\t")
 
                     morph_code = columns[5] if columns[5].strip() != "" else None
-                    if morph_code:
-                        self.process_morph_code(
-                            code    = morph_code
-                        )
 
-                    self.write.write_lexicon_data(
+                    data_id = self.write.write_lexicon_data(
                         e_strong            = columns[0],
                         d_strong            = self. get_strong_relationship(
                                                 raw_d_strong    = columns[1],
@@ -88,29 +86,98 @@ class TEBSG():
                         transliteration     = columns[4],
                         morph               = morph_code,
                         gloss               = columns[6],
-                        meaning             = columns[7],
+                        meaning             = columns[7].strip(),
                         source_id           = downloaded_file.source_id
                     )
+
+                    if morph_code:
+                        self.process_morph_code(
+                            data_id = data_id,
+                            code    = morph_code
+                        )
         
         self.db.commit()
 
-    def process_morph_code(self,
-            code    : str
-        ):
-        language        = code.split(":")[0]
-        type            = None
-        gender          = None
-        number          = None
-        extra           = None
+    import re
 
-        self.write.write_lexicon_morph_codes(
-            code        = code,
-            language    = language,
-            type        = type,
-            gender      = gender,
-            number      = number,
-            extra       = extra
-        )
+    def process_morph_code(self, data_id: int, code: str):
+
+        # -------------------------------------------------------
+        # 1. Expand feature alternates (case 3 -> case 4)
+        # Example: G:N-M/F -> G:N-M / G:N-F
+        # -------------------------------------------------------
+
+        match = re.search(r"([A-Z]:[A-Z]+-[^/\s]+)/([^\s+]+)", code)
+
+        if match:
+            base_left = match.group(1)      # e.g. G:N-M
+            alt = match.group(2)            # e.g. F
+
+            prefix = base_left.rsplit("-", 1)[0]  # G:N
+
+            left = base_left
+            right = f"{prefix}-{alt}"
+
+            expanded = code.replace(match.group(0), f"{left} / {right}")
+
+            # Re-run parser with expanded string
+            return self.process_morph_code(data_id, expanded)
+
+        # -------------------------------------------------------
+        # 2. Split components normally
+        # -------------------------------------------------------
+
+        components = re.split(r"(\s*[+/]\s*)", code)
+
+        relation_type = "single"
+
+        position = 1
+
+        for part in components:
+
+            # ---------------------------------------------------
+            # Detect relationship separators
+            # ---------------------------------------------------
+
+            if part == '+':
+                relation_type = "compound"
+                continue
+
+            elif part == ' + ':
+                relation_type = "multi_word"
+                continue
+
+            elif part.strip() == '/':
+                relation_type = "alternate"
+                continue
+
+            # ---------------------------------------------------
+            # Otherwise it's a morphology code
+            # ---------------------------------------------------
+
+            language = None
+            sub_code = None
+
+            if ":" in part:
+                language, sub_code = part.split(":", 1)
+
+            else:
+                # Observed only in Hebrew entries
+                language = "H"
+                sub_code = part
+
+            if self.read.find_morph_code(sub_code) == None:
+                print(f"\t{sub_code}")
+            else:
+                self.write.map_lexicon_morph_codes(
+                    data_id         = data_id,
+                    position        = position,
+                    relation_type   = relation_type,
+                    language        = language,
+                    sub_code        = sub_code
+                )
+
+            position += 1
 
     def get_strong_relationship(self,
             raw_d_strong    : str,
