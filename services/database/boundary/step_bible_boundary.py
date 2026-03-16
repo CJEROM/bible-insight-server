@@ -1,7 +1,14 @@
 from database.boundary.base_boundary import ReadBoundary, WriteBoundary, DeleteBoundary
 
 class StepBibleReadBoundary(ReadBoundary):
-    pass    
+    def find_morph_code(self, 
+            code: str    
+        ):
+        query = """
+            SELECT morph_code FROM morphology.codes WHERE code = %s
+        """
+        found_code = self.db.fetch_clean_one(query, (code,))
+        return found_code
 
 class StepBibleWriteBoundary(WriteBoundary):
     # ============================================================================
