@@ -131,22 +131,21 @@ class StepBibleWriteBoundary(WriteBoundary):
     #                                   LEXICON
     # ============================================================================
 
-    def write_lexicon_morph_codes(self,
-            code        : str,
-            language    : str,
-            type        : str,
-            gender      : str,
-            number      : str,
-            extra       : str
+    def map_lexicon_morph_codes(self,
+            data_id         : int,
+            position        : str,
+            relation_type   : str,
+            language        : str,
+            sub_code        : str
         ) -> None: 
         query = """
-            INSERT INTO lexicon.morph_codes (
-                id, language, type, gender, number, extra
-            ) VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO lexicon.morph_mapping (
+                data_id, position, relation_type, language, sub_code
+            ) VALUES (%s, %s, %s, %s)
             ON CONFLICT DO NOTHING
         """
         self.db.execute(query, (
-            code, language, type, gender, number, extra
+            data_id, position, relation_type, language, sub_code
         ))
 
     def write_lexicon_data(self,
@@ -160,16 +159,17 @@ class StepBibleWriteBoundary(WriteBoundary):
             gloss               : str,
             meaning             : str,
             source_id           : int,
-        ) -> None: 
+        ) -> int: 
         query = """
             INSERT INTO lexicon.data (
                 e_strong, d_strong, d_u_relationship, u_strong, text, transliteration, morph, gloss, meaning, source_id
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT DO NOTHING
+            RETURNING id;
         """
-        self.db.execute(query, (
+        data_id = self.db.fetch_clean_one(query, (
             e_strong, d_strong, d_u_relationship, u_strong, text, transliteration, morph, gloss, meaning, source_id
         ))
+        return data_id
 
 class StepBibleDeleteBoundary(DeleteBoundary):
     pass
