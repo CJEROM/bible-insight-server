@@ -15,7 +15,8 @@ class LexiconBase():
     def __init__(self, 
             manager         : ManagerHandler, 
             log             : LogManager,
-            start_marker    : str
+            start_marker    : str,
+            codes           : dict
         ):
 
         self.manager        = manager
@@ -28,7 +29,7 @@ class LexiconBase():
         self.start_marker   = start_marker
 
         self.exceptions     = set()
-        self.codes          = {}
+        self.codes          = codes
 
         self.download_files()
 
