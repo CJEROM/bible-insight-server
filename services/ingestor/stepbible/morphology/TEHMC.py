@@ -2,29 +2,17 @@
 # https://raw.githubusercontent.com/STEPBible/STEPBible-Data/refs/heads/master/TEHMC%20-%20Translators%20Expansion%20of%20Hebrew%20Morphology%20Codes%20-%20STEPBible.org%20CC%20BY.txt
 
 from ingestor.stepbible.download_file import DownloadFile
-
 from manager.managerhandler import ManagerHandler
-from manager.logmanager import LogManager
-
-from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
+from ingestor.stepbible.morphology.morphology_base import MorphologyBase
 
 import re
 
-class TEHMC():
-    def __init__(self, 
-            manager: ManagerHandler, 
-            log: LogManager
-        ):
-
-        self.manager        = manager
-        self.log            = log
-        self.db             = manager.get_db()
-
-        self.read           = StepBibleReadBoundary(self.db)
-        self.write          = StepBibleWriteBoundary(self.db)
-
-
-        self.process_file()
+class TEHMC(MorphologyBase):
+    def __init__(self, manager, log):
+        super().__init__(
+            manager = manager, 
+            log     = log
+        )
 
     def download_files(self):
 
@@ -47,69 +35,7 @@ class TEHMC():
             license_code    = "CC BY 4.0",
             is_new_license  = False
         )
-
-        return FILE
-
-    def process_file(self):
-        downloaded_file = self.download_files()
-
-        # Read the downloaded file
-        with open(downloaded_file.this_file_path, "r", encoding="utf-8") as f:
-            # Loop through file line by line
-            count = 0
-            valid = False
-
-            for line in f:
-
-                if line.startswith("$"):
-                    if count == 0:
-                        valid = True
-
-                    count += 1
-
-                    if valid:
-                        block = [
-                            next(f).rstrip("\n"),
-                            next(f).rstrip("\n"),
-                            next(f).rstrip("\n"),
-                            next(f).rstrip("\n"),
-                        ]
-
-                        self.process_block(
-                            block       = block, 
-                            source_id   = downloaded_file.source_id
-                        )
-        
-        self.db.commit()
-
-    def process_block(self, 
-            block       : list[str],
-            source_id   : int
-        ):
-        # line 1: full list of morphological elements with values
-        code, elements  = self.process_line_one(block[0])
-        # line 2: morphology: a phrase summarising these elements
-        morphology      = block[1][1:].strip('\"') # Skip tab
-        # line 3: explanation: a description of the function of this morphology
-        explanation     = block[2][1:].strip('\"') # Skip tab
-        # line 4: example: an example sentence that includes an underlined word having this same function.
-        example         = block[3][10:].strip('\"') # Skip tab + 'Example: '
-        
-        code_id = self.write.write_morphological_code(
-            iso         = None,
-            code        = code,
-            morphology  = morphology,
-            explanation = explanation,
-            example     = example,
-            source_id   = source_id,
-            raw_data    = "\n".join(block)
-        )
-
-        for value_id in elements:
-            self.write.write_morphology_code_values(
-                code_id     = code_id,
-                value_id    = value_id
-            )
+        self.process_file(FILE)
 
     def process_line_one(self, line: str):
         code, elements = line.split("\t", 1)
