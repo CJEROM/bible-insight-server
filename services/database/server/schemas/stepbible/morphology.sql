@@ -4,26 +4,6 @@
 DROP SCHEMA morphology CASCADE;
 CREATE SCHEMA morphology;
 
--- ==============================================================================================================================
-
--- CREATE TABLE IF NOT EXISTS morphology.systems(
---         id              SERIAL PRIMARY KEY,
---         code            TEXT UNIQUE,
---         name            TEXT,
---         description     TEXT,
---         source_id       INTEGER,
---         language_scope  TEXT,
---         FOREIGN KEY (source_id) REFERENCES audit.sources (id)
---         FOREIGN KEY (language_scope) REFERENCES standards.iso693_3_codes (id)
--- );
--- INSERT INTO morphology.systems (code, name, description, source_id, language_scope)
--- VALUES
---         ("", "", "", , "grc"),  -- Ancient Greek
---         ("", "", "", , "hbo");  -- Ancient Hebrew
---         -- ("", "", "", , "heb")        -- Modern Hebrew
-        -- ("", "", "", , "arc")        -- 
-
-
 -- ==================================================================================================================================================================
 
 CREATE TABLE IF NOT EXISTS morphology.codes(
@@ -44,12 +24,10 @@ CREATE TABLE IF NOT EXISTS morphology.codes(
 CREATE TABLE IF NOT EXISTS morphology.features(
         id              SERIAL PRIMARY KEY,
         name            TEXT UNIQUE,
-        description     TEXT
+        description     TEXT,
+        limit           INTEGER,        -- How many of the same feature can one entry have
+        union           TEXT            -- How to deal with any over limit e.g OR / AND (relationship types)
 );
--- INSERT INTO morphology.features ()
--- VALUES
---         (),
---         ();
 
 CREATE TABLE IF NOT EXISTS morphology.feature_values(
         id              SERIAL PRIMARY KEY,
