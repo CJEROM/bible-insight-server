@@ -96,15 +96,15 @@ class StepBibleWriteBoundary(WriteBoundary):
         ) -> int: 
         query = """
             INSERT INTO morphology.feature_values (
-                feature_id, feature, value, description
+                feature_id, value, description
             )
-            VALUES (%s, %s, %s, %s)
+            VALUES (%s, %s, %s)
             ON CONFLICT (feature_id, value)
             DO UPDATE SET description = morphology.feature_values.description
             RETURNING id;
         """
         feature_id = self.db.fetch_clean_one(query, (
-            feature_id, feature, value, description
+            feature_id, value, description
         ))
         return feature_id 
     

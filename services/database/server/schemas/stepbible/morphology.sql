@@ -32,7 +32,6 @@ CREATE TABLE IF NOT EXISTS morphology.features(
 CREATE TABLE IF NOT EXISTS morphology.feature_values(
         id              SERIAL PRIMARY KEY,
         feature_id      INTEGER,
-        feature         TEXT,
         value           TEXT,
         description     TEXT,
         UNIQUE (feature_id, value),
