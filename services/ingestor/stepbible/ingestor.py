@@ -1,19 +1,19 @@
 
 
 
-from services.ingestor.stepbible.tagged.TAHOT import TAHOT
-from services.ingestor.stepbible.tagged.TAGNT import TAGNT
-from services.ingestor.stepbible.tagged.TTESV import TTESV
+from ingestor.stepbible.tagged.TAHOT import TAHOT
+from ingestor.stepbible.tagged.TAGNT import TAGNT
+from ingestor.stepbible.tagged.TTESV import TTESV
 
-from services.ingestor.stepbible.lexicon.TEBSG import TEBSG
-from services.ingestor.stepbible.lexicon.TEBSH import TEBSH
-from services.ingestor.stepbible.lexicon.TFLSJ import TFLSJ
+from ingestor.stepbible.lexicon.TEBSG import TEBSG
+from ingestor.stepbible.lexicon.TEBSH import TEBSH
+from ingestor.stepbible.lexicon.TFLSJ import TFLSJ
 
-from services.ingestor.stepbible.morphology.TEGMC import TEGMC
-from services.ingestor.stepbible.morphology.TEHMC import TEHMC
+from ingestor.stepbible.morphology.TEGMC import TEGMC
+from ingestor.stepbible.morphology.TEHMC import TEHMC
 
-from services.ingestor.stepbible.other.TIPNR import TIPNR
-from services.ingestor.stepbible.other.TVTMS import TVTMS
+from ingestor.stepbible.other.TIPNR import TIPNR
+from ingestor.stepbible.other.TVTMS import TVTMS
 
 from manager.managerhandler import ManagerHandler
 from database.boundary.step_bible_boundary import StepBibleReadBoundary, StepBibleWriteBoundary, StepBibleDeleteBoundary
@@ -28,6 +28,7 @@ class STEPBibleIngestor:
         self.read  = StepBibleReadBoundary(self.db)
 
         self.ingest()
+        # FUTURE: Potentially ingest all the current corrections flagged, and link issue to entries
 
     def ingest(self):
         # ================================================================================================================
@@ -39,31 +40,39 @@ class STEPBibleIngestor:
             manager     = self.manager,
             log         = self.log
         )
+        print("Completed: TEGMC - Translators Expansion of Greek Morphhology Codes")
+
         # Translators Expansion of Hebrew Morphology Codes
         TEHMC(
             manager     = self.manager,
             log         = self.log
         )
+        print("Completed: TEHMC - Translators Expansion of Hebrew Morphology Codes")
 
-        # # ================================================================================================================
-        # #                                                   Lexicons
-        # # ================================================================================================================
+        # ================================================================================================================
+        #                                                   Lexicons
+        # ================================================================================================================
 
-        # # Translators Brief lexicon of Extended Strongs for Greek
-        # TEBSG(
-        #     manager     = self.manager,
-        #     log         = self.log
-        # )
-        # # Translators Brief lexicon of Extended Strongs for Hebrew
-        # TEBSH(
-        #     manager     = self.manager,
-        #     log         = self.log
-        # )
-        # # Translators Formatted full LSJ Bible lexicon
-        # TFLSJ(
-        #     manager     = self.manager,
-        #     log         = self.log
-        # )
+        # Translators Brief lexicon of Extended Strongs for Greek
+        TEBSG(
+            manager     = self.manager,
+            log         = self.log
+        )
+        print("Completed: TEBSG - Translators Brief lexicon of Extended Strongs for Greek")
+
+        # Translators Brief lexicon of Extended Strongs for Hebrew
+        TEBSH(
+            manager     = self.manager,
+            log         = self.log
+        )
+        print("Completed: TEBSH - Translators Brief lexicon of Extended Strongs for Hebrew")
+
+        # Translators Formatted full LSJ Bible lexicon
+        TFLSJ(
+            manager     = self.manager,
+            log         = self.log
+        )
+        print("Completed: TFLSJ - Translators Formatted full LSJ Bible lexicon")
 
         # # ================================================================================================================
         # #                                                   Tagged Bibles
@@ -74,16 +83,21 @@ class STEPBibleIngestor:
         #     manager     = self.manager,
         #     log         = self.log
         # )
+        # print("Completed: TAHOT - Translators Amalgamated Hebrew OT")
+
         # # Translators Amalgamated Greek NT
         # TAGNT(
         #     manager     = self.manager,
         #     log         = self.log
         # )
+        # print("Completed: TAGNT - Translators Amalgamated Greek NT")
+
         # # Tyndale Translation tags for ESV
         # TTESV(
         #     manager     = self.manager,
         #     log         = self.log
         # )
+        # print("Completed: TTESV - Tyndale Translation tags for ESV")
 
         # # ================================================================================================================
         # #                                                   Entities
@@ -94,6 +108,7 @@ class STEPBibleIngestor:
         #     manager     = self.manager,
         #     log         = self.log
         # )
+        # print("Completed: TIPNR - Translators Individualised Proper Names with all References")
 
         # # ================================================================================================================
         # #                                                   Versification
@@ -105,6 +120,7 @@ class STEPBibleIngestor:
         #     manager     = self.manager,
         #     log         = self.log
         # )
+        # print("Completed: TVTMS - Translators Versification Traditions with Methodology for Standardisation for Eng+Heb+Lat+Grk+Others")
 
 if __name__ == "__main__":
     manager = ManagerHandler()
