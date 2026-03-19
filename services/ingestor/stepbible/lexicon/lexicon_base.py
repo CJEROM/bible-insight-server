@@ -154,8 +154,9 @@ class LexiconBase():
                 language, sub_code = part.split(":", 1)
 
             else:
-                # Observed only in Hebrew entries
-                language = "H"
+                # First letter is language for the Hebrew Morphology codes
+                #   Either H or A
+                language = code[0] 
                 sub_code = part
 
             # FOR EXCEPTIONS I KNOW OF - UNCLEAN DATA
