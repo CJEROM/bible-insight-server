@@ -4,6 +4,7 @@ devops/docker/*/*
 
 # But not these specific files
 !devops/docker/**/docker-compose.yml
+!devops/docker/**/compose.yml
 !devops/docker/**/README.md
 !devops/docker/*/*/.env
 

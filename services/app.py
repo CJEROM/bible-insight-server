@@ -84,6 +84,7 @@ if __name__ == "__main__":
     RESET = True
     try:
         restart_docker("postgres", RESET)
+        restart_docker("databasus", RESET)
         restart_docker("minio", RESET)
         restart_docker("label-studio", RESET)
         # restart_docker("authentik")
