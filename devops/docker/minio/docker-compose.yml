@@ -6,18 +6,18 @@ services:
       - '9900:9000'
       - '9901:9001'
     networks:
-      - minionetwork
+      - bibleminionetwork
     volumes:
-      - 'minio_data:/data'
+      - 'bible_minio_data:/data'
     environment:
       - MINIO_ROOT_USER=ceph
       - MINIO_ROOT_PASSWORD=password
       - MINIO_DEFAULT_BUCKETS=your_bucket_name
 
 networks:
-  minionetwork:
+  bibleminionetwork:
     driver: bridge
 
 volumes:
-  minio_data:
+  bible_minio_data:
     driver: local

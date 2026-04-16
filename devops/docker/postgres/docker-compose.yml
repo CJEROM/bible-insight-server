@@ -1,5 +1,5 @@
 services:
-  db:
+  bible-db:
     image: timescale/timescaledb-ha:pg16.11-ts2.24.0-all-oss
     restart: always
     ports:
@@ -9,6 +9,6 @@ services:
       POSTGRES_PASSWORD: mypassword
       POSTGRES_DB: bible-insight # default database
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - bible_pg_data:/var/lib/postgresql/data
 volumes:
-  pg_data:
+  bible_pg_data:

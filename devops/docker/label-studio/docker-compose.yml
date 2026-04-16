@@ -1,5 +1,5 @@
 services:
-  nginx:
+  label-nginx:
     build: .
     image: heartexlabs/label-studio:latest
     restart: unless-stopped
@@ -7,7 +7,7 @@ services:
       - "8080:8085"
       - "8081:8086"
     depends_on:
-      - app
+      - label-app
     environment:
       - LABEL_STUDIO_HOST=${LABEL_STUDIO_HOST:-}
     #   Optional: Specify SSL termination certificate & key
@@ -21,7 +21,7 @@ services:
     #      - ./deploy/my.conf:/etc/nginx/nginx.conf
     command: nginx
 
-  app:
+  label-app:
     stdin_open: true
     tty: true
     build: .
@@ -30,7 +30,7 @@ services:
     expose:
       - "8000"
     depends_on:
-      - db
+      - label-db
     environment:
       - DJANGO_DB=default
       - POSTGRE_NAME=postgres
@@ -47,9 +47,9 @@ services:
       - ./mydata:/label-studio/data:rw
     command: label-studio-uwsgi
 
-  db:
+  label-db:
     image: pgautoupgrade/pgautoupgrade:13-alpine
-    hostname: db
+    hostname: label-db
     restart: unless-stopped
     # Optional: Enable TLS on PostgreSQL
     # Just drop your server.crt and server.key into folder 'deploy/pgsql/certs'
