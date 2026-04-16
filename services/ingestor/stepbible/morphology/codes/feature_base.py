@@ -21,6 +21,7 @@ class FeatureBase(BaseParser):
             log         : LogManager, 
             code        : str,
             name        : str,
+            subtype     : str,
             description : str,
             limit       : int,
             union       : str,
@@ -32,6 +33,7 @@ class FeatureBase(BaseParser):
         )
 
         self.feature_name           = name
+        self.subtype                = subtype
         self.feature_description    = description
         self.feature_limit          = limit
         self.feature_union          = union
@@ -43,6 +45,7 @@ class FeatureBase(BaseParser):
     def init_feature(self):
         feature_id = self.write.write_morphology_features(
             name        = self.feature_name,
+            subtype     = self.subtype,
             description = self.feature_description,
             limit       = self.feature_limit,       # Can only have 1 assigned
             union       = self.feature_union        # We should ignore any that go over the limit
@@ -59,3 +62,9 @@ class FeatureBase(BaseParser):
                 value       = value_name,
                 description = value_description
             )
+
+class FeatureBaseMapping():
+    pass
+
+class FeatureBaseRules():
+    pass

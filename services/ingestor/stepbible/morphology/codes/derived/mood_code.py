@@ -1,7 +1,47 @@
+from ingestor.stepbible.morphology.codes.feature_base import FeatureBase
 
-from ingestor.stepbible.morphology.codes.base_parser import BaseParser
+# NOT Always just a derived feature
 
-class MoodCode(BaseParser):
+class MoodCode(FeatureBase):
+    # Format -> "Name": {"Codes": [""], "Description": ""}
+    CODES       = "Codes"
+    DESCRIPTION = "Description"
+
+    values = {
+        "Subjunctive": {
+            CODES           : ["S"],
+            DESCRIPTION     : ""
+        },
+        "Imperative": {
+            CODES           : ["M", "v"],
+            DESCRIPTION     : ""
+        },
+        "Optative": {
+            CODES           : ["O"],
+            DESCRIPTION     : ""
+        },
+        "Jussive": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Indicative": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Cohortative": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+    }
+
+    def __init__(self, manager, log, code):
+        name        = "Mood"
+        description = ""
+        limit       = 1
+        union       = None
+
+        super().__init__(manager, log, code, name, description, limit, union)
+
     # Subjunctive
     # Imperative
     # jussive
@@ -11,10 +51,3 @@ class MoodCode(BaseParser):
     # Cohortative
     # Indicative/cohortative
     # Jussive
-    def __init__(self, manager, log, code):
-        super().__init__(
-            manager = manager, 
-            log     = log, 
-            code    = code
-        )
-

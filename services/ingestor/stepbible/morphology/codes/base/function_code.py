@@ -1,8 +1,41 @@
+from ingestor.stepbible.morphology.codes.feature_base import FeatureBase
 
-from ingestor.stepbible.morphology.codes.base_parser import BaseParser
+class ExtraCode(FeatureBase):
+    # Format -> "Name": {"Codes": [""], "Description": ""}
+    CODES       = "Codes"
+    DESCRIPTION = "Description"
 
+    values = {
+        "Relative Pronoun": {
+            CODES           : ["R"],
+            DESCRIPTION     : ""
+        },
+        "Conjunction": {
+            CODES           : ["COND", "CONJ"],
+            DESCRIPTION     : ""
+        },
+        "": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+    }
 
-class FunctionCode(BaseParser):
+    def __init__(self, manager, log, code):
+        name        = "Case"
+        description = ""
+        limit       = 1
+        union       = None
+
+        super().__init__(manager, log, code, name, description, limit, union)
+
     # Adverb or adverb and particle combined
     # Possessive pronoun
     # Indeclinable Noun of Other type
@@ -47,9 +80,3 @@ class FunctionCode(BaseParser):
     # Indefinite Pronoun
     # Interogative
     # Negative
-    def __init__(self, manager, log, code):
-        super().__init__(
-            manager = manager, 
-            log     = log, 
-            code    = code
-        )

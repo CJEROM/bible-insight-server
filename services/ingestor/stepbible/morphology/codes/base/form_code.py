@@ -1,7 +1,132 @@
+from ingestor.stepbible.morphology.codes.feature_base import FeatureBase
 
-from ingestor.stepbible.morphology.codes.base_parser import BaseParser
+class FormCode(FeatureBase):
+    # Format -> "Name": {"Codes": [""], "Description": ""}
+    CODES       = "Codes"
+    DESCRIPTION = "Description"
 
-class FormCode(BaseParser):
+    values = {
+        # ------------------------------------ VerbForm ------------------------------------
+        "Infinitive": { 
+            CODES           : [""], # RAN
+            DESCRIPTION     : ""
+        },
+        "Participle": {
+            CODES           : ["P"],
+            DESCRIPTION     : ""
+        },
+        # ------------------------------------ Tense ------------------------------------
+        "Imperfect": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        # ------------------------------------ Mood ------------------------------------
+        "Imperative": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        # ------------------------------------ SyntaxRole ------------------------------------
+        "Relative": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Conjunction": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        # ------------------------------------ NounType ------------------------------------
+        "Common": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Gentilic": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Proper": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        # ------------------------------------ HebrewForm ------------------------------------
+        "Consecutive": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Paragogic Hé": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Paragogic Nun": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        # ------------------------------------ OTHER ------------------------------------
+        "Interrogative": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Definite": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Definite article (Aramaic)": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Definite article (Hebrew)": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Directional": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Conditional": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Interjection": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Demonstrative": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Negative": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Object indicator": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Numerical": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Numerical position": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Personal": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+        "Participle passive": {
+            CODES           : [""],
+            DESCRIPTION     : ""
+        },
+    }
+
+    def __init__(self, manager, log, code):
+        name        = "Form"
+        description = ""
+        limit       = 1
+        union       = None
+
+        super().__init__(manager, log, code, name, description, limit, union)
+
     # Interrogative
     # Definite
     # Definite article (Aramaic)
@@ -32,9 +157,3 @@ class FormCode(BaseParser):
     # Participle passive
     # Numerical position
     # Conjunction+Imperfect
-    def __init__(self, manager, log, code):
-        super().__init__(
-            manager = manager, 
-            log     = log, 
-            code    = code
-        )

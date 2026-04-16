@@ -23,10 +23,15 @@ CREATE TABLE IF NOT EXISTS morphology.codes(
 
 CREATE TABLE IF NOT EXISTS morphology.features(
         id              SERIAL PRIMARY KEY,
-        name            TEXT UNIQUE,
-        description     TEXT,
-        limit           INTEGER,        -- How many of the same feature can one entry have
-        union           TEXT            -- How to deal with any over limit e.g OR / AND (relationship types)
+        name            TEXT,
+        description     TEXT
+);
+
+-- POS (Part Of Speech)
+CREATE TABLE IF NOT EXISTS morphology.functions(
+        id              SERIAL PRIMARY KEY,
+        name            TEXT,
+        description     TEXT
 );
 
 CREATE TABLE IF NOT EXISTS morphology.feature_values(
@@ -34,7 +39,6 @@ CREATE TABLE IF NOT EXISTS morphology.feature_values(
         feature_id      INTEGER,
         value           TEXT,
         description     TEXT,
-        UNIQUE (feature_id, value),
         FOREIGN KEY (feature_id) REFERENCES morphology.features (id)
 );
 
@@ -52,6 +56,15 @@ CREATE TABLE IF NOT EXISTS morphology.code_values(
         value_id        INTEGER,    
         FOREIGN KEY (code_id) REFERENCES morphology.codes (id),
         FOREIGN KEY (value_id) REFERENCES morphology.feature_values (id)
+);
+
+CREATE TABLE IF NOT EXISTS morphology.features_rules(
+        id              SERIAL PRIMARY KEY,
+        feature_id      INTEGER REFERENCES morphology.features (id),
+        function_id     INTEGER REFERENCES morphology.functions (id),
+        language_id     CHAR(1) REFERENCES lexicon.language (id),
+        required        BOOLEAN,
+        UNIQUE (feature_id, function_id, language_id)
 );
 
 -- ==================================================================================================================================================================

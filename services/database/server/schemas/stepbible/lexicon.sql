@@ -28,13 +28,14 @@ VALUES
 
 CREATE TABLE IF NOT EXISTS lexicon.type(
     id              TEXT PRIMARY KEY,
+    code            TEXT,
     name            TEXT,
     feature_value   INTEGER,
     FOREIGN KEY (feature_value) REFERENCES morphology.feature_values (id)
 );
 
 -- Type is A=Adjective, Adv=Adverb, Art=Article, etc.
-INSERT INTO lexicon.type (id, name)
+INSERT INTO lexicon.type (code, name)
 VALUES
     ('A'    , 'Adjective'),
     ('Adv'  , 'Adverb'),
@@ -129,7 +130,6 @@ CREATE TABLE IF NOT EXISTS lexicon.morph_mapping (
     relation_type   TEXT,
     language        CHAR(1),
     sub_code        TEXT,
-
     FOREIGN KEY (language)  REFERENCES lexicon.language (id),
     FOREIGN KEY (data_id) REFERENCES lexicon.data (id)
     -- FOREIGN KEY (sub_code)  REFERENCES morphology.code (id),
