@@ -27,7 +27,7 @@ class USXIngestor:
             is_default      = True
         )
 
-        StrongsIngestor(self.manager)
+        # StrongsIngestor(self.manager)
 
         self.dbl_id = dbl_id
         self.agreement_id = agreement_id
