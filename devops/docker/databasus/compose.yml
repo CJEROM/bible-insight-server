@@ -4,7 +4,6 @@ services:
     image: databasus/databasus:latest
     ports:
       - "4005:4005"
-    network_mode: host
     volumes:
       - ./databasus-data:/databasus-data
     restart: unless-stopped

@@ -82,9 +82,10 @@ def start_api_server():
 
 if __name__ == "__main__":
     RESET = True
+    REUSE = False
     try:
         restart_docker("postgres", RESET)
-        restart_docker("databasus", RESET)
+        restart_docker("databasus", REUSE)
         restart_docker("minio", RESET)
         restart_docker("label-studio", RESET)
         # restart_docker("authentik")
