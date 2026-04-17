@@ -85,12 +85,12 @@ if __name__ == "__main__":
     REUSE = False
     try:
         restart_docker("postgres", RESET)
-        restart_docker("databasus", REUSE)
+        # restart_docker("databasus", REUSE)
         restart_docker("minio", RESET)
-        restart_docker("label-studio", RESET)
+        # restart_docker("label-studio", RESET)
         # restart_docker("authentik")
         # restart_docker("memgraph")
-        initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
+        # initialise_script("init_labelstudio.py", 60) # Label Studio has a long delay before operational
         # # start_api_server() 
         run_script("ingestor.unicode.ingestor")
         run_script("ingestor.sil.ingestor")

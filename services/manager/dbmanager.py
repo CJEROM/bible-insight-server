@@ -62,17 +62,19 @@ class DBManager:
             db_server_script_path / schema_folder / "reference" / "licences.sql",
             db_server_script_path / schema_folder / "reference" / "sources.sql",
 
-            db_server_script_path / schema_folder / "stepbible" / "lexicon.sql",
-            db_server_script_path / schema_folder / "stepbible" / "morphology.sql",
-            
-            # db_server_script_path / schema_folder / "stepbible" / "tagged.sql",
-            # db_server_script_path / schema_folder / "stepbible" / "other.sql",
-
             db_server_script_path / schema_folder / "reference" / "files.sql",
             db_server_script_path / schema_folder / "reference" / "languages.sql",
+
+            db_server_script_path / schema_folder / "stepbible" / "morphology.sql",
+            db_server_script_path / schema_folder / "stepbible" / "languages.sql",
+            db_server_script_path / schema_folder / "stepbible" / "lexicon.sql",
+
             db_server_script_path / schema_folder / "reference" / "translations.sql",
             db_server_script_path / schema_folder / "usx"       / "agreements.sql",
             db_server_script_path / schema_folder / "bible"     / "books.sql",
+
+            # db_server_script_path / schema_folder / "stepbible" / "tagged.sql",
+            # db_server_script_path / schema_folder / "stepbible" / "other.sql",
 
             db_server_script_path / schema_folder / "reference" / "lexemes (legacy).sql",
             db_server_script_path / schema_folder / "reference" / "lexemes.sql",
